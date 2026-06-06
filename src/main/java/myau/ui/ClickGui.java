@@ -98,7 +98,6 @@ public class ClickGui extends GuiScreen {
         List<Module> miscModules = new ArrayList<>();
         miscModules.add(Myau.moduleManager.getModule(Spammer.class));
         miscModules.add(Myau.moduleManager.getModule(BedNuker.class));
-        miscModules.add(Myau.moduleManager.getModule(BedTracker.class));
         miscModules.add(Myau.moduleManager.getModule(BedwarUtils.class));
         miscModules.add(Myau.moduleManager.getModule(MurderDetector.class));
         miscModules.add(Myau.moduleManager.getModule(LightningTracker.class));
@@ -107,6 +106,8 @@ public class ClickGui extends GuiScreen {
         miscModules.add(Myau.moduleManager.getModule(AntiObbyTrap.class));
         miscModules.add(Myau.moduleManager.getModule(AntiObfuscate.class));
         miscModules.add(Myau.moduleManager.getModule(AntiBot.class));
+        miscModules.add(Myau.moduleManager.getModule(AntiCheatDetector.class));
+        miscModules.add(Myau.moduleManager.getModule(HackerDetector.class));
         miscModules.add(Myau.moduleManager.getModule(RPC.class));
         miscModules.add(Myau.moduleManager.getModule(AutoAnduril.class));
         miscModules.add(Myau.moduleManager.getModule(InventoryClicker.class));
@@ -140,7 +141,6 @@ public class ClickGui extends GuiScreen {
 
         this.categoryList = new ArrayList<>();
         int topOffset = 5;
-
 
         CategoryComponent combat = new CategoryComponent("Combat", combatModules);
         combat.setY(topOffset);
@@ -185,8 +185,10 @@ public class ClickGui extends GuiScreen {
     public void drawScreen(int x, int y, float p) {
         drawRect(0, 0, this.width, this.height, new Color(0, 0, 0, 100).getRGB());
 
-        mc.fontRendererObj.drawStringWithShadow("Myau " + Myau.version, 4, this.height - 3 - mc.fontRendererObj.FONT_HEIGHT * 2, new Color(60, 162, 253).getRGB());
-        mc.fontRendererObj.drawStringWithShadow("dev, ksyz", 4, this.height - 3 - mc.fontRendererObj.FONT_HEIGHT, new Color(60, 162, 253).getRGB());
+        mc.fontRendererObj.drawStringWithShadow("Myau " + Myau.version, 4,
+                this.height - 3 - mc.fontRendererObj.FONT_HEIGHT * 2, new Color(60, 162, 253).getRGB());
+        mc.fontRendererObj.drawStringWithShadow("dev, ksyz, idle", 4, this.height - 3 - mc.fontRendererObj.FONT_HEIGHT,
+                new Color(60, 162, 253).getRGB());
 
         for (CategoryComponent category : categoryList) {
             category.render(this.fontRendererObj);
@@ -217,7 +219,8 @@ public class ClickGui extends GuiScreen {
                     }
 
                     category = btnCat.next();
-                    if (category.insideArea(x, y) && !category.isHovered(x, y) && !category.mousePressed(x, y) && mouseButton == 0) {
+                    if (category.insideArea(x, y) && !category.isHovered(x, y) && !category.mousePressed(x, y)
+                            && mouseButton == 0) {
                         category.mousePressed(true);
                         category.xx = x - category.getX();
                         category.yy = y - category.getY();
@@ -320,7 +323,8 @@ public class ClickGui extends GuiScreen {
     }
 
     private void loadPositions() {
-        if (!configFile.exists()) return;
+        if (!configFile.exists())
+            return;
         try (FileReader reader = new FileReader(configFile)) {
             JsonObject json = new JsonParser().parse(reader).getAsJsonObject();
             for (CategoryComponent cat : categoryList) {

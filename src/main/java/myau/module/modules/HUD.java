@@ -169,7 +169,7 @@ public class HUD extends Module {
         if (this.hidePlayer.getValue() && (module instanceof AutoHeal || module instanceof AutoTool || module instanceof ChestStealer || module instanceof InvManager || module instanceof InvWalk || module instanceof Scaffold || module instanceof AutoBlockIn || module instanceof AutoBedDef || module instanceof SpeedMine || module instanceof FastPlace || module instanceof GhostHand || module instanceof MCF || module instanceof AntiDebuff)) {
             return true;
         }
-        if (this.hideMisc.getValue() && (module instanceof Spammer || module instanceof BedNuker || module instanceof BedTracker || module instanceof BedwarUtils || module instanceof MurderDetector || module instanceof LightningTracker || module instanceof NoRotate || module instanceof NickHider || module instanceof AntiObbyTrap || module instanceof AntiObfuscate || module instanceof AntiBot || module instanceof RPC || module instanceof AutoAnduril || module instanceof InventoryClicker)) {
+        if (this.hideMisc.getValue() && (module instanceof Spammer || module instanceof BedNuker || module instanceof BedwarUtils || module instanceof MurderDetector || module instanceof LightningTracker || module instanceof NoRotate || module instanceof NickHider || module instanceof AntiObbyTrap || module instanceof AntiObfuscate || module instanceof AntiBot || module instanceof AntiCheatDetector || module instanceof HackerDetector || module instanceof RPC || module instanceof AutoAnduril || module instanceof InventoryClicker)) {
             return true;
         }
         return this.hideLatency.getValue() && (module instanceof BackTrack || module instanceof LagRange || module instanceof FakeLag);
