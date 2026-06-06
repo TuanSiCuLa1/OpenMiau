@@ -55,14 +55,17 @@ public class BedwarUtils extends Module {
     public final BooleanProperty diamondUpgrades = new BooleanProperty("diamond-upgrades", true);
     public final BooleanProperty itemTracker = new BooleanProperty("item-tracker", true);
     public final BooleanProperty bedTracker = new BooleanProperty("bedtracker", true);
+    public final BooleanProperty invisAlert = new BooleanProperty("invis-alert", true);
 
     private static final Pattern ITEM_TRACKER_PATTERN = Pattern.compile("(.+?)\\s+has\\s+(?:an?\\s+)?(.+?)(?:[.!])?$", Pattern.CASE_INSENSITIVE);
     private final Set<String> trackedItemMessages = new HashSet<>();
     private final BedTracker bedTrackerDelegate = new BedTracker();
 
     private boolean trap;
+    private String trapType = "";
     private boolean sharp;
     private int protLevel;
+    private final LinkedHashMap<String, Long> invisAlertCooldowns = new LinkedHashMap<>();
 
     public BedwarUtils() {
         super("BedwarUtils", false, false);
@@ -112,6 +115,9 @@ public class BedwarUtils extends Module {
         if (this.bedTracker.getValue()) {
             this.bedTrackerDelegate.onTick(event);
         }
+        if (this.invisAlert.getValue()) {
+            this.scanInvisiblePlayers();
+        }
     }
 
     @EventTarget
@@ -129,11 +135,12 @@ public class BedwarUtils extends Module {
         GlStateManager.scale(scale, scale, 1.0F);
         float rowY = y;
         if (this.diamondUpgrades.getValue()) {
-            this.drawLine("Trap", this.trap, -1, x, rowY);
+            this.drawTrapLine(x, rowY);
             rowY += 10.0F;
             this.drawLine("Sharp", this.sharp, -1, x, rowY);
             rowY += 10.0F;
             this.drawLine("Prot", this.protLevel > 0, this.protLevel, x, rowY);
+            rowY += 10.0F;
         }
         GlStateManager.popMatrix();
     }
@@ -151,6 +158,7 @@ public class BedwarUtils extends Module {
             if (lower.contains("trap") || lower.contains("it's a trap") || lower.contains("alarm trap")
                     || lower.contains("miner fatigue")) {
                 this.trap = true;
+                this.trapType = this.parseTrapType(lower);
             }
             if (lower.contains("sharpened swords") || lower.contains("sharpness") || lower.contains("sharp")) {
                 this.sharp = true;
@@ -207,21 +215,25 @@ public class BedwarUtils extends Module {
 
     private boolean isTrackedItem(String item) {
         String lower = item.toLowerCase();
-        return lower.contains("sword")
+        boolean tieredGear = (lower.contains("stone") || lower.contains("iron") || lower.contains("diamond"))
+                && (lower.contains("sword")
                 || lower.contains("armor")
                 || lower.contains("chestplate")
                 || lower.contains("leggings")
                 || lower.contains("boots")
                 || lower.contains("helmet")
-                || lower.contains("bow")
                 || lower.contains("pickaxe")
-                || lower.contains("axe")
+                || lower.contains("axe"));
+        boolean utilityItem = lower.contains("bow")
                 || lower.contains("shears")
                 || lower.contains("fireball")
                 || lower.contains("ender pearl")
+                || lower.contains("pearl")
                 || lower.contains("invisibility")
+                || lower.contains("invis")
                 || lower.contains("jump")
                 || lower.contains("speed");
+        return tieredGear || utilityItem;
     }
 
     private String normalizeItemName(String item) {
@@ -275,6 +287,55 @@ public class BedwarUtils extends Module {
         }
     }
 
+    private void drawTextLine(String text, float x, float y, int color) {
+        mc.fontRendererObj.drawString(text, x, y, color, this.hudShadow.getValue());
+    }
+
+
+
+
+    private void scanInvisiblePlayers() {
+        BlockPos bed = this.bedTrackerDelegate.getBedPos();
+        if (bed == null || mc.theWorld == null || mc.thePlayer == null) return;
+        long now = System.currentTimeMillis();
+        for (Object object : mc.theWorld.playerEntities) {
+            if (!(object instanceof EntityPlayer)) continue;
+            EntityPlayer player = (EntityPlayer) object;
+            if (player == mc.thePlayer || player.isDead || player.getName() == null || TeamUtil.isSameTeam(player)) continue;
+            double distance = player.getDistance(bed.getX() + 0.5D, bed.getY() + 0.5D, bed.getZ() + 0.5D);
+            if (distance > 18.0D) continue;
+            int armorPieces = 0;
+            for (int slot = 0; slot < 4; slot++) {
+                if (player.getCurrentArmor(slot) != null) armorPieces++;
+            }
+            boolean suspicious = player.isInvisible() || armorPieces <= 1;
+            String key = player.getName().toLowerCase();
+            long last = this.invisAlertCooldowns.getOrDefault(key, 0L);
+            if (suspicious && now - last > 5000L) {
+                this.invisAlertCooldowns.put(key, now);
+                ChatUtil.sendFormatted(this.getMyauPrefix() + " &cSuspicious/invis player near bed: &f" + player.getDisplayName().getFormattedText());
+                SoundUtil.playSound("note.pling");
+            }
+        }
+    }
+
+
+    private void drawTrapLine(float x, float y) {
+        int green = 0xFF55FF55;
+        int red = 0xFFFF5555;
+        boolean shadow = this.hudShadow.getValue();
+        String text = this.trap ? "- Trap " + (this.trapType.isEmpty() ? "Unknown" : this.trapType) : "- Trap: false";
+        mc.fontRendererObj.drawString(text, x, y, this.trap ? green : red, shadow);
+    }
+
+    private String parseTrapType(String lower) {
+        if (lower.contains("alarm")) return "Alarm";
+        if (lower.contains("miner fatigue") || lower.contains("miner")) return "Miner Fatigue";
+        if (lower.contains("counter-offensive") || lower.contains("counter offensive") || lower.contains("counter")) return "Counter-Offensive";
+        if (lower.contains("it's a trap") || lower.contains("its a trap")) return "It's a Trap";
+        return "Unknown";
+    }
+
     private String toRoman(int level) {
         switch (level) {
             case 1:
@@ -292,9 +353,11 @@ public class BedwarUtils extends Module {
 
     private void reset() {
         this.trap = false;
+        this.trapType = "";
         this.sharp = false;
         this.protLevel = 0;
         this.trackedItemMessages.clear();
+        this.invisAlertCooldowns.clear();
     }
 
     private void sendItemTrackerMessage(String formattedPlayer, String item) {
@@ -442,6 +505,9 @@ public class BedwarUtils extends Module {
             this.lastMarcoTime = -1L;
             this.lastBedScanAttempt = -1L;
             this.lastAutoIncTime = -1L;
+        }
+        private BlockPos getBedPos() {
+            return this.bedPos;
         }
         private void scheduleBedScan() {
             if (!this.scannedThisGame && this.bedScanAt == -1L) {
