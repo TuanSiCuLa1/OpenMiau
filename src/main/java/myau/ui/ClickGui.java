@@ -38,11 +38,11 @@ public class ClickGui extends GuiScreen {
         combatModules.add(Myau.moduleManager.getModule(TargetStrafe.class));
         combatModules.add(Myau.moduleManager.getModule(NoHitDelay.class));
         combatModules.add(Myau.moduleManager.getModule(AntiFireball.class));
-        combatModules.add(Myau.moduleManager.getModule(LagRange.class));
         combatModules.add(Myau.moduleManager.getModule(HitBox.class));
         combatModules.add(Myau.moduleManager.getModule(MoreKB.class));
         combatModules.add(Myau.moduleManager.getModule(Refill.class));
         combatModules.add(Myau.moduleManager.getModule(HitSelect.class));
+        combatModules.add(Myau.moduleManager.getModule(ProjectileAimBot.class));
 
         List<Module> movementModules = new ArrayList<>();
         movementModules.add(Myau.moduleManager.getModule(AntiAFK.class));
@@ -74,6 +74,7 @@ public class ClickGui extends GuiScreen {
         renderModules.add(Myau.moduleManager.getModule(ViewClip.class));
         renderModules.add(Myau.moduleManager.getModule(NoHurtCam.class));
         renderModules.add(Myau.moduleManager.getModule(HUD.class));
+        renderModules.add(Myau.moduleManager.getModule(WaterMark.class));
         renderModules.add(Myau.moduleManager.getModule(GuiModule.class));
         renderModules.add(Myau.moduleManager.getModule(ChestESP.class));
         renderModules.add(Myau.moduleManager.getModule(Trajectories.class));
@@ -87,6 +88,7 @@ public class ClickGui extends GuiScreen {
         playerModules.add(Myau.moduleManager.getModule(InvWalk.class));
         playerModules.add(Myau.moduleManager.getModule(Scaffold.class));
         playerModules.add(Myau.moduleManager.getModule(AutoBlockIn.class));
+        playerModules.add(Myau.moduleManager.getModule(AutoBedDef.class));
         playerModules.add(Myau.moduleManager.getModule(SpeedMine.class));
         playerModules.add(Myau.moduleManager.getModule(FastPlace.class));
         playerModules.add(Myau.moduleManager.getModule(GhostHand.class));
@@ -97,13 +99,22 @@ public class ClickGui extends GuiScreen {
         miscModules.add(Myau.moduleManager.getModule(Spammer.class));
         miscModules.add(Myau.moduleManager.getModule(BedNuker.class));
         miscModules.add(Myau.moduleManager.getModule(BedTracker.class));
+        miscModules.add(Myau.moduleManager.getModule(BedwarUtils.class));
+        miscModules.add(Myau.moduleManager.getModule(MurderDetector.class));
         miscModules.add(Myau.moduleManager.getModule(LightningTracker.class));
         miscModules.add(Myau.moduleManager.getModule(NoRotate.class));
         miscModules.add(Myau.moduleManager.getModule(NickHider.class));
         miscModules.add(Myau.moduleManager.getModule(AntiObbyTrap.class));
         miscModules.add(Myau.moduleManager.getModule(AntiObfuscate.class));
+        miscModules.add(Myau.moduleManager.getModule(AntiBot.class));
+        miscModules.add(Myau.moduleManager.getModule(RPC.class));
         miscModules.add(Myau.moduleManager.getModule(AutoAnduril.class));
         miscModules.add(Myau.moduleManager.getModule(InventoryClicker.class));
+
+        List<Module> latencyModules = new ArrayList<>();
+        latencyModules.add(Myau.moduleManager.getModule(BackTrack.class));
+        latencyModules.add(Myau.moduleManager.getModule(LagRange.class));
+        latencyModules.add(Myau.moduleManager.getModule(FakeLag.class));
 
         Comparator<Module> comparator = Comparator.comparing(m -> m.getName().toLowerCase());
         combatModules.sort(comparator);
@@ -111,6 +122,7 @@ public class ClickGui extends GuiScreen {
         renderModules.sort(comparator);
         playerModules.sort(comparator);
         miscModules.sort(comparator);
+        latencyModules.sort(comparator);
 
         Set<Module> registered = new HashSet<>();
         registered.addAll(combatModules);
@@ -118,6 +130,7 @@ public class ClickGui extends GuiScreen {
         registered.addAll(renderModules);
         registered.addAll(playerModules);
         registered.addAll(miscModules);
+        registered.addAll(latencyModules);
 
         for (Module module : Myau.moduleManager.modules.values()) {
             if (!registered.contains(module)) {
@@ -152,6 +165,11 @@ public class ClickGui extends GuiScreen {
         CategoryComponent misc = new CategoryComponent("Misc", miscModules);
         misc.setY(topOffset);
         categoryList.add(misc);
+        topOffset += 20;
+
+        CategoryComponent latency = new CategoryComponent("Latence", latencyModules);
+        latency.setY(topOffset);
+        categoryList.add(latency);
 
         loadPositions();
     }

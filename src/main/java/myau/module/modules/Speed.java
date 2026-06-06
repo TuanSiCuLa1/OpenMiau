@@ -9,14 +9,16 @@ import myau.mixin.IAccessorEntity;
 import myau.module.Module;
 import myau.util.MoveUtil;
 import myau.property.properties.FloatProperty;
+import myau.property.properties.ModeProperty;
 import myau.property.properties.PercentProperty;
 import net.minecraft.client.Minecraft;
 
 public class Speed extends Module {
     private static final Minecraft mc = Minecraft.getMinecraft();
-    public final FloatProperty multiplier = new FloatProperty("multiplier", 1.0F, 0.0F, 10.0F);
-    public final FloatProperty friction = new FloatProperty("friction", 1.0F, 0.0F, 10.0F);
-    public final PercentProperty strafe = new PercentProperty("strafe", 0);
+    public final ModeProperty mode = new ModeProperty("mode", 0, new String[]{"DEFAULT", "LEGIT"});
+    public final FloatProperty multiplier = new FloatProperty("multiplier", 1.0F, 0.0F, 10.0F, () -> this.mode.getValue() == 0);
+    public final FloatProperty friction = new FloatProperty("friction", 1.0F, 0.0F, 10.0F, () -> this.mode.getValue() == 0);
+    public final PercentProperty strafe = new PercentProperty("strafe", 0, () -> this.mode.getValue() == 0);
 
     private boolean canBoost() {
         Scaffold scaffold = (Scaffold) Myau.moduleManager.modules.get(Scaffold.class);
@@ -34,7 +36,7 @@ public class Speed extends Module {
 
     @EventTarget(Priority.LOW)
     public void onStrafe(StrafeEvent event) {
-        if (this.isEnabled() && this.canBoost()) {
+        if (this.isEnabled() && this.mode.getValue() == 0 && this.canBoost()) {
             if (mc.thePlayer.onGround) {
                 mc.thePlayer.motionY = 0.42F;
                 MoveUtil.setSpeed(
@@ -60,7 +62,19 @@ public class Speed extends Module {
     @EventTarget(Priority.LOW)
     public void onLivingUpdate(LivingUpdateEvent event) {
         if (this.isEnabled() && this.canBoost()) {
+            if (this.mode.getValue() == 1) {
+                if (mc.thePlayer.onGround && MoveUtil.isForwardPressed()) {
+                    mc.thePlayer.jump();
+                }
+                mc.thePlayer.setSprinting(mc.thePlayer.movementInput.moveForward > 0.8F);
+                return;
+            }
             mc.thePlayer.movementInput.jump = false;
         }
+    }
+
+    @Override
+    public String[] getSuffix() {
+        return new String[]{mode.getModeString()};
     }
 }

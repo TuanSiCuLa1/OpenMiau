@@ -33,16 +33,15 @@ import net.minecraft.util.MathHelper;
 import org.lwjgl.opengl.GL11;
 
 import java.awt.*;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class BedTracker extends Module {
     private static final Minecraft mc = Minecraft.getMinecraft();
-    private final ScheduledExecutorService executor;
+    private static final long BED_SCAN_DELAY_MS = 3000L;
+    private static final long BED_RESCAN_DELAY_MS = 5000L;
     private final LinkedHashMap<String, Long> alertCooldowns;
     private final LinkedHashSet<EntityEnderPearl> trackedPearls;
     private final LinkedHashSet<String> whitelistedPlayers;
@@ -53,11 +52,16 @@ public class BedTracker extends Module {
     private BlockPos bedPos;
     private long lastMarcoTime;
     private boolean waiting;
+    private long bedScanAt;
+    private long lastBedScanAttempt;
+    private boolean scannedThisGame;
+    private long lastAutoIncTime;
     public final BooleanProperty alerts;
     public final IntProperty alertRange;
     public final BooleanProperty alertOnPearl;
     public final ModeProperty alertSound;
     public final IntProperty alertFrequency;
+    public final BooleanProperty autoInc;
     public final BooleanProperty marco;
     public final IntProperty marcoRange;
     public final BooleanProperty marcoOnPreal;
@@ -94,12 +98,11 @@ public class BedTracker extends Module {
     }
 
     private boolean isBed(BlockPos blockPos) {
-        return blockPos != null && mc.theWorld.getBlockState(blockPos).getBlock() == Blocks.bed;
+        return blockPos != null && mc.theWorld != null && mc.theWorld.getBlockState(blockPos).getBlock() == Blocks.bed;
     }
 
     public BedTracker() {
         super("BedTracker", false, true);
-        this.executor = Executors.newScheduledThreadPool(1);
         this.alertCooldowns = new LinkedHashMap<>();
         this.trackedPearls = new LinkedHashSet<>();
         this.whitelistedPlayers = new LinkedHashSet<>();
@@ -110,11 +113,16 @@ public class BedTracker extends Module {
         this.bedPos = null;
         this.lastMarcoTime = -1L;
         this.waiting = false;
+        this.bedScanAt = -1L;
+        this.lastBedScanAttempt = -1L;
+        this.scannedThisGame = false;
+        this.lastAutoIncTime = -1L;
         this.alerts = new BooleanProperty("alerts", true);
         this.alertRange = new IntProperty("alerts-range", 48, 8, 128, this.alerts::getValue);
         this.alertOnPearl = new BooleanProperty("alerts-on-pearl", true);
         this.alertSound = new ModeProperty("alerts-sound", 1, new String[]{"NONE", "MEOW", "ANVIL"}, () -> this.alerts.getValue() || this.alertOnPearl.getValue());
         this.alertFrequency = new IntProperty("alerts-frequency", 5, 1, 30, () -> this.alerts.getValue() || this.alertOnPearl.getValue());
+        this.autoInc = new BooleanProperty("auto-inc", false);
         this.marco = new BooleanProperty("macro", false);
         this.marcoRange = new IntProperty("macro-range", 24, 8, 128, this.marco::getValue);
         this.marcoOnPreal = new BooleanProperty("macro-on-pearl", false);
@@ -129,9 +137,95 @@ public class BedTracker extends Module {
         this.hudShadow = new BooleanProperty("hud-shadow", true, this.hud::getValue);
     }
 
+    private void resetTracking() {
+        this.alertCooldowns.clear();
+        this.trackedPearls.clear();
+        this.whitelistedPlayers.clear();
+        this.bedPos = null;
+        this.lastMarcoTime = -1L;
+        this.lastBedScanAttempt = -1L;
+        this.lastAutoIncTime = -1L;
+    }
+
+    private void scheduleBedScan() {
+        if (!this.scannedThisGame && this.bedScanAt == -1L) {
+            this.bedScanAt = System.currentTimeMillis() + BED_SCAN_DELAY_MS;
+        }
+    }
+
+    private void scheduleAutomaticBedScan() {
+        if (this.scannedThisGame || mc.theWorld == null || mc.thePlayer == null || this.isBed(this.bedPos)) return;
+        if (this.bedScanAt == -1L) {
+            this.bedScanAt = System.currentTimeMillis() + BED_SCAN_DELAY_MS;
+        }
+    }
+
+    private void runPendingBedScan() {
+        if (this.bedScanAt == -1L || System.currentTimeMillis() < this.bedScanAt) {
+            return;
+        }
+        this.bedScanAt = -1L;
+        this.lastBedScanAttempt = System.currentTimeMillis();
+        if (mc.theWorld == null || mc.thePlayer == null) {
+            this.bedScanAt = System.currentTimeMillis() + BED_RESCAN_DELAY_MS;
+            return;
+        }
+
+        int x = MathHelper.floor_double(mc.thePlayer.posX);
+        int y = MathHelper.floor_double(mc.thePlayer.posY + (double) mc.thePlayer.getEyeHeight());
+        int z = MathHelper.floor_double(mc.thePlayer.posZ);
+        for (int i = x - 25; i <= x + 25; i++) {
+            for (int j = y - 25; j <= y + 25; j++) {
+                for (int k = z - 25; k <= z + 25; k++) {
+                    BlockPos blockPos = new BlockPos(i, j, k);
+                    if (this.isBed(blockPos)) {
+                        this.bedPos = blockPos;
+                        this.scannedThisGame = true;
+                        ChatUtil.sendFormatted(
+                                String.format(
+                                        "%s%s: &fWhitelisted your bed at (%d, %d, %d) &a&l\u2714&r",
+                                        Myau.clientName,
+                                        this.getName(),
+                                        this.bedPos.getX(),
+                                        this.bedPos.getY(),
+                                        this.bedPos.getZ()
+                                )
+                        );
+                        SoundUtil.playSound("note.pling");
+                        return;
+                    }
+                }
+            }
+        }
+
+        this.bedScanAt = System.currentTimeMillis() + BED_RESCAN_DELAY_MS;
+    }
+
+    private void pruneTrackedPearls() {
+        if (mc.theWorld == null) {
+            this.trackedPearls.clear();
+            return;
+        }
+
+        Iterator<EntityEnderPearl> iterator = this.trackedPearls.iterator();
+        while (iterator.hasNext()) {
+            EntityEnderPearl pearl = iterator.next();
+            if (pearl.isDead || !mc.theWorld.loadedEntityList.contains(pearl)) {
+                iterator.remove();
+            }
+        }
+    }
+
     @EventTarget
     public void onTick(TickEvent event) {
-        if (this.isEnabled() && event.getType() == EventType.POST && this.isBed(this.bedPos)) {
+        if (this.isEnabled() && event.getType() == EventType.POST) {
+            this.scheduleAutomaticBedScan();
+            this.runPendingBedScan();
+            this.pruneTrackedPearls();
+            if (!this.isBed(this.bedPos)) {
+                return;
+            }
+
             long millis = System.currentTimeMillis();
             boolean pearl = false;
             boolean marco = false;
@@ -174,6 +268,12 @@ public class BedTracker extends Module {
                                     String.format("%s%s: %s&r &fis %d blocks away from your bed &e&l⚠&r", Myau.clientName, this.getName(), text, (int) distance + 1)
                             );
                             pearl = true;
+                        }
+                        if (this.autoInc.getValue() && this.lastAutoIncTime + (long) this.alertFrequency.getValue() * 1000L <= millis) {
+                            this.lastAutoIncTime = millis;
+                            ChatUtil.sendMessage("inc");
+                            ChatUtil.sendMessage("inc");
+                            ChatUtil.sendMessage("inc");
                         }
                     }
                     if (this.alertOnPearl.getValue() && isPearl) {
@@ -278,6 +378,9 @@ public class BedTracker extends Module {
     @EventTarget
     public void onLoadWorld(LoadWorldEvent event) {
         this.waiting = false;
+        this.bedScanAt = -1L;
+        this.scannedThisGame = false;
+        this.resetTracking();
     }
 
     @EventTarget
@@ -286,56 +389,24 @@ public class BedTracker extends Module {
             if (event.getPacket() instanceof S02PacketChat) {
                 String msg = ((S02PacketChat) event.getPacket()).getChatComponent().getFormattedText();
                 if (msg.contains("§e§lProtect your bed and destroy the enemy bed") || msg.contains("§e§lDestroy the enemy bed and then eliminate them")) {
-                    this.alertCooldowns.clear();
-                    this.trackedPearls.clear();
-                    this.whitelistedPlayers.clear();
-                    this.bedPos = null;
+                    this.bedScanAt = -1L;
+                    this.resetTracking();
+                    this.scannedThisGame = false;
                     this.waiting = true;
                 }
             }
             if (event.getPacket() instanceof S08PacketPlayerPosLook && this.waiting) {
                 this.waiting = false;
-                this.executor
-                        .schedule(
-                                () -> {
-                                    int x = MathHelper.floor_double(mc.thePlayer.posX);
-                                    int y = MathHelper.floor_double(mc.thePlayer.posY + (double) mc.thePlayer.getEyeHeight());
-                                    int z = MathHelper.floor_double(mc.thePlayer.posZ);
-                                    for (int i = x - 25; i <= x + 25; i++) {
-                                        for (int j = y - 25; j <= y + 25; j++) {
-                                            for (int k = z - 25; k <= z + 25; k++) {
-                                                BlockPos blockPos = new BlockPos(i, j, k);
-                                                if (this.isBed(blockPos)) {
-                                                    this.bedPos = blockPos;
-                                                    ChatUtil.sendFormatted(
-                                                            String.format(
-                                                                    "%s%s: &fWhitelisted your bed at (%d, %d, %d) &a&l✔&r",
-                                                                    Myau.clientName,
-                                                                    this.getName(),
-                                                                    this.bedPos.getX(),
-                                                                    this.bedPos.getY(),
-                                                                    this.bedPos.getZ()
-                                                            )
-                                                    );
-                                                    SoundUtil.playSound("note.pling");
-                                                    return;
-                                                }
-                                            }
-                                        }
-                                    }
-                                },
-                                3000L,
-                                TimeUnit.MILLISECONDS
-                        );
+                this.scheduleBedScan();
             }
         }
     }
 
     @Override
     public void onDisabled() {
-        this.alertCooldowns.clear();
-        this.trackedPearls.clear();
-        this.whitelistedPlayers.clear();
-        this.bedPos = null;
+        this.waiting = false;
+        this.bedScanAt = -1L;
+        this.scannedThisGame = false;
+        this.resetTracking();
     }
 }

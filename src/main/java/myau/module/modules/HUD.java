@@ -51,6 +51,12 @@ public class HUD extends Module {
     public final BooleanProperty blinkTimer = new BooleanProperty("blink-timer", true);
     public final BooleanProperty toggleSound = new BooleanProperty("toggle-sounds", true);
     public final BooleanProperty toggleAlerts = new BooleanProperty("toggle-alerts", false);
+    public final BooleanProperty hideCombat = new BooleanProperty("hide-combat", false);
+    public final BooleanProperty hideMovement = new BooleanProperty("hide-movement", false);
+    public final BooleanProperty hideRender = new BooleanProperty("hide-render", false);
+    public final BooleanProperty hidePlayer = new BooleanProperty("hide-player", false);
+    public final BooleanProperty hideMisc = new BooleanProperty("hide-misc", false);
+    public final BooleanProperty hideLatency = new BooleanProperty("hide-latency", false);
 
     private String getModuleName(Module module) {
         String moduleName = module.getName();
@@ -146,8 +152,27 @@ public class HUD extends Module {
     @EventTarget
     public void onTick(TickEvent event) {
         if (this.isEnabled() && event.getType() == EventType.POST) {
-            this.activeModules = Myau.moduleManager.modules.values().stream().filter(module -> module.isEnabled() && !module.isHidden()).sorted(Comparator.comparingInt(this::getModuleWidth).reversed()).collect(Collectors.<Module>toList());
+            this.activeModules = Myau.moduleManager.modules.values().stream().filter(module -> module.isEnabled() && !module.isHidden() && !this.isCategoryHidden(module)).sorted(Comparator.comparingInt(this::getModuleWidth).reversed()).collect(Collectors.<Module>toList());
         }
+    }
+
+    private boolean isCategoryHidden(Module module) {
+        if (this.hideCombat.getValue() && (module instanceof AimAssist || module instanceof AutoClicker || module instanceof KillAura || module instanceof Wtap || module instanceof Velocity || module instanceof Freeze || module instanceof Reach || module instanceof TargetStrafe || module instanceof NoHitDelay || module instanceof AntiFireball || module instanceof HitBox || module instanceof MoreKB || module instanceof Refill || module instanceof HitSelect || module instanceof ProjectileAimBot)) {
+            return true;
+        }
+        if (this.hideMovement.getValue() && (module instanceof AntiAFK || module instanceof Fly || module instanceof Speed || module instanceof LongJump || module instanceof Sprint || module instanceof SafeWalk || module instanceof Jesus || module instanceof Blink || module instanceof NoFall || module instanceof NoSlow || module instanceof KeepSprint || module instanceof Eagle || module instanceof NoJumpDelay || module instanceof AntiVoid)) {
+            return true;
+        }
+        if (this.hideRender.getValue() && (module instanceof ESP || module instanceof Chams || module instanceof FullBright || module instanceof Tracers || module instanceof NameTags || module instanceof Xray || module instanceof TargetHUD || module instanceof Indicators || module instanceof BedESP || module instanceof ItemESP || module instanceof ViewClip || module instanceof NoHurtCam || module instanceof HUD || module instanceof WaterMark || module instanceof GuiModule || module instanceof ChestESP || module instanceof Trajectories || module instanceof Radar)) {
+            return true;
+        }
+        if (this.hidePlayer.getValue() && (module instanceof AutoHeal || module instanceof AutoTool || module instanceof ChestStealer || module instanceof InvManager || module instanceof InvWalk || module instanceof Scaffold || module instanceof AutoBlockIn || module instanceof AutoBedDef || module instanceof SpeedMine || module instanceof FastPlace || module instanceof GhostHand || module instanceof MCF || module instanceof AntiDebuff)) {
+            return true;
+        }
+        if (this.hideMisc.getValue() && (module instanceof Spammer || module instanceof BedNuker || module instanceof BedTracker || module instanceof BedwarUtils || module instanceof MurderDetector || module instanceof LightningTracker || module instanceof NoRotate || module instanceof NickHider || module instanceof AntiObbyTrap || module instanceof AntiObfuscate || module instanceof AntiBot || module instanceof RPC || module instanceof AutoAnduril || module instanceof InventoryClicker)) {
+            return true;
+        }
+        return this.hideLatency.getValue() && (module instanceof BackTrack || module instanceof LagRange || module instanceof FakeLag);
     }
 
     @EventTarget

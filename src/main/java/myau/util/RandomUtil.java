@@ -16,4 +16,8 @@ public class RandomUtil {
     public static double nextDouble(double min, double max) {
         return theRandom.nextDouble() * (max - min) + min;
     }
+
+    public static int nextInt(int min, int max) {
+        return (int) nextDouble(min, max + 1);
+    }
 }

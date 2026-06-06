@@ -7,6 +7,8 @@ import myau.event.types.Priority;
 import myau.events.PacketEvent;
 import myau.events.UpdateEvent;
 import myau.module.Module;
+import myau.property.properties.FloatProperty;
+import myau.property.properties.IntProperty;
 import myau.property.properties.ModeProperty;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
@@ -18,15 +20,22 @@ import net.minecraft.util.Vec3;
 
 public class HitSelect extends Module {
     private static final Minecraft mc = Minecraft.getMinecraft();
-    
-    public final ModeProperty mode = new ModeProperty("mode", 0, new String[]{"SECOND", "CRITICALS", "W_TAP"});
-    
+
+    public final ModeProperty mode = new ModeProperty("mode", 0, new String[]{"SECOND", "CRITICALS", "W_TAP", "PAUSE", "ACTIVE"});
+    public final ModeProperty preference = new ModeProperty("preference", 0, new String[]{"MOVE_SPEED", "KB_REDUCTION", "CRITICAL_HITS"}, () -> this.mode.getValue() == 3 || this.mode.getValue() == 4);
+    public final IntProperty delay = new IntProperty("delay", 420, 300, 500, () -> this.mode.getValue() == 3 || this.mode.getValue() == 4);
+    public final IntProperty chance = new IntProperty("chance", 80, 0, 100, () -> this.mode.getValue() == 3 || this.mode.getValue() == 4);
+    public final FloatProperty range = new FloatProperty("range", 8.0F, 1.0F, 20.0F, () -> this.mode.getValue() == 3 || this.mode.getValue() == 4);
+
     private boolean sprintState = false;
     private boolean set = false;
+    private boolean keepSprintWasEnabled = false;
     private double savedSlowdown = 0.0;
-    
+
     private int blockedHits = 0;
     private int allowedHits = 0;
+    private long attackTime = -1L;
+    private boolean currentShouldAttack = false;
 
     public HitSelect() {
         super("HitSelect", false);
@@ -37,7 +46,31 @@ public class HitSelect extends Module {
         if (!this.isEnabled()) {
             return;
         }
-        
+
+        if (event.getType() == EventType.PRE && (this.mode.getValue() == 3 || this.mode.getValue() == 4)) {
+            EntityLivingBase target = this.getNearestEntityInRange();
+            if (target == null) {
+                this.resetState();
+            } else {
+                this.currentShouldAttack = false;
+                if (Math.random() * 100.0D > this.chance.getValue()) {
+                    this.currentShouldAttack = true;
+                } else {
+                    switch (this.preference.getValue()) {
+                        case 1: // KB reduction
+                            this.currentShouldAttack = !mc.thePlayer.onGround && mc.thePlayer.motionY < 0.0D;
+                            break;
+                        case 2: // Critical hits
+                            this.currentShouldAttack = mc.thePlayer.hurtTime > 0 && !mc.thePlayer.onGround && this.isMoving(mc.thePlayer);
+                            break;
+                    }
+                    if (!this.currentShouldAttack) {
+                        this.currentShouldAttack = System.currentTimeMillis() - this.attackTime >= this.delay.getValue();
+                    }
+                }
+            }
+        }
+
         if (event.getType() == EventType.POST) {
             this.resetMotion();
         }
@@ -64,7 +97,7 @@ public class HitSelect extends Module {
 
         if (event.getPacket() instanceof C02PacketUseEntity) {
             C02PacketUseEntity use = (C02PacketUseEntity) event.getPacket();
-            
+
             if (use.getAction() != C02PacketUseEntity.Action.ATTACK) {
                 return;
             }
@@ -91,6 +124,12 @@ public class HitSelect extends Module {
                 case 2: // WTAP
                     allow = this.prioritizeWTapHits(mc.thePlayer, this.sprintState);
                     break;
+                case 3: // PAUSE
+                    allow = this.prioritizePauseHits();
+                    break;
+                case 4: // ACTIVE
+                    allow = true;
+                    break;
             }
 
             if (!allow) {
@@ -98,6 +137,7 @@ public class HitSelect extends Module {
                 this.blockedHits++;
             } else {
                 this.allowedHits++;
+                this.attackTime = System.currentTimeMillis();
             }
         }
     }
@@ -175,6 +215,46 @@ public class HitSelect extends Module {
         return false;
     }
 
+    private boolean prioritizePauseHits() {
+        if (this.currentShouldAttack) {
+            return true;
+        }
+        this.fixMotion();
+        return false;
+    }
+
+    private void resetState() {
+        this.currentShouldAttack = false;
+    }
+
+    private EntityLivingBase getNearestEntityInRange() {
+        if (mc.thePlayer == null || mc.theWorld == null) {
+            return null;
+        }
+
+        EntityLivingBase nearest = null;
+        double bestDistance = Double.MAX_VALUE;
+        for (Entity entity : mc.theWorld.loadedEntityList) {
+            if (!(entity instanceof EntityLivingBase) || entity == mc.thePlayer) {
+                continue;
+            }
+            EntityLivingBase living = (EntityLivingBase) entity;
+            if (living.isDead || living.getHealth() <= 0.0F) {
+                continue;
+            }
+            double distance = mc.thePlayer.getDistanceToEntity(living);
+            if (distance <= this.range.getValue() && distance < bestDistance) {
+                nearest = living;
+                bestDistance = distance;
+            }
+        }
+        return nearest;
+    }
+
+    private boolean isMoving(EntityLivingBase entity) {
+        return Math.abs(entity.motionX) > 0.005D || Math.abs(entity.motionZ) > 0.005D;
+    }
+
     private void fixMotion() {
         if (this.set) {
             return;
@@ -188,13 +268,14 @@ public class HitSelect extends Module {
         try {
             // Save the current slowdown value
             this.savedSlowdown = keepSprint.slowdown.getValue().doubleValue();
-            
-            // Enable KeepSprint and set slowdown to 0
-            if (!keepSprint.isEnabled()) {
-                keepSprint.toggle();
+            this.keepSprintWasEnabled = keepSprint.isEnabled();
+
+            // Temporarily enable KeepSprint silently so this internal motion fix does not spam toggles.
+            if (!this.keepSprintWasEnabled) {
+                keepSprint.setEnabled(true);
             }
             keepSprint.slowdown.setValue(0);
-            
+
             this.set = true;
         } catch (Exception e) {
             e.printStackTrace();
@@ -214,16 +295,17 @@ public class HitSelect extends Module {
         try {
             // Restore the original slowdown value
             keepSprint.slowdown.setValue((int) this.savedSlowdown);
-            
-            // Disable KeepSprint if we enabled it
-            if (keepSprint.isEnabled()) {
-                keepSprint.toggle();
+
+            // Only restore the enabled state if HitSelect changed it.
+            if (!this.keepSprintWasEnabled && keepSprint.isEnabled()) {
+                keepSprint.setEnabled(false);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
 
         this.set = false;
+        this.keepSprintWasEnabled = false;
         this.savedSlowdown = 0.0;
     }
 
@@ -273,6 +355,8 @@ public class HitSelect extends Module {
         this.sprintState = false;
         this.set = false;
         this.savedSlowdown = 0.0;
+        this.attackTime = -1L;
+        this.currentShouldAttack = false;
         this.blockedHits = 0;
         this.allowedHits = 0;
     }

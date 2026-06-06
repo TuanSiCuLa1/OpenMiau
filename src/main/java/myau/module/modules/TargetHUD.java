@@ -44,17 +44,18 @@ public class TargetHUD extends Module {
     private float oldHealth = 0.0F;
     private float newHealth = 0.0F;
     private float maxHealth = 0.0F;
-    public final ModeProperty color = new ModeProperty("color", 0, new String[]{"DEFAULT", "HUD"});
+    public final ModeProperty style = new ModeProperty("style", 0, new String[]{"MYAU", "CLEAN"});
+    public final ModeProperty color = new ModeProperty("color", 0, new String[]{"DEFAULT", "HUD"}, () -> this.style.getValue() == 0);
     public final ModeProperty posX = new ModeProperty("position-x", 1, new String[]{"LEFT", "MIDDLE", "RIGHT"});
     public final ModeProperty posY = new ModeProperty("position-y", 1, new String[]{"TOP", "MIDDLE", "BOTTOM"});
     public final FloatProperty scale = new FloatProperty("scale", 1.0F, 0.5F, 1.5F);
     public final IntProperty offX = new IntProperty("offset-x", 0, -255, 255);
     public final IntProperty offY = new IntProperty("offset-y", 40, -255, 255);
-    public final PercentProperty background = new PercentProperty("background", 25);
-    public final BooleanProperty head = new BooleanProperty("head", true);
-    public final BooleanProperty indicator = new BooleanProperty("indicator", true);
-    public final BooleanProperty outline = new BooleanProperty("outline", false);
-    public final BooleanProperty animations = new BooleanProperty("animations", true);
+    public final PercentProperty background = new PercentProperty("background", 25, () -> this.style.getValue() == 0);
+    public final BooleanProperty head = new BooleanProperty("head", true, () -> this.style.getValue() == 0);
+    public final BooleanProperty indicator = new BooleanProperty("indicator", true, () -> this.style.getValue() == 0);
+    public final BooleanProperty outline = new BooleanProperty("outline", false, () -> this.style.getValue() == 0);
+    public final BooleanProperty animations = new BooleanProperty("animations", true, () -> this.style.getValue() == 0);
     public final BooleanProperty shadow = new BooleanProperty("shadow", true);
     public final BooleanProperty kaOnly = new BooleanProperty("ka-only", true);
     public final BooleanProperty chatPreview = new BooleanProperty("chat-preview", false);
@@ -139,6 +140,10 @@ public class TargetHUD extends Module {
                 float elapsedTime = (float) Math.min(Math.max(this.animTimer.getElapsedTime(), 0L), 150L);
                 float healthRatio = Math.min(Math.max(RenderUtil.lerpFloat(this.newHealth, this.oldHealth, elapsedTime / 150.0F) / this.maxHealth, 0.0F), 1.0F);
                 Color targetColor = this.getTargetColor(this.target);
+                if (this.style.getValue() == 1) {
+                    drawCleanStyle(this.target);
+                    return;
+                }
                 Color healthBarColor = this.color.getValue() == 0 ? ColorUtil.getHealthBlend(healthRatio) : targetColor;
                 float healthDeltaRatio = Math.min(Math.max((health - heal + 1.0F) / 2.0F, 0.0F), 1.0F);
                 Color healthDeltaColor = ColorUtil.getHealthBlend(healthDeltaRatio);
@@ -210,6 +215,115 @@ public class TargetHUD extends Module {
                 GlStateManager.popMatrix();
             }
         }
+    }
+
+    private void drawCleanStyle(EntityLivingBase entity) {
+        String targetName = TeamUtil.stripName(entity);
+        String targetPrefix = "Target: ";
+        String healthPrefix = "Health: ";
+        String healthValue = healthFormat.format(entity.getHealth());
+        String status = getCleanStatus(entity);
+        int targetWidth = mc.fontRendererObj.getStringWidth(targetPrefix + targetName + (status.isEmpty() ? "" : " " + status));
+        int healthWidth = mc.fontRendererObj.getStringWidth(healthPrefix + healthValue);
+        int hudWidth = Math.max(98, Math.max(targetWidth, healthWidth) + 14);
+        int hudHeight = 30;
+        ScaledResolution scaledResolution = new ScaledResolution(mc);
+        float baseX = this.offX.getValue().floatValue() / this.scale.getValue();
+        switch (this.posX.getValue()) {
+            case 1:
+                baseX += (float) scaledResolution.getScaledWidth() / this.scale.getValue() / 2.0F - hudWidth / 2.0F;
+                break;
+            case 2:
+                baseX *= -1.0F;
+                baseX += (float) scaledResolution.getScaledWidth() / this.scale.getValue() - hudWidth;
+                break;
+        }
+        float baseY = this.offY.getValue().floatValue() / this.scale.getValue();
+        switch (this.posY.getValue()) {
+            case 1:
+                baseY += (float) scaledResolution.getScaledHeight() / this.scale.getValue() / 2.0F - hudHeight / 2.0F;
+                break;
+            case 2:
+                baseY *= -1.0F;
+                baseY += (float) scaledResolution.getScaledHeight() / this.scale.getValue() - hudHeight;
+                break;
+        }
+
+        float sc = this.scale.getValue();
+        GL11.glPushMatrix();
+        GL11.glTranslated(baseX + hudWidth / 2.0F, baseY + hudHeight / 2.0F, 0);
+        GL11.glScalef(sc, sc, 1.0F);
+        GL11.glTranslated(-(baseX + hudWidth / 2.0F), -(baseY + hudHeight / 2.0F), 0);
+        int x = (int) baseX;
+        int y = (int) baseY;
+        int bgColor = (150 << 24) | 0x000000;
+        int whiteColor = 0xFFFFFFFF;
+        int greenColor = 0xFF00FF38;
+        int redColor = 0xFFFF3030;
+        int yellowColor = 0xFFFFFF00;
+        int statusColor = "W".equals(status) ? greenColor : ("L".equals(status) ? redColor : yellowColor);
+        GlStateManager.enableBlend();
+        Gui.drawRect(x, y, x + hudWidth, y + hudHeight, bgColor);
+        drawVerticalGradientRect(x, y, x + 2, y + hudHeight, 0xFFC44DFF, 0xFF4D8DFF);
+        int textX = x + 8;
+        int targetY = y + 5;
+        int healthY = y + 17;
+        mc.fontRendererObj.drawString(targetPrefix, textX, targetY, whiteColor, this.shadow.getValue());
+        int nameX = textX + mc.fontRendererObj.getStringWidth(targetPrefix);
+        mc.fontRendererObj.drawString(targetName, nameX, targetY, whiteColor, this.shadow.getValue());
+        if (!status.isEmpty()) {
+            int statusX = nameX + mc.fontRendererObj.getStringWidth(targetName + " ");
+            mc.fontRendererObj.drawString(status, statusX, targetY, statusColor, this.shadow.getValue());
+        }
+        mc.fontRendererObj.drawString(healthPrefix, textX, healthY, whiteColor, this.shadow.getValue());
+        int healthX = textX + mc.fontRendererObj.getStringWidth(healthPrefix);
+        mc.fontRendererObj.drawString(healthValue, healthX, healthY, greenColor, this.shadow.getValue());
+        GlStateManager.disableBlend();
+        GL11.glPopMatrix();
+    }
+
+    private String getCleanStatus(EntityLivingBase entity) {
+        if (mc.thePlayer == null || entity == null) return "N";
+        KillAura killAura = (KillAura) Myau.moduleManager.modules.get(KillAura.class);
+        boolean killAuraReady = killAura != null && killAura.isEnabled() && killAura.isAttackAllowed()
+                && killAura.getTarget() == entity && mc.thePlayer.getDistanceToEntity(entity) <= (double) killAura.attackRange.getValue();
+        float playerScore = getCleanFightScore(mc.thePlayer);
+        float targetScore = getCleanFightScore(entity);
+        if (killAuraReady && playerScore >= targetScore * 0.92F) return "W";
+        if (!killAuraReady || playerScore < targetScore * 0.85F) return "L";
+        return "N";
+    }
+
+    private float getCleanFightScore(EntityLivingBase entity) {
+        float health = entity.getHealth() + entity.getAbsorptionAmount();
+        if (entity instanceof EntityPlayer) health += ((EntityPlayer) entity).getTotalArmorValue() * 0.45F;
+        return health;
+    }
+
+    private void drawVerticalGradientRect(int left, int top, int right, int bottom, int startColor, int endColor) {
+        float startA = (float) (startColor >> 24 & 255) / 255.0F;
+        float startR = (float) (startColor >> 16 & 255) / 255.0F;
+        float startG = (float) (startColor >> 8 & 255) / 255.0F;
+        float startB = (float) (startColor & 255) / 255.0F;
+        float endA = (float) (endColor >> 24 & 255) / 255.0F;
+        float endR = (float) (endColor >> 16 & 255) / 255.0F;
+        float endG = (float) (endColor >> 8 & 255) / 255.0F;
+        float endB = (float) (endColor & 255) / 255.0F;
+        GlStateManager.disableTexture2D();
+        GlStateManager.enableBlend();
+        GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
+        GlStateManager.shadeModel(GL11.GL_SMOOTH);
+        GL11.glBegin(GL11.GL_QUADS);
+        GL11.glColor4f(startR, startG, startB, startA);
+        GL11.glVertex2f(left, top);
+        GL11.glVertex2f(right, top);
+        GL11.glColor4f(endR, endG, endB, endA);
+        GL11.glVertex2f(right, bottom);
+        GL11.glVertex2f(left, bottom);
+        GL11.glEnd();
+        GlStateManager.shadeModel(GL11.GL_FLAT);
+        GlStateManager.disableBlend();
+        GlStateManager.enableTexture2D();
     }
 
     @EventTarget

@@ -87,7 +87,6 @@ public class KillAura extends Module {
     public final BooleanProperty weaponsOnly;
     public final BooleanProperty allowTools;
     public final BooleanProperty inventoryCheck;
-    public final BooleanProperty botCheck;
     public final BooleanProperty players;
     public final BooleanProperty bosses;
     public final BooleanProperty mobs;
@@ -239,7 +238,7 @@ public class KillAura extends Module {
                 } else if (TeamUtil.isFriend((EntityPlayer) entityLivingBase)) {
                     return false;
                 } else {
-                    return (!this.teams.getValue() || !TeamUtil.isSameTeam((EntityPlayer) entityLivingBase)) && (!this.botCheck.getValue() || !TeamUtil.isBot((EntityPlayer) entityLivingBase));
+                    return (!this.teams.getValue() || !TeamUtil.isSameTeam((EntityPlayer) entityLivingBase)) && !AntiBot.isBot(entityLivingBase);
                 }
             } else if (entityLivingBase instanceof EntityDragon || entityLivingBase instanceof EntityWither) {
                 return this.bosses.getValue();
@@ -349,7 +348,6 @@ public class KillAura extends Module {
         this.weaponsOnly = new BooleanProperty("weapons-only", true);
         this.allowTools = new BooleanProperty("allow-tools", false, this.weaponsOnly::getValue);
         this.inventoryCheck = new BooleanProperty("inventory-check", true);
-        this.botCheck = new BooleanProperty("bot-check", true);
         this.players = new BooleanProperty("players", true);
         this.bosses = new BooleanProperty("bosses", false);
         this.mobs = new BooleanProperty("mobs", false);

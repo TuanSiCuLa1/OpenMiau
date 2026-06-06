@@ -65,6 +65,8 @@ public class Scaffold extends Module {
     public final ModeProperty rotationMode = new ModeProperty("rotations", 2, new String[]{"NONE", "DEFAULT", "BACKWARDS", "SIDEWAYS"});
     public final ModeProperty moveFix = new ModeProperty("move-fix", 1, new String[]{"NONE", "SILENT"});
     public final ModeProperty sprintMode = new ModeProperty("sprint", 0, new String[]{"NONE", "VANILLA"});
+    public final BooleanProperty sprintOnGround = new BooleanProperty("sprint-on-ground", true, () -> this.sprintMode.getValue() != 0);
+    public final BooleanProperty sprintOffGround = new BooleanProperty("sprint-off-ground", true, () -> this.sprintMode.getValue() != 0);
     public final PercentProperty groundMotion = new PercentProperty("ground-motion", 100);
     public final PercentProperty airMotion = new PercentProperty("air-motion", 100);
     public final PercentProperty speedMotion = new PercentProperty("speed-motion", 100);
@@ -83,7 +85,13 @@ public class Scaffold extends Module {
             return false;
         } else {
             boolean stage = this.keepY.getValue() == 1 || this.keepY.getValue() == 2;
-            return (!stage || this.stage <= 0) && this.sprintMode.getValue() == 0;
+            if (stage && this.stage > 0) {
+                return false;
+            }
+            if (this.sprintMode.getValue() == 0) {
+                return true;
+            }
+            return mc.thePlayer.onGround ? !this.sprintOnGround.getValue() : !this.sprintOffGround.getValue();
         }
     }
 
