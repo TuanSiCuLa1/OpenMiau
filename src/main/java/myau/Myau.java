@@ -87,6 +87,7 @@ public class Myau {
         moduleManager.modules.put(Blink.class, new Blink());
         moduleManager.modules.put(BlockHit.class, new BlockHit());
         moduleManager.modules.put(BackTrack.class, new BackTrack());
+        moduleManager.modules.put(TickBase.class, new TickBase());
         moduleManager.modules.put(Chams.class, new Chams());
         moduleManager.modules.put(ChestESP.class, new ChestESP());
         moduleManager.modules.put(ChestStealer.class, new ChestStealer());

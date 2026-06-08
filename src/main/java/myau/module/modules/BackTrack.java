@@ -140,6 +140,11 @@ public class BackTrack extends Module {
             return;
         }
 
+        if (TickBase.duringTickModification) {
+            clearPackets(true, false);
+            return;
+        }
+
         Packet<?> packet = event.getPacket();
         if (isIgnoredPacket(packet)) return;
         if (isFlushPacket(packet)) {
@@ -190,7 +195,15 @@ public class BackTrack extends Module {
                 GlStateManager.pushMatrix();
                 GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
                 GlStateManager.color(0.6F, 0.6F, 0.6F, 1.0F);
-                mc.getRenderManager().renderEntityStatic(target, event.getPartialTicks(), true);
+                mc.getRenderManager().doRenderEntity(
+                        target,
+                        x,
+                        y,
+                        z,
+                        target.prevRotationYaw + (target.rotationYaw - target.prevRotationYaw) * event.getPartialTicks(),
+                        event.getPartialTicks(),
+                        true
+                );
                 GL11.glPopAttrib();
                 GlStateManager.popMatrix();
                 break;
@@ -353,12 +366,15 @@ public class BackTrack extends Module {
             S14PacketEntity movement = (S14PacketEntity) packet;
             Entity entity = movement.getEntity(mc.theWorld);
             if (entity != null && entity.getEntityId() == target.getEntityId()) {
-                positions.offer(new TimedPosition(new Vec3(target.posX, target.posY, target.posZ), System.currentTimeMillis()));
+                double x = (target.serverPosX + movement.func_149062_c()) / 32.0D;
+                double y = (target.serverPosY + movement.func_149061_d()) / 32.0D;
+                double z = (target.serverPosZ + movement.func_149064_e()) / 32.0D;
+                positions.offer(new TimedPosition(new Vec3(x, y, z), System.currentTimeMillis()));
             }
         } else if (packet instanceof S18PacketEntityTeleport) {
             S18PacketEntityTeleport teleport = (S18PacketEntityTeleport) packet;
             if (teleport.getEntityId() == target.getEntityId()) {
-                positions.offer(new TimedPosition(new Vec3(target.posX, target.posY, target.posZ), System.currentTimeMillis()));
+                positions.offer(new TimedPosition(new Vec3(teleport.getX() / 32.0D, teleport.getY() / 32.0D, teleport.getZ() / 32.0D), System.currentTimeMillis()));
             }
         }
     }

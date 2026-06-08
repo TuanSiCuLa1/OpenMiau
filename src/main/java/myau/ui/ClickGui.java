@@ -46,6 +46,7 @@ public class ClickGui extends GuiScreen {
         combatModules.add(Myau.moduleManager.getModule(HitSelect.class));
         combatModules.add(Myau.moduleManager.getModule(Hitflick.class));
         combatModules.add(Myau.moduleManager.getModule(ProjectileAimBot.class));
+        combatModules.add(Myau.moduleManager.getModule(TickBase.class));
 
         List<Module> movementModules = new ArrayList<>();
         movementModules.add(Myau.moduleManager.getModule(AntiAFK.class));
