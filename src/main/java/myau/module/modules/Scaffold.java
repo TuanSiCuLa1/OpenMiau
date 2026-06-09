@@ -8,6 +8,8 @@ import myau.events.*;
 import myau.management.RotationState;
 import myau.module.Module;
 import myau.property.properties.BooleanProperty;
+import myau.property.properties.ColorProperty;
+import myau.property.properties.IntProperty;
 import myau.property.properties.ModeProperty;
 import myau.property.properties.PercentProperty;
 import myau.util.*;
@@ -15,6 +17,7 @@ import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.renderer.RenderGlobal;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
@@ -28,6 +31,9 @@ import org.lwjgl.opengl.GL11;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 public class Scaffold extends Module {
     private static final Minecraft mc = Minecraft.getMinecraft();
@@ -66,9 +72,9 @@ public class Scaffold extends Module {
             new String[] { "NONE", "DEFAULT", "BACKWARDS", "SIDEWAYS" });
     public final ModeProperty moveFix = new ModeProperty("move-fix", 1, new String[] { "NONE", "SILENT" });
     public final ModeProperty sprintMode = new ModeProperty("sprint", 0, new String[] { "NONE", "VANILLA" });
-    public final BooleanProperty sprintOnGround = new BooleanProperty("sprint-on-ground", true,
+    public final BooleanProperty jumpSprint = new BooleanProperty("jump-sprint", true,
             () -> this.sprintMode.getValue() != 0);
-    public final BooleanProperty sprintOffGround = new BooleanProperty("sprint-off-ground", true,
+    public final BooleanProperty diaSprint = new BooleanProperty("dia-sprint", true,
             () -> this.sprintMode.getValue() != 0);
     public final PercentProperty groundMotion = new PercentProperty("ground-motion", 100);
     public final PercentProperty airMotion = new PercentProperty("air-motion", 100);
@@ -86,6 +92,21 @@ public class Scaffold extends Module {
     public final BooleanProperty swing = new BooleanProperty("swing", true);
     public final BooleanProperty itemSpoof = new BooleanProperty("item-spoof", false);
     public final BooleanProperty blockCounter = new BooleanProperty("block-counter", true);
+    public final BooleanProperty blockRender = new BooleanProperty("block-render", false);
+    public final ModeProperty blockRenderColorMode = new ModeProperty("block-render-color", 0,
+            new String[] { "HUD", "CUSTOM" }, () -> this.blockRender.getValue());
+    public final ColorProperty blockRenderColor = new ColorProperty("block-render-custom-color", 0xFF55AAFF,
+            () -> this.blockRender.getValue() && this.blockRenderColorMode.getValue() == 1);
+    public final BooleanProperty blockRenderRaytrace = new BooleanProperty("block-render-raytrace", false,
+            () -> this.blockRender.getValue());
+    public final IntProperty blockRenderAlpha = new IntProperty("block-render-alpha", 200, 0, 255,
+            () -> this.blockRender.getValue() && this.blockRenderRaytrace.getValue());
+    public final BooleanProperty blockRenderOutline = new BooleanProperty("block-render-outline", true,
+            () -> this.blockRender.getValue());
+    public final BooleanProperty blockRenderShade = new BooleanProperty("block-render-shade", false,
+            () -> this.blockRender.getValue());
+    private MovingObjectPosition lastBlockRenderRaytrace = null;
+    private final Map<BlockPos, TimerUtil> blockRenderHighlights = new HashMap<>();
 
     private boolean shouldStopSprint() {
         if (this.isTowering()) {
@@ -98,7 +119,7 @@ public class Scaffold extends Module {
             if (this.sprintMode.getValue() == 0) {
                 return true;
             }
-            return mc.thePlayer.onGround ? !this.sprintOnGround.getValue() : !this.sprintOffGround.getValue();
+            return mc.thePlayer.onGround ? !this.jumpSprint.getValue() : !(this.diaSprint.getValue() && this.isDiagonal(this.getCurrentYaw()));
         }
     }
 
@@ -188,6 +209,9 @@ public class Scaffold extends Module {
                     mc.thePlayer.swingItem();
                 } else {
                     PacketUtil.sendPacket(new C0APacketAnimation());
+                }
+                if (this.blockRender.getValue()) {
+                    this.blockRenderHighlights.put(blockPos.offset(enumFacing), new TimerUtil());
                 }
             }
         }
@@ -729,6 +753,96 @@ public class Scaffold extends Module {
                 GlStateManager.popMatrix();
             }
         }
+    }
+
+    @EventTarget
+    public void onRender3D(Render3DEvent event) {
+        if (!this.isEnabled() || !this.blockRender.getValue()) {
+            return;
+        }
+        Color renderColor = this.getBlockRenderColor();
+        if (!this.blockRenderRaytrace.getValue()) {
+            Iterator<Map.Entry<BlockPos, TimerUtil>> iterator = this.blockRenderHighlights.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<BlockPos, TimerUtil> entry = iterator.next();
+                long elapsed = entry.getValue().getElapsedTime();
+                int alpha = 210 - (int) (210.0F * elapsed / 750.0F);
+                if (alpha <= 0) {
+                    iterator.remove();
+                    continue;
+                }
+                this.renderScaffoldBlock(entry.getKey(), renderColor, alpha);
+            }
+            return;
+        }
+
+        MovingObjectPosition hitResult = mc.objectMouseOver;
+        if (hitResult != null && hitResult.typeOfHit == MovingObjectType.MISS) {
+            hitResult = this.lastBlockRenderRaytrace;
+        } else if (hitResult != null) {
+            this.lastBlockRenderRaytrace = hitResult;
+        }
+        if (hitResult == null) {
+            hitResult = this.lastBlockRenderRaytrace;
+        }
+        if (hitResult != null && hitResult.typeOfHit == MovingObjectType.BLOCK) {
+            this.renderScaffoldBlock(hitResult.getBlockPos(), renderColor, this.blockRenderAlpha.getValue());
+        }
+    }
+
+    private Color getBlockRenderColor() {
+        if (this.blockRenderColorMode.getValue() == 0) {
+            HUD hud = (HUD) Myau.moduleManager.modules.get(HUD.class);
+            return hud != null ? hud.getColor(System.currentTimeMillis()) : Color.WHITE;
+        }
+        return new Color(this.blockRenderColor.getValue());
+    }
+
+    private void renderScaffoldBlock(BlockPos blockPos, Color color, int alpha) {
+        if (blockPos == null || alpha <= 0) {
+            return;
+        }
+        double x = blockPos.getX() - mc.getRenderManager().viewerPosX;
+        double y = blockPos.getY() - mc.getRenderManager().viewerPosY;
+        double z = blockPos.getZ() - mc.getRenderManager().viewerPosZ;
+        AxisAlignedBB bb = new AxisAlignedBB(x, y, z, x + 1.0D, y + 1.0D, z + 1.0D);
+        float red = color.getRed() / 255.0F;
+        float green = color.getGreen() / 255.0F;
+        float blue = color.getBlue() / 255.0F;
+        float a = alpha / 255.0F;
+
+        GL11.glPushMatrix();
+        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+        GL11.glEnable(GL11.GL_BLEND);
+        GL11.glLineWidth(2.0F);
+        GL11.glDisable(GL11.GL_TEXTURE_2D);
+        GL11.glDisable(GL11.GL_DEPTH_TEST);
+        GL11.glDepthMask(false);
+        GL11.glColor4f(red, green, blue, a);
+        if (this.blockRenderOutline.getValue()) {
+            RenderGlobal.drawSelectionBoundingBox(bb);
+        }
+        if (this.blockRenderShade.getValue()) {
+            drawScaffoldFilledBox(bb, red, green, blue, Math.min(a, 0.25F));
+        }
+        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+        GL11.glEnable(GL11.GL_TEXTURE_2D);
+        GL11.glEnable(GL11.GL_DEPTH_TEST);
+        GL11.glDepthMask(true);
+        GL11.glDisable(GL11.GL_BLEND);
+        GL11.glPopMatrix();
+    }
+
+    private static void drawScaffoldFilledBox(AxisAlignedBB bb, float red, float green, float blue, float alpha) {
+        GL11.glColor4f(red, green, blue, alpha);
+        GL11.glBegin(GL11.GL_QUADS);
+        GL11.glVertex3d(bb.minX, bb.minY, bb.minZ); GL11.glVertex3d(bb.maxX, bb.minY, bb.minZ); GL11.glVertex3d(bb.maxX, bb.minY, bb.maxZ); GL11.glVertex3d(bb.minX, bb.minY, bb.maxZ);
+        GL11.glVertex3d(bb.minX, bb.maxY, bb.minZ); GL11.glVertex3d(bb.minX, bb.maxY, bb.maxZ); GL11.glVertex3d(bb.maxX, bb.maxY, bb.maxZ); GL11.glVertex3d(bb.maxX, bb.maxY, bb.minZ);
+        GL11.glVertex3d(bb.minX, bb.minY, bb.minZ); GL11.glVertex3d(bb.minX, bb.maxY, bb.minZ); GL11.glVertex3d(bb.maxX, bb.maxY, bb.minZ); GL11.glVertex3d(bb.maxX, bb.minY, bb.minZ);
+        GL11.glVertex3d(bb.minX, bb.minY, bb.maxZ); GL11.glVertex3d(bb.maxX, bb.minY, bb.maxZ); GL11.glVertex3d(bb.maxX, bb.maxY, bb.maxZ); GL11.glVertex3d(bb.minX, bb.maxY, bb.maxZ);
+        GL11.glVertex3d(bb.minX, bb.minY, bb.minZ); GL11.glVertex3d(bb.minX, bb.minY, bb.maxZ); GL11.glVertex3d(bb.minX, bb.maxY, bb.maxZ); GL11.glVertex3d(bb.minX, bb.maxY, bb.minZ);
+        GL11.glVertex3d(bb.maxX, bb.minY, bb.minZ); GL11.glVertex3d(bb.maxX, bb.maxY, bb.minZ); GL11.glVertex3d(bb.maxX, bb.maxY, bb.maxZ); GL11.glVertex3d(bb.maxX, bb.minY, bb.maxZ);
+        GL11.glEnd();
     }
 
     @EventTarget

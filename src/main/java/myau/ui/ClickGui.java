@@ -82,6 +82,11 @@ public class ClickGui extends GuiScreen {
         renderModules.add(Myau.moduleManager.getModule(GuiModule.class));
         renderModules.add(Myau.moduleManager.getModule(ChestESP.class));
         renderModules.add(Myau.moduleManager.getModule(Trajectories.class));
+        renderModules.add(Myau.moduleManager.getModule(TargetESP.class));
+
+        renderModules.add(Myau.moduleManager.getModule(StatusEffect.class));
+        renderModules.add(Myau.moduleManager.getModule(Keystrokes.class));
+        renderModules.add(Myau.moduleManager.getModule(BlockOverlay.class));
         renderModules.add(Myau.moduleManager.getModule(Radar.class));
 
         List<Module> playerModules = new ArrayList<>();
@@ -99,6 +104,7 @@ public class ClickGui extends GuiScreen {
         playerModules.add(Myau.moduleManager.getModule(FastPlace.class));
         playerModules.add(Myau.moduleManager.getModule(GhostHand.class));
         playerModules.add(Myau.moduleManager.getModule(MCF.class));
+        playerModules.add(Myau.moduleManager.getModule(BreakProgress.class));
         playerModules.add(Myau.moduleManager.getModule(AntiDebuff.class));
 
         List<Module> miscModules = new ArrayList<>();
@@ -118,6 +124,7 @@ public class ClickGui extends GuiScreen {
         miscModules.add(Myau.moduleManager.getModule(RPC.class));
         miscModules.add(Myau.moduleManager.getModule(AutoAnduril.class));
         miscModules.add(Myau.moduleManager.getModule(InventoryClicker.class));
+        miscModules.add(Myau.moduleManager.getModule(ClientSpoofer.class));
         miscModules.add(Myau.moduleManager.getModule(Panic.class));
 
         List<Module> latencyModules = new ArrayList<>();

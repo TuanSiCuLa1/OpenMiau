@@ -73,6 +73,7 @@ public class Myau {
         moduleManager.modules.put(AntiCheatDetector.class, new AntiCheatDetector());
         moduleManager.modules.put(AntiVoid.class, new AntiVoid());
         moduleManager.modules.put(HackerDetector.class, new HackerDetector());
+
         moduleManager.modules.put(AutoClicker.class, new AutoClicker());
         moduleManager.modules.put(AutoAnduril.class, new AutoAnduril());
         moduleManager.modules.put(AutoAuth.class, new AutoAuth());
@@ -86,11 +87,14 @@ public class Myau {
         moduleManager.modules.put(BedwarUtils.class, new BedwarUtils());
         moduleManager.modules.put(Blink.class, new Blink());
         moduleManager.modules.put(BlockHit.class, new BlockHit());
+        moduleManager.modules.put(BlockOverlay.class, new BlockOverlay());
+        moduleManager.modules.put(BreakProgress.class, new BreakProgress());
         moduleManager.modules.put(BackTrack.class, new BackTrack());
         moduleManager.modules.put(TickBase.class, new TickBase());
         moduleManager.modules.put(Chams.class, new Chams());
         moduleManager.modules.put(ChestESP.class, new ChestESP());
         moduleManager.modules.put(ChestStealer.class, new ChestStealer());
+        moduleManager.modules.put(ClientSpoofer.class, new ClientSpoofer());
         moduleManager.modules.put(Eagle.class, new Eagle());
         moduleManager.modules.put(ESP.class, new ESP());
         moduleManager.modules.put(FastPlace.class, new FastPlace());
@@ -111,6 +115,7 @@ public class Myau {
         moduleManager.modules.put(ItemESP.class, new ItemESP());
         moduleManager.modules.put(Jesus.class, new Jesus());
         moduleManager.modules.put(KeepSprint.class, new KeepSprint());
+        moduleManager.modules.put(Keystrokes.class, new Keystrokes());
         moduleManager.modules.put(HitBox.class, new HitBox());
         moduleManager.modules.put(KillAura.class, new KillAura());
         moduleManager.modules.put(LagRange.class, new LagRange());
@@ -138,7 +143,9 @@ public class Myau {
         moduleManager.modules.put(Spammer.class, new Spammer());
         moduleManager.modules.put(Speed.class, new Speed());
         moduleManager.modules.put(SpeedMine.class, new SpeedMine());
+        moduleManager.modules.put(StatusEffect.class, new StatusEffect());
         moduleManager.modules.put(Sprint.class, new Sprint());
+        moduleManager.modules.put(TargetESP.class, new TargetESP());
         moduleManager.modules.put(TargetHUD.class, new TargetHUD());
         moduleManager.modules.put(TargetStrafe.class, new TargetStrafe());
         moduleManager.modules.put(Tracers.class, new Tracers());
@@ -182,6 +189,7 @@ public class Myau {
             propertyManager.properties.put(module.getClass(), properties);
             EventManager.register(module);
         }
+
         Config config = new Config("default", true);
         if (config.file.exists()) {
             config.load();
