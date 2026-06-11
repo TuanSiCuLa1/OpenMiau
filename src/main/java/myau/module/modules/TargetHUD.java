@@ -44,8 +44,8 @@ public class TargetHUD extends Module {
     private float oldHealth = 0.0F;
     private float newHealth = 0.0F;
     private float maxHealth = 0.0F;
-    public final ModeProperty style = new ModeProperty("style", 0, new String[]{"MYAU", "CLEAN"});
-    public final ModeProperty color = new ModeProperty("color", 0, new String[]{"DEFAULT", "HUD"}, () -> this.style.getValue() == 0);
+    public final ModeProperty style = new ModeProperty("style", 0, new String[]{"MYAU", "CLEAN", "RAVEN", "RAVEN_NEW"});
+    public final ModeProperty color = new ModeProperty("color", 0, new String[]{"DEFAULT", "HUD"}, () -> this.style.getValue() == 0 || this.style.getValue() == 2 || this.style.getValue() == 3);
     public final ModeProperty posX = new ModeProperty("position-x", 1, new String[]{"LEFT", "MIDDLE", "RIGHT"});
     public final ModeProperty posY = new ModeProperty("position-y", 1, new String[]{"TOP", "MIDDLE", "BOTTOM"});
     public final FloatProperty scale = new FloatProperty("scale", 1.0F, 0.5F, 1.5F);
@@ -142,6 +142,14 @@ public class TargetHUD extends Module {
                 Color targetColor = this.getTargetColor(this.target);
                 if (this.style.getValue() == 1) {
                     drawCleanStyle(this.target);
+                    return;
+                }
+                if (this.style.getValue() == 2) {
+                    drawRavenStyle(this.target, healthRatio, targetColor);
+                    return;
+                }
+                if (this.style.getValue() == 3) {
+                    drawRavenNewStyle(this.target, healthRatio, targetColor);
                     return;
                 }
                 Color healthBarColor = this.color.getValue() == 0 ? ColorUtil.getHealthBlend(healthRatio) : targetColor;
@@ -320,6 +328,126 @@ public class TargetHUD extends Module {
         GL11.glColor4f(endR, endG, endB, endA);
         GL11.glVertex2f(right, bottom);
         GL11.glVertex2f(left, bottom);
+        GL11.glEnd();
+        GlStateManager.shadeModel(GL11.GL_FLAT);
+        GlStateManager.disableBlend();
+        GlStateManager.enableTexture2D();
+    }
+
+    private void drawRavenStyle(EntityLivingBase entity, float healthRatio, Color targetColor) {
+        String name = TeamUtil.stripName(entity);
+        float displayedHealth = entity.getHealth() + entity.getAbsorptionAmount();
+        String healthText = " " + (displayedHealth == (int) displayedHealth ? String.valueOf((int) displayedHealth) : healthFormat.format(displayedHealth));
+        if (mc.thePlayer != null) {
+            float playerRatio = (mc.thePlayer.getHealth() + mc.thePlayer.getAbsorptionAmount()) / mc.thePlayer.getMaxHealth();
+            healthText += healthRatio <= playerRatio ? " §aW" : " §cL";
+        }
+        int textWidth = mc.fontRendererObj.getStringWidth(name + healthText);
+        int hudWidth = Math.max(82, textWidth + 22);
+        int hudHeight = 31;
+        int x = (int) getHudX(hudWidth);
+        int y = (int) getHudY(hudHeight);
+        int alpha = Math.max(0, Math.min(255, this.background.getValue() * 2 + 70));
+        Color barColor = this.color.getValue() == 0 ? ColorUtil.getHealthBlend(healthRatio) : targetColor;
+
+        GlStateManager.pushMatrix();
+        GlStateManager.scale(this.scale.getValue(), this.scale.getValue(), 1.0F);
+        float sx = x / this.scale.getValue();
+        float sy = y / this.scale.getValue();
+        float sw = hudWidth / this.scale.getValue();
+        float sh = hudHeight / this.scale.getValue();
+        RenderUtil.enableRenderState();
+        RenderUtil.drawRect(sx, sy, sx + sw, sy + sh, new Color(0, 0, 0, alpha).getRGB());
+        RenderUtil.drawRect(sx + 1.0F, sy + 1.0F, sx + sw - 1.0F, sy + sh - 1.0F, new Color(18, 18, 22, alpha + 20 > 255 ? 255 : alpha + 20).getRGB());
+        drawHorizontalGradientRect(sx + 2.0F, sy + 2.0F, sx + sw - 2.0F, sy + 3.5F, targetColor.getRGB(), ColorUtil.darker(targetColor, 0.45F).getRGB());
+        RenderUtil.drawRect(sx + 6.0F, sy + sh - 9.0F, sx + sw - 6.0F, sy + sh - 4.0F, new Color(0, 0, 0, 120).getRGB());
+        RenderUtil.drawRect(sx + 6.0F, sy + sh - 9.0F, sx + 6.0F + (sw - 12.0F) * Math.max(0.05F, healthRatio), sy + sh - 4.0F, barColor.getRGB());
+        RenderUtil.disableRenderState();
+        mc.fontRendererObj.drawString(name, sx + 8.0F, sy + 9.0F, new Color(220, 220, 220).getRGB(), this.shadow.getValue());
+        mc.fontRendererObj.drawString(healthText, sx + 8.0F + mc.fontRendererObj.getStringWidth(name), sy + 9.0F, ColorUtil.getHealthBlend(healthRatio).getRGB(), this.shadow.getValue());
+        GlStateManager.popMatrix();
+    }
+
+    private void drawRavenNewStyle(EntityLivingBase entity, float healthRatio, Color targetColor) {
+        String name = TeamUtil.stripName(entity);
+        String healthText = " " + (int) (entity.getHealth() + entity.getAbsorptionAmount());
+        if (mc.thePlayer != null) {
+            float playerRatio = (mc.thePlayer.getHealth() + mc.thePlayer.getAbsorptionAmount()) / mc.thePlayer.getMaxHealth();
+            healthText += healthRatio <= playerRatio ? " §aW" : " §cL";
+        }
+        int textWidth = mc.fontRendererObj.getStringWidth(name + healthText);
+        int hudWidth = Math.max(92, textWidth + 18);
+        int hudHeight = 32;
+        int x = (int) getHudX(hudWidth);
+        int y = (int) getHudY(hudHeight);
+        Color barColor = this.color.getValue() == 0 ? ColorUtil.getHealthBlend(healthRatio) : targetColor;
+
+        GlStateManager.pushMatrix();
+        GlStateManager.scale(this.scale.getValue(), this.scale.getValue(), 1.0F);
+        float sx = x / this.scale.getValue();
+        float sy = y / this.scale.getValue();
+        float sw = hudWidth / this.scale.getValue();
+        float sh = hudHeight / this.scale.getValue();
+        RenderUtil.enableRenderState();
+        if (this.shadow.getValue()) {
+            RenderUtil.drawRect(sx - 2.0F, sy - 2.0F, sx + sw + 2.0F, sy + sh + 2.0F, new Color(0, 0, 0, 45).getRGB());
+        }
+        RenderUtil.drawRect(sx, sy, sx + sw, sy + sh, new Color(0, 0, 0, 80).getRGB());
+        RenderUtil.drawRect(sx + 4.0F, sy + 4.0F, sx + sw - 4.0F, sy + sh - 4.0F, new Color(255, 255, 255, 18).getRGB());
+        drawHorizontalGradientRect(sx + 6.0F, sy + sh - 9.0F, sx + sw - 6.0F, sy + sh - 4.0F, ColorUtil.darker(targetColor, 0.5F).getRGB(), new Color(255, 255, 255, 35).getRGB());
+        drawHorizontalGradientRect(sx + 6.0F, sy + sh - 9.0F, sx + 6.0F + (sw - 12.0F) * Math.max(0.05F, healthRatio), sy + sh - 4.0F, barColor.getRGB(), targetColor.getRGB());
+        RenderUtil.disableRenderState();
+        mc.fontRendererObj.drawString(name, sx + 6.0F, sy + 6.0F, -1, this.shadow.getValue());
+        mc.fontRendererObj.drawString(healthText, sx + 6.0F + mc.fontRendererObj.getStringWidth(name), sy + 6.0F, ColorUtil.getHealthBlend(healthRatio).getRGB(), this.shadow.getValue());
+        GlStateManager.popMatrix();
+    }
+
+    private float getHudX(float width) {
+        ScaledResolution scaledResolution = new ScaledResolution(mc);
+        float x = this.offX.getValue().floatValue();
+        switch (this.posX.getValue()) {
+            case 1:
+                return scaledResolution.getScaledWidth() / 2.0F - width / 2.0F + x;
+            case 2:
+                return scaledResolution.getScaledWidth() - width - x;
+            default:
+                return x;
+        }
+    }
+
+    private float getHudY(float height) {
+        ScaledResolution scaledResolution = new ScaledResolution(mc);
+        float y = this.offY.getValue().floatValue();
+        switch (this.posY.getValue()) {
+            case 1:
+                return scaledResolution.getScaledHeight() / 2.0F - height / 2.0F + y;
+            case 2:
+                return scaledResolution.getScaledHeight() - height - y;
+            default:
+                return y;
+        }
+    }
+
+    private void drawHorizontalGradientRect(float left, float top, float right, float bottom, int startColor, int endColor) {
+        float startA = (float) (startColor >> 24 & 255) / 255.0F;
+        float startR = (float) (startColor >> 16 & 255) / 255.0F;
+        float startG = (float) (startColor >> 8 & 255) / 255.0F;
+        float startB = (float) (startColor & 255) / 255.0F;
+        float endA = (float) (endColor >> 24 & 255) / 255.0F;
+        float endR = (float) (endColor >> 16 & 255) / 255.0F;
+        float endG = (float) (endColor >> 8 & 255) / 255.0F;
+        float endB = (float) (endColor & 255) / 255.0F;
+        GlStateManager.disableTexture2D();
+        GlStateManager.enableBlend();
+        GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
+        GlStateManager.shadeModel(GL11.GL_SMOOTH);
+        GL11.glBegin(GL11.GL_QUADS);
+        GL11.glColor4f(startR, startG, startB, startA);
+        GL11.glVertex2f(left, top);
+        GL11.glVertex2f(left, bottom);
+        GL11.glColor4f(endR, endG, endB, endA);
+        GL11.glVertex2f(right, bottom);
+        GL11.glVertex2f(right, top);
         GL11.glEnd();
         GlStateManager.shadeModel(GL11.GL_FLAT);
         GlStateManager.disableBlend();

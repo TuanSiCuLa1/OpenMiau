@@ -4,6 +4,7 @@ import myau.Myau;
 import myau.event.EventManager;
 import myau.events.KnockbackEvent;
 import myau.events.SafeWalkEvent;
+import myau.module.modules.FreeLook;
 import myau.util.ITruePosition;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.entity.Entity;
@@ -95,9 +96,19 @@ public abstract class MixinEntity implements ITruePosition {
             at = {@At("HEAD")},
             cancellable = true
     )
-    private void setAngles(CallbackInfo callbackInfo) {
-        if ((Entity) ((Object) this) instanceof EntityPlayerSP && Myau.rotationManager != null && Myau.rotationManager.isRotated()) {
-            callbackInfo.cancel();
+    private void setAngles(float yaw, float pitch, CallbackInfo callbackInfo) {
+        if ((Entity) ((Object) this) instanceof EntityPlayerSP) {
+            if (Myau.moduleManager != null) {
+                FreeLook freeLook = (FreeLook) Myau.moduleManager.modules.get(FreeLook.class);
+                if (freeLook != null && freeLook.isFreeLooking()) {
+                    freeLook.updateCamera(yaw, pitch);
+                    callbackInfo.cancel();
+                    return;
+                }
+            }
+            if (Myau.rotationManager != null && Myau.rotationManager.isRotated()) {
+                callbackInfo.cancel();
+            }
         }
     }
 

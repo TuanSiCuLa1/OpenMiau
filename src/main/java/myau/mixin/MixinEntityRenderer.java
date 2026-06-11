@@ -16,6 +16,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.item.ItemStack;
 import net.minecraft.potion.Potion;
+import net.minecraft.util.MathHelper;
 import net.minecraft.util.Vec3;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -41,6 +42,8 @@ public abstract class MixinEntityRenderer {
     private Minecraft mc;
     @Shadow
     private float thirdPersonDistance;
+    @Shadow
+    private float thirdPersonDistanceTemp;
 
     @Inject(
             method = {"updateCameraAndRender"},
@@ -203,6 +206,26 @@ public abstract class MixinEntityRenderer {
             if (event.isEnabled()) {
                 list.removeIf(event::shouldSkip);
             }
+        }
+    }
+
+    @Inject(
+            method = {"orientCamera"},
+            at = {@At("HEAD")}
+    )
+    private void orientFreeLook(float partialTicks, CallbackInfo callbackInfo) {
+        if (Myau.moduleManager == null || this.mc.thePlayer == null) {
+            return;
+        }
+        FreeLook freeLook = (FreeLook) Myau.moduleManager.modules.get(FreeLook.class);
+        if (freeLook != null && freeLook.isFreeLooking()) {
+            EntityPlayerSP player = this.mc.thePlayer;
+            player.prevRotationYaw = player.rotationYaw = freeLook.getCameraYaw();
+            player.prevRotationPitch = player.rotationPitch = MathHelper.clamp_float(freeLook.getCameraPitch(), -90.0F, 90.0F);
+            if (this.mc.gameSettings.thirdPersonView == 0) {
+                this.mc.gameSettings.thirdPersonView = 1;
+            }
+            this.thirdPersonDistanceTemp = this.thirdPersonDistance;
         }
     }
 

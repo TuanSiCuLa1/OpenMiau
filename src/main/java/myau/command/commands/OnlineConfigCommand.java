@@ -113,7 +113,8 @@ public class OnlineConfigCommand extends Command {
 
     private void sendEntry(OnlineConfigEntry entry) {
         String command = ".onlineconfig load " + entry.getId();
-        String line = String.format("§7» §f%s §7[§b%s§7] §7by §a%s", entry.getName(), safe(entry.setting_type),
+        String version = entry.getVersion().isEmpty() ? "" : " §7v§e" + entry.getVersion();
+        String line = String.format("§7» §f%s%s §7[§b%s§7] §7by §a%s", entry.getName(), version, safe(entry.setting_type),
                 entry.getAuthor());
         ChatUtil.send(new ChatComponentText(line).setChatStyle(new ChatStyle()
                 .setChatClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, command))
@@ -129,6 +130,9 @@ public class OnlineConfigCommand extends Command {
         ChatUtil.sendFormatted("&fAuthor: &a" + entry.getAuthor() + "&r");
         ChatUtil.sendFormatted("&fType: &b" + safe(entry.setting_type) + "&r");
         ChatUtil.sendFormatted("&fStatus: &e" + safe(entry.status_type) + "&r");
+        if (!entry.getVersion().isEmpty()) {
+            ChatUtil.sendFormatted("&fVersion: &e" + entry.getVersion() + "&r");
+        }
         if (entry.description != null && !entry.description.trim().isEmpty()) {
             ChatUtil.sendFormatted("&fDescription: &7" + entry.description + "&r");
         }

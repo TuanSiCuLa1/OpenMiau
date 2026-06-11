@@ -86,6 +86,7 @@ public class ClickGui extends GuiScreen {
         renderModules.add(Myau.moduleManager.getModule(ESP.class));
         renderModules.add(Myau.moduleManager.getModule(Chams.class));
         renderModules.add(Myau.moduleManager.getModule(FullBright.class));
+        renderModules.add(Myau.moduleManager.getModule(FreeLook.class));
         renderModules.add(Myau.moduleManager.getModule(Tracers.class));
         renderModules.add(Myau.moduleManager.getModule(NameTags.class));
         renderModules.add(Myau.moduleManager.getModule(Xray.class));
@@ -145,6 +146,7 @@ public class ClickGui extends GuiScreen {
         miscModules.add(Myau.moduleManager.getModule(InventoryClicker.class));
         miscModules.add(Myau.moduleManager.getModule(ClientSpoofer.class));
         miscModules.add(Myau.moduleManager.getModule(Panic.class));
+        miscModules.add(Myau.moduleManager.getModule(MouseRawInput.class));
 
         List<Module> latencyModules = new ArrayList<>();
         latencyModules.add(Myau.moduleManager.getModule(BackTrack.class));
@@ -370,6 +372,9 @@ public class ClickGui extends GuiScreen {
         int offset = 16;
         for (OnlineConfigEntry entry : entries) {
             String subtitle = "by " + entry.getAuthor() + " | " + safe(entry.setting_type);
+            if (!entry.getVersion().isEmpty()) {
+                subtitle += " • v" + entry.getVersion();
+            }
             components.add(new OnlineConfigComponent(this.onlineConfigCategory, offset, entry.getName(), subtitle,
                     () -> this.loadOnlineConfig(entry)));
             offset += 24;

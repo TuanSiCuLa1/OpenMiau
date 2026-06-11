@@ -4,6 +4,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import myau.Myau;
+import myau.config.ConfigVersionUtil;
 import myau.module.Module;
 import myau.property.Property;
 
@@ -20,6 +21,7 @@ public class OnlineConfigApplier {
         int applied = 0;
         List<String> failedProperties = new ArrayList<>();
         JsonObject root = parsed.getAsJsonObject();
+        ConfigVersionUtil.warnIfOutdated(root, "online config");
         for (Module module : Myau.moduleManager.modules.values()) {
             JsonObject object = findModuleObject(root, module);
             if (object == null) {

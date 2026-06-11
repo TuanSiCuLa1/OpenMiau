@@ -52,6 +52,7 @@ public class Config {
             }
 
             JsonObject jsonObject = parsed.getAsJsonObject();
+            ConfigVersionUtil.warnIfOutdated(jsonObject, file.getName());
             for (Module module : Myau.moduleManager.modules.values()) {
                 JsonElement moduleObj = jsonObject.get(module.getName());
                 if (moduleObj != null && moduleObj.isJsonObject()) {
@@ -111,6 +112,7 @@ public class Config {
             }
 
             JsonObject object = new JsonObject();
+            ConfigVersionUtil.addVersion(object);
             for (Module module : Myau.moduleManager.modules.values()) {
                 JsonObject moduleObject = new JsonObject();
                 moduleObject.addProperty("toggled", module.isEnabled());
