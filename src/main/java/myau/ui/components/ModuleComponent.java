@@ -32,8 +32,9 @@ public class ModuleComponent implements Component {
         this.settings = new ArrayList<>();
         this.panelExpand = false;
         int y = offsetY + 12;
-        if (!Myau.propertyManager.properties.get(mod.getClass()).isEmpty()) {
-            for (Property<?> baseProperty : Myau.propertyManager.properties.get(mod.getClass())) {
+        ArrayList<Property<?>> properties = Myau.propertyManager.properties.get(mod.getClass());
+        if (properties != null && !properties.isEmpty()) {
+            for (Property<?> baseProperty : properties) {
                 if (baseProperty instanceof BooleanProperty) {
                     BooleanProperty property = (BooleanProperty) baseProperty;
                     CheckBoxComponent c = new CheckBoxComponent(property, this, y);

@@ -11,31 +11,33 @@ public class VelocityCheck {
     private final Map<String, CheckBuffer> verticalBuffers = new HashMap<>();
 
     public void check(EntityPlayer player, PlayerCheckData data, ClientAntiCheatContext context) {
+        String key = CheckDataManager.getPlayerKey(player);
         String name = player.getName();
-        CheckBuffer horizontalBuffer = this.horizontalBuffers.computeIfAbsent(name, key -> new CheckBuffer());
-        CheckBuffer verticalBuffer = this.verticalBuffers.computeIfAbsent(name, key -> new CheckBuffer());
+        if (key == null || name == null) return;
+        CheckBuffer horizontalBuffer = this.horizontalBuffers.computeIfAbsent(key, ignored -> new CheckBuffer());
+        CheckBuffer verticalBuffer = this.verticalBuffers.computeIfAbsent(key, ignored -> new CheckBuffer());
         if (isExempt(player, data)) {
-            reset(name);
+            reset(key);
             return;
         }
 
         if (player.hurtTime > 0 || player.hurtResistantTime > 10) {
-            this.velocityWindows.put(name, 0);
+            this.velocityWindows.put(key, 0);
             horizontalBuffer.reset();
             verticalBuffer.reset();
             return;
         }
 
-        if (!this.velocityWindows.containsKey(name)) {
+        if (!this.velocityWindows.containsKey(key)) {
             horizontalBuffer.decay(0.25D);
             verticalBuffer.decay(0.25D);
             return;
         }
 
-        int ticks = this.velocityWindows.get(name) + 1;
-        this.velocityWindows.put(name, ticks);
+        int ticks = this.velocityWindows.get(key) + 1;
+        this.velocityWindows.put(key, ticks);
         if (ticks > 12) {
-            this.velocityWindows.remove(name);
+            this.velocityWindows.remove(key);
             return;
         }
 
@@ -44,7 +46,7 @@ public class VelocityCheck {
         if (horizontalMissing) {
             if (horizontalBuffer.flag(1.0D, 2.5D)) {
                 context.receiveSignal(name, "Velocity");
-                reset(name);
+                reset(key);
                 return;
             }
         } else {
@@ -54,7 +56,7 @@ public class VelocityCheck {
         if (verticalMissing) {
             if (verticalBuffer.flag(1.0D, 2.0D)) {
                 context.receiveSignal(name, "Velocity");
-                reset(name);
+                reset(key);
             }
         } else {
             verticalBuffer.decay(0.5D);

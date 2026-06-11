@@ -18,8 +18,12 @@ import net.minecraft.network.play.client.C02PacketUseEntity;
 import net.minecraft.network.play.client.C0BPacketEntityAction;
 import net.minecraft.util.Vec3;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class HitSelect extends Module {
     private static final Minecraft mc = Minecraft.getMinecraft();
+    private static final Logger LOGGER = Logger.getLogger(HitSelect.class.getName());
 
     public final ModeProperty mode = new ModeProperty("mode", 0, new String[]{"SECOND", "CRITICALS", "W_TAP", "PAUSE", "ACTIVE"});
     public final ModeProperty preference = new ModeProperty("preference", 0, new String[]{"MOVE_SPEED", "KB_REDUCTION", "CRITICAL_HITS"}, () -> this.mode.getValue() == 3 || this.mode.getValue() == 4);
@@ -30,7 +34,7 @@ public class HitSelect extends Module {
     private boolean sprintState = false;
     private boolean set = false;
     private boolean keepSprintWasEnabled = false;
-    private double savedSlowdown = 0.0;
+    private int savedSlowdown = 0;
 
     private int blockedHits = 0;
     private int allowedHits = 0;
@@ -267,7 +271,7 @@ public class HitSelect extends Module {
 
         try {
             // Save the current slowdown value
-            this.savedSlowdown = keepSprint.slowdown.getValue().doubleValue();
+            this.savedSlowdown = keepSprint.slowdown.getValue();
             this.keepSprintWasEnabled = keepSprint.isEnabled();
 
             // Temporarily enable KeepSprint silently so this internal motion fix does not spam toggles.
@@ -278,7 +282,7 @@ public class HitSelect extends Module {
 
             this.set = true;
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "Failed to apply HitSelect motion fix", e);
         }
     }
 
@@ -288,25 +292,23 @@ public class HitSelect extends Module {
         }
 
         KeepSprint keepSprint = (KeepSprint) Myau.moduleManager.modules.get(KeepSprint.class);
-        if (keepSprint == null) {
-            return;
-        }
+        if (keepSprint != null) {
+            try {
+                // Restore the original slowdown value
+                keepSprint.slowdown.setValue(this.savedSlowdown);
 
-        try {
-            // Restore the original slowdown value
-            keepSprint.slowdown.setValue((int) this.savedSlowdown);
-
-            // Only restore the enabled state if HitSelect changed it.
-            if (!this.keepSprintWasEnabled && keepSprint.isEnabled()) {
-                keepSprint.setEnabled(false);
+                // Only restore the enabled state if HitSelect changed it.
+                if (!this.keepSprintWasEnabled && keepSprint.isEnabled()) {
+                    keepSprint.setEnabled(false);
+                }
+            } catch (Exception e) {
+                LOGGER.log(Level.WARNING, "Failed to restore HitSelect motion fix", e);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
 
         this.set = false;
         this.keepSprintWasEnabled = false;
-        this.savedSlowdown = 0.0;
+        this.savedSlowdown = 0;
     }
 
     private boolean isMovingTowards(EntityLivingBase source, EntityLivingBase target, double maxAngle) {
@@ -354,7 +356,7 @@ public class HitSelect extends Module {
         this.resetMotion();
         this.sprintState = false;
         this.set = false;
-        this.savedSlowdown = 0.0;
+        this.savedSlowdown = 0;
         this.attackTime = -1L;
         this.currentShouldAttack = false;
         this.blockedHits = 0;

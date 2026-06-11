@@ -40,16 +40,12 @@ public class Velocity extends Module {
     private int intaveTick = 0;
     private int intaveDamageTick = 0;
 
-    public final ModeProperty mode = new ModeProperty("mode", 0, new String[]{"VANILLA", "JUMP", "DELAY", "REVERSE", "LEGIT_TEST", "LEGIT_SMART", "GRIM_REDUCE", "INTAVE_REDUCE"});
+    public final ModeProperty mode = new ModeProperty("mode", 0, new String[]{"VANILLA", "JUMP", "DELAY", "REVERSE", "LEGIT_TEST", "LEGIT_SMART", "INTAVE_REDUCE"});
     public final IntProperty delayTicks = new IntProperty("delay-ticks", 3, 1, 20, () -> this.mode.getValue() == 2);
     public final PercentProperty delayChance = new PercentProperty("delay-chance", 100, () -> this.mode.getValue() == 2);
     public final IntProperty legitSmartJumpLimit = new IntProperty("legit-smart-jump-limit", 2, 1, 5, () -> this.mode.getValue() == 5);
-    public final FloatProperty grimReduceFactor = new FloatProperty("grim-reduce-factor", 0.6F, 0.0F, 1.0F, () -> this.mode.getValue() == 6);
-    public final IntProperty grimReduceMinHurtTime = new IntProperty("grim-reduce-min-hurt-time", 5, 0, 10, () -> this.mode.getValue() == 6);
-    public final IntProperty grimReduceMaxHurtTime = new IntProperty("grim-reduce-max-hurt-time", 10, 0, 20, () -> this.mode.getValue() == 6);
-    public final BooleanProperty grimReduceOnlyGround = new BooleanProperty("grim-reduce-only-ground", false, () -> this.mode.getValue() == 6);
-    public final FloatProperty intaveReduceFactor = new FloatProperty("intave-reduce-factor", 0.6F, 0.6F, 1.0F, () -> this.mode.getValue() == 7);
-    public final IntProperty intaveReduceHurtTime = new IntProperty("intave-reduce-hurt-time", 9, 1, 10, () -> this.mode.getValue() == 7);
+    public final FloatProperty intaveReduceFactor = new FloatProperty("intave-reduce-factor", 0.6F, 0.6F, 1.0F, () -> this.mode.getValue() == 6);
+    public final IntProperty intaveReduceHurtTime = new IntProperty("intave-reduce-hurt-time", 9, 1, 10, () -> this.mode.getValue() == 6);
     public final PercentProperty chance = new PercentProperty("chance", 100);
     public final PercentProperty horizontal = new PercentProperty("horizontal", 0);
     public final PercentProperty vertical = new PercentProperty("vertical", 100);
@@ -96,7 +92,7 @@ public class Velocity extends Module {
                 this.chanceCounter = this.chanceCounter % 100 + this.chance.getValue();
                 if (this.chanceCounter >= 100) {
                     this.jumpFlag = (this.mode.getValue() == 1 || this.mode.getValue() == 2) && event.getY() > 0.0;
-                    this.delayActive = this.mode.getValue() == 3;
+                    this.delayActive = this.mode.getValue() == 2;
                     if (this.horizontal.getValue() > 0) {
                         event.setX(event.getX() * (double) this.horizontal.getValue() / 100.0);
                         event.setZ(event.getZ() * (double) this.horizontal.getValue() / 100.0);
@@ -168,16 +164,7 @@ public class Velocity extends Module {
                     this.legitSmartJumpCount = 0;
                 }
             }
-            if (this.mode.getValue() == 6 && this.hasReceivedVelocity && mc.thePlayer.hurtTime >= this.grimReduceMinHurtTime.getValue() && mc.thePlayer.hurtTime <= this.grimReduceMaxHurtTime.getValue()) {
-                mc.thePlayer.motionX *= this.grimReduceFactor.getValue();
-                mc.thePlayer.motionY *= this.grimReduceFactor.getValue();
-                mc.thePlayer.motionZ *= this.grimReduceFactor.getValue();
-
-                if (this.grimReduceOnlyGround.getValue() && !mc.thePlayer.onGround) {
-                    this.hasReceivedVelocity = false;
-                }
-            }
-            if (this.mode.getValue() == 7 && this.hasReceivedVelocity) {
+            if (this.mode.getValue() == 6 && this.hasReceivedVelocity) {
                 this.intaveTick++;
                 if (mc.thePlayer.hurtTime == 2) {
                     this.intaveDamageTick++;
@@ -224,7 +211,7 @@ public class Velocity extends Module {
                             return;
                         }
                     }
-                    if (this.mode.getValue() == 5 || this.mode.getValue() == 6 || this.mode.getValue() == 7) {
+                    if (this.mode.getValue() == 5 || this.mode.getValue() == 6) {
                         this.hasReceivedVelocity = true;
                     }
                     if (this.debugLog.getValue()) {

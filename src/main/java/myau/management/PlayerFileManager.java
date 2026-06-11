@@ -5,6 +5,8 @@ import net.minecraft.client.Minecraft;
 import java.awt.*;
 import java.io.*;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public abstract class PlayerFileManager {
@@ -30,34 +32,49 @@ public abstract class PlayerFileManager {
             }
         }
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            Set<String> loaded = reader.lines()
+                    .map(String::trim)
+                    .filter(name -> !name.isEmpty())
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
             players.clear();
-            players.addAll(reader.lines().map(String::trim).collect(Collectors.toList()));
+            players.addAll(loaded);
         } catch (IOException e) {
             System.err.println("Error reading file: " + e.getMessage());
         }
     }
 
     public void save() {
-        try (PrintWriter writer = new PrintWriter(new FileWriter(file))) {
-            writer.print(String.join("\n", players));
+        try {
+            File parent = file.getParentFile();
+            if (parent != null && !parent.exists()) {
+                parent.mkdirs();
+            }
+            try (PrintWriter writer = new PrintWriter(new FileWriter(file))) {
+                writer.print(String.join("\n", players));
+            }
         } catch (IOException e) {
             System.err.println("Error saving file: " + e.getMessage());
         }
     }
 
     public String add(String name) {
-        if (isFriend(name)) {
+        String normalized = name == null ? "" : name.trim();
+        if (normalized.isEmpty() || isFriend(normalized)) {
             return null;
         }
-        players.add(name);
+        players.add(normalized);
         save();
-        return name;
+        return normalized;
     }
 
     public String remove(String name) {
-        for (String player : players) {
-            if (player.equalsIgnoreCase(name)) {
-                players.remove(player);
+        if (name == null) {
+            return null;
+        }
+        for (int i = 0; i < players.size(); i++) {
+            String player = players.get(i);
+            if (player.equalsIgnoreCase(name.trim())) {
+                players.remove(i);
                 save();
                 return player;
             }
@@ -71,7 +88,7 @@ public abstract class PlayerFileManager {
     }
 
     public boolean isFriend(String string) {
-        return this.players.stream().anyMatch(string2 -> string2.equalsIgnoreCase(string));
+        return string != null && this.players.stream().anyMatch(string2 -> string2.equalsIgnoreCase(string.trim()));
     }
 
     public ArrayList<String> getPlayers() {

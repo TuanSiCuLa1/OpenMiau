@@ -15,9 +15,10 @@ public class CheckDataManager {
     public void update(World world) {
         Set<String> seen = new HashSet<>();
         for (EntityPlayer player : world.playerEntities) {
-            if (player.getName() == null) continue;
-            seen.add(player.getName());
-            PlayerCheckData playerData = this.data.computeIfAbsent(player.getName(), key -> new PlayerCheckData(player));
+            String key = getPlayerKey(player);
+            if (key == null) continue;
+            seen.add(key);
+            PlayerCheckData playerData = this.data.computeIfAbsent(key, ignored -> new PlayerCheckData(player));
             playerData.update(player);
         }
         Iterator<String> iterator = this.data.keySet().iterator();
@@ -29,8 +30,8 @@ public class CheckDataManager {
     }
 
     public PlayerCheckData get(EntityPlayer player) {
-        if (player == null || player.getName() == null) return null;
-        return this.data.get(player.getName());
+        String key = getPlayerKey(player);
+        return key == null ? null : this.data.get(key);
     }
 
     public boolean isMovementExempt(EntityPlayer player, PlayerCheckData data) {
@@ -45,6 +46,13 @@ public class CheckDataManager {
                 || player.isRiding()
                 || player.capabilities.isFlying
                 || player.capabilities.disableDamage;
+    }
+
+    public static String getPlayerKey(EntityPlayer player) {
+        if (player == null) return null;
+        if (player.getUniqueID() != null) return player.getUniqueID().toString();
+        String name = player.getName();
+        return name == null ? String.valueOf(player.getEntityId()) : name;
     }
 
     public void reset() {

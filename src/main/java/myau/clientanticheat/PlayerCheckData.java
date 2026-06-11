@@ -5,6 +5,20 @@ import net.minecraft.potion.Potion;
 import net.minecraft.util.MathHelper;
 
 public class PlayerCheckData {
+    private static final double TELEPORT_DISTANCE_THRESHOLD = 8.0D;
+    private static final int TELEPORT_EXEMPT_TICKS = 4;
+    private static final int MAX_SINCE_HURT_TICKS = 999;
+    private static final int RECENT_HURT_TICKS = 10;
+    private static final int INITIAL_EXEMPT_TICKS = 5;
+    private static final double GROUND_HORIZONTAL_LIMIT = 0.36D;
+    private static final double AIR_HORIZONTAL_LIMIT = 0.62D;
+    private static final double SPRINT_LIMIT_BONUS = 0.08D;
+    private static final double SNEAK_LIMIT_BONUS = 0.02D;
+    private static final double USING_ITEM_LIMIT_BONUS = 0.02D;
+    private static final double SPEED_POTION_LIMIT_BONUS = 0.075D;
+    private static final double JUMP_POTION_LIMIT_BONUS = 0.04D;
+    private static final double RECENT_HURT_LIMIT_BONUS = 0.35D;
+
     public final String name;
 
     public double lastX;
@@ -71,11 +85,11 @@ public class PlayerCheckData {
         this.pitchDelta = Math.abs(this.pitch - this.lastPitch);
 
         double totalDelta = Math.sqrt(this.deltaX * this.deltaX + this.deltaY * this.deltaY + this.deltaZ * this.deltaZ);
-        this.teleportTicks = totalDelta > 8.0D ? 4 : Math.max(0, this.teleportTicks - 1);
+        this.teleportTicks = totalDelta > TELEPORT_DISTANCE_THRESHOLD ? TELEPORT_EXEMPT_TICKS : Math.max(0, this.teleportTicks - 1);
         this.groundTicks = this.onGround ? this.groundTicks + 1 : 0;
         this.airTicks = this.onGround ? 0 : this.airTicks + 1;
         this.hurtTicks = player.hurtTime > 0 ? player.hurtTime : Math.max(0, this.hurtTicks - 1);
-        this.sinceHurtTicks = player.hurtTime > 0 ? 0 : Math.min(999, this.sinceHurtTicks + 1);
+        this.sinceHurtTicks = player.hurtTime > 0 ? 0 : Math.min(MAX_SINCE_HURT_TICKS, this.sinceHurtTicks + 1);
 
         if (!this.onGround && this.deltaY < 0.0D) {
             this.observedFallDistance += (float) -this.deltaY;
@@ -85,24 +99,24 @@ public class PlayerCheckData {
     }
 
     public boolean recentlyTeleported() {
-        return this.teleportTicks > 0 || this.existedTicks < 5;
+        return this.teleportTicks > 0 || this.existedTicks < INITIAL_EXEMPT_TICKS;
     }
 
     public boolean recentlyHurt() {
-        return this.sinceHurtTicks <= 10 || this.hurtTicks > 0;
+        return this.sinceHurtTicks <= RECENT_HURT_TICKS || this.hurtTicks > 0;
     }
 
     public double predictedHorizontalLimit(EntityPlayer player) {
-        double limit = this.onGround ? 0.36D : 0.62D;
-        if (player.isSprinting()) limit += 0.08D;
-        if (player.isSneaking()) limit += 0.02D;
-        if (player.isUsingItem()) limit += 0.02D;
+        double limit = this.onGround ? GROUND_HORIZONTAL_LIMIT : AIR_HORIZONTAL_LIMIT;
+        if (player.isSprinting()) limit += SPRINT_LIMIT_BONUS;
+        if (player.isSneaking()) limit += SNEAK_LIMIT_BONUS;
+        if (player.isUsingItem()) limit += USING_ITEM_LIMIT_BONUS;
         if (player.isPotionActive(Potion.moveSpeed)) {
             int amplifier = player.getActivePotionEffect(Potion.moveSpeed).getAmplifier() + 1;
-            limit += amplifier * 0.075D;
+            limit += amplifier * SPEED_POTION_LIMIT_BONUS;
         }
-        if (player.isPotionActive(Potion.jump)) limit += 0.04D;
-        if (this.recentlyHurt()) limit += 0.35D;
+        if (player.isPotionActive(Potion.jump)) limit += JUMP_POTION_LIMIT_BONUS;
+        if (this.recentlyHurt()) limit += RECENT_HURT_LIMIT_BONUS;
         return limit;
     }
 }

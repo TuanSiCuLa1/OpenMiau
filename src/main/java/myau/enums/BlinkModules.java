@@ -5,6 +5,7 @@ public enum BlinkModules {
     ANTI_VOID,
     AUTO_BLOCK,
     BLINK,
+    DISPLACE,
     FAKE_LAG,
     HITFLICK,
     NO_FALL,

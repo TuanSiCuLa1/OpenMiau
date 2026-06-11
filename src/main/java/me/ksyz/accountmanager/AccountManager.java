@@ -11,6 +11,8 @@ import javax.net.ssl.SSLContext;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /*
  * This file is derived from https://github.com/ksyzov/AccountManager.
@@ -22,6 +24,7 @@ public class AccountManager {
     private static final Minecraft mc = Minecraft.getMinecraft();
     private static final File file = new File(mc.mcDataDir, "openmyau.accounts.json");
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+    private static final Logger LOGGER = Logger.getLogger(AccountManager.class.getName());
 
     public static final ArrayList<Account> accounts = new ArrayList<>();
 
@@ -33,24 +36,25 @@ public class AccountManager {
             try {
                 if (file.getParentFile().exists() || file.getParentFile().mkdirs()) {
                     if (file.createNewFile()) {
-                        System.out.print("Successfully created openmyau.accounts.json!");
+                        LOGGER.info("Successfully created openmyau.accounts.json");
                     }
                 }
             } catch (IOException e) {
-                System.err.print("Couldn't create openmyau.accounts.json!");
+                LOGGER.log(Level.WARNING, "Couldn't create openmyau.accounts.json", e);
             }
         }
     }
 
     public static void load() {
         accounts.clear();
-        try {
-            JsonElement json = new JsonParser().parse(
-                    new BufferedReader(new FileReader(file))
-            );
-            if (json instanceof JsonArray) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            JsonElement json = new JsonParser().parse(reader);
+            if (json != null && json.isJsonArray()) {
                 JsonArray jsonArray = json.getAsJsonArray();
                 for (JsonElement jsonElement : jsonArray) {
+                    if (!jsonElement.isJsonObject()) {
+                        continue;
+                    }
                     JsonObject jsonObject = jsonElement.getAsJsonObject();
                     accounts.add(new Account(
                             Optional.ofNullable(jsonObject.get("refreshToken")).map(JsonElement::getAsString).orElse(""),
@@ -64,7 +68,9 @@ public class AccountManager {
                 }
             }
         } catch (FileNotFoundException e) {
-            System.err.print("Couldn't find openmyau.accounts.json!");
+            LOGGER.log(Level.WARNING, "Couldn't find openmyau.accounts.json", e);
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Couldn't load openmyau.accounts.json", e);
         }
     }
 
@@ -82,11 +88,15 @@ public class AccountManager {
                 jsonObject.addProperty("type", account.getType());
                 jsonArray.add(jsonObject);
             }
-            PrintWriter printWriter = new PrintWriter(new FileWriter(file));
-            printWriter.println(gson.toJson(jsonArray));
-            printWriter.close();
+            File parent = file.getParentFile();
+            if (parent != null && !parent.exists()) {
+                parent.mkdirs();
+            }
+            try (PrintWriter printWriter = new PrintWriter(new FileWriter(file))) {
+                printWriter.println(gson.toJson(jsonArray));
+            }
         } catch (IOException e) {
-            System.err.print("Couldn't save openmyau.accounts.json!");
+            LOGGER.log(Level.WARNING, "Couldn't save openmyau.accounts.json", e);
         }
     }
 }

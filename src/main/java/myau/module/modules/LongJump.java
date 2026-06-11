@@ -107,15 +107,20 @@ public class LongJump extends Module {
                     }
                     break;
                 case POST:
-                    if (this.savedHotbarSlot != -1) {
-                        mc.thePlayer.inventory.currentItem = this.savedHotbarSlot;
-                        this.savedHotbarSlot = -1;
-                    }
+                    this.restoreHotbarSlot();
                     break;
                 default:
                     break;
             }
         }
+    }
+
+    private void restoreHotbarSlot() {
+        if (this.savedHotbarSlot != -1 && mc.thePlayer != null) {
+            mc.thePlayer.inventory.currentItem = this.savedHotbarSlot;
+            ((IAccessorPlayerControllerMP) mc.playerController).callSyncCurrentPlayItem();
+        }
+        this.savedHotbarSlot = -1;
     }
 
     @EventTarget
@@ -247,6 +252,7 @@ public class LongJump extends Module {
 
     @Override
     public void onDisabled() {
+        this.restoreHotbarSlot();
         this.isJumping = false;
         this.tickCounter = 0;
         this.jumpModeStage = 0;

@@ -119,6 +119,7 @@ public class Myau {
         moduleManager.modules.put(Keystrokes.class, new Keystrokes());
         moduleManager.modules.put(HitBox.class, new HitBox());
         moduleManager.modules.put(KillAura.class, new KillAura());
+        moduleManager.modules.put(Displace.class, new Displace());
         moduleManager.modules.put(KnockbackDelay.class, new KnockbackDelay());
         moduleManager.modules.put(LagRange.class, new LagRange());
         moduleManager.modules.put(LightningTracker.class, new LightningTracker());

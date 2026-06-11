@@ -128,8 +128,12 @@ public class Clutch extends Module {
             this.autoClutchActive = false;
             return;
         }
-        if (mc.thePlayer.motionY < 0.0D && this.willFallFar(this.minimumFallDistance.getValue())) {
+        if (mc.thePlayer.motionY < 0.0D
+                && this.willFallFar(this.minimumFallDistance.getValue())
+                && this.hasRescuePlacement()) {
             this.autoClutchActive = true;
+        } else {
+            this.autoClutchActive = false;
         }
     }
 
@@ -151,9 +155,12 @@ public class Clutch extends Module {
         int feetY = MathHelper.floor_double(playerPos.yCoord);
         int feetZ = MathHelper.floor_double(playerPos.zCoord);
 
-        for (int y = feetY - 1; y >= feetY - 4; y--) {
-            for (int x = feetX - 5; x <= feetX + 4; x++) {
-                for (int z = feetZ - 5; z <= feetZ + 4; z++) {
+        int scanRadius = MathHelper.ceiling_float_int(this.reach.getValue()) + 1;
+        int minY = Math.max(0, Math.min(feetY - 1, MathHelper.floor_double(futurePos.yCoord) - 1));
+
+        for (int y = feetY - 1; y >= minY - 2; y--) {
+            for (int x = feetX - scanRadius; x <= feetX + scanRadius; x++) {
+                for (int z = feetZ - scanRadius; z <= feetZ + scanRadius; z++) {
                     BlockPos pos = new BlockPos(x, y, z);
                     if (this.canPlaceThrough(pos)) continue;
                     double score = pos.distanceSq(futurePos.xCoord, futurePos.yCoord, futurePos.zCoord);
@@ -270,6 +277,11 @@ public class Clutch extends Module {
 
     private boolean willFallFar(int minFall) {
         return mc.thePlayer.fallDistance >= minFall || mc.thePlayer.posY - (mc.thePlayer.posY + mc.thePlayer.motionY * 12.0D) >= minFall;
+    }
+
+    private boolean hasRescuePlacement() {
+        if (!this.canPlaceThrough(this.getFeetBelow())) return false;
+        return this.findAim(mc.thePlayer.rotationYaw, mc.thePlayer.rotationPitch) != null;
     }
 
     private boolean canPlaceThrough(BlockPos pos) {

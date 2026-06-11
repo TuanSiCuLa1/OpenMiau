@@ -37,31 +37,35 @@ public class OnlineConfigClient {
     private static String get(String path) throws Exception {
         String url = API_BASE + "/client/" + encode(BRANCH) + "/" + path;
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
-        connection.setRequestMethod("GET");
-        connection.setConnectTimeout(TIMEOUT_MS);
-        connection.setReadTimeout(TIMEOUT_MS);
-        connection.setRequestProperty("User-Agent", "OpenMyau/OnlineConfig");
+        try {
+            connection.setRequestMethod("GET");
+            connection.setConnectTimeout(TIMEOUT_MS);
+            connection.setReadTimeout(TIMEOUT_MS);
+            connection.setRequestProperty("User-Agent", "OpenMyau/OnlineConfig");
 
-        int code = connection.getResponseCode();
-        String body = read(code >= 200 && code < 300 ? connection.getInputStream() : connection.getErrorStream());
-        if (code < 200 || code >= 300) {
-            throw new Exception(formatError(code, body));
+            int code = connection.getResponseCode();
+            String body = read(code >= 200 && code < 300 ? connection.getInputStream() : connection.getErrorStream());
+            if (code < 200 || code >= 300) {
+                throw new Exception(formatError(code, body));
+            }
+            return body;
+        } finally {
+            connection.disconnect();
         }
-        return body;
     }
 
     private static String read(InputStream stream) throws Exception {
         if (stream == null) {
             return "";
         }
-        BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8));
-        StringBuilder builder = new StringBuilder();
-        String line;
-        while ((line = reader.readLine()) != null) {
-            builder.append(line).append('\n');
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))) {
+            StringBuilder builder = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                builder.append(line).append('\n');
+            }
+            return builder.toString();
         }
-        reader.close();
-        return builder.toString();
     }
 
     private static String formatError(int code, String body) {

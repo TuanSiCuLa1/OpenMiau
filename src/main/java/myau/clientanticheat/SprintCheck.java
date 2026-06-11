@@ -13,9 +13,11 @@ public class SprintCheck {
 
     public void check(EntityPlayer player, PlayerCheckData data, ClientAntiCheatContext context) {
         if (data == null || player.ticksExisted < 20 || data.recentlyTeleported() || data.recentlyHurt()) return;
+        String key = CheckDataManager.getPlayerKey(player);
         String name = player.getName();
-        CheckBuffer blockBuffer = this.blockSprintBuffers.computeIfAbsent(name, key -> new CheckBuffer());
-        CheckBuffer omniBuffer = this.omniSprintBuffers.computeIfAbsent(name, key -> new CheckBuffer());
+        if (key == null || name == null) return;
+        CheckBuffer blockBuffer = this.blockSprintBuffers.computeIfAbsent(key, ignored -> new CheckBuffer());
+        CheckBuffer omniBuffer = this.omniSprintBuffers.computeIfAbsent(key, ignored -> new CheckBuffer());
 
         ItemStack heldItem = player.getHeldItem();
         boolean blocking = heldItem != null && heldItem.getItem() instanceof ItemSword && player.isBlocking();

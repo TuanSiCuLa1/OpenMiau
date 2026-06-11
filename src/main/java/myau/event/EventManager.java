@@ -11,12 +11,16 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author DarkMagician6
  * @since February 2, 2014
  */
 public final class EventManager {
+    private static final Logger LOGGER = Logger.getLogger(EventManager.class.getName());
+
     /**
      * HashMap containing all the registered MethodData sorted on the event parameters of the methods.
      */
@@ -62,12 +66,11 @@ public final class EventManager {
      * @param object Object of which you want to unregister all Methods.
      */
     public static void unregister(Object object) {
+        if (object == null) {
+            return;
+        }
         for (final List<MethodData> dataList : REGISTRY_MAP.values()) {
-            for (final MethodData data : dataList) {
-                if (data.getSource().equals(object)) {
-                    dataList.remove(data);
-                }
-            }
+            dataList.removeIf(data -> data.getSource().equals(object));
         }
         cleanMap(true);
     }
@@ -79,12 +82,12 @@ public final class EventManager {
      * @param eventClass class for the method to remove.
      */
     public static void unregister(Object object, Class<? extends Event> eventClass) {
-        if (REGISTRY_MAP.containsKey(eventClass)) {
-            for (final MethodData data : REGISTRY_MAP.get(eventClass)) {
-                if (data.getSource().equals(object)) {
-                    REGISTRY_MAP.get(eventClass).remove(data);
-                }
-            }
+        if (object == null || eventClass == null) {
+            return;
+        }
+        List<MethodData> dataList = REGISTRY_MAP.get(eventClass);
+        if (dataList != null) {
+            dataList.removeIf(data -> data.getSource().equals(object));
             cleanMap(true);
         }
     }
@@ -240,7 +243,13 @@ public final class EventManager {
         try {
             data.getTarget().invoke(data.getSource(), argument);
         } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-            e.printStackTrace();
+            Throwable cause = e instanceof InvocationTargetException && e.getCause() != null ? e.getCause() : e;
+            LOGGER.log(Level.WARNING,
+                    String.format("Event handler failed: event=%s source=%s method=%s",
+                            argument.getClass().getName(),
+                            data.getSource().getClass().getName(),
+                            data.getTarget().getName()),
+                    cause);
         }
     }
 

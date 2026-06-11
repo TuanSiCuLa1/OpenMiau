@@ -20,11 +20,8 @@ public class Config {
     public static String lastConfig;
 
     public Config(String name, boolean newConfig) {
-        this.name = name;
-        lastConfig = name;
-        if (name.equals("!") || name.equals("default")) {
-            this.name = "default";
-        }
+        this.name = (name.equals("!") || name.equals("default")) ? "default" : name;
+        lastConfig = this.name;
         this.file = new File("./config/Myau/", String.format("%s.json", this.name));
         try {
             file.getParentFile().mkdirs();
@@ -45,7 +42,10 @@ public class Config {
                 return;
             }
 
-            JsonElement parsed = new JsonParser().parse(new BufferedReader(new FileReader(file)));
+            JsonElement parsed;
+            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                parsed = new JsonParser().parse(reader);
+            }
             if (parsed == null || !parsed.isJsonObject()) {
                 ChatUtil.sendFormatted(String.format("%sInvalid config format (&c&o%s&r)&r", Myau.clientName, file.getName()));
                 return;
@@ -130,9 +130,9 @@ public class Config {
                 object.add(module.getName(), moduleObject);
             }
 
-            PrintWriter printWriter = new PrintWriter(new FileWriter(file));
-            printWriter.println(gson.toJson(object));
-            printWriter.close();
+            try (PrintWriter printWriter = new PrintWriter(new FileWriter(file))) {
+                printWriter.println(gson.toJson(object));
+            }
             ChatUtil.sendFormatted(String.format("%sConfig has been saved (&a&o%s&r)&r", Myau.clientName, file.getName()));
         } catch (IOException e) {
             ((IAccessorMinecraft) mc).getLogger().error("Error saving config: " + e.getMessage());

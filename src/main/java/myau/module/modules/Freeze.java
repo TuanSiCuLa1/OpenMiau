@@ -24,9 +24,12 @@ import net.minecraft.network.play.server.S32PacketConfirmTransaction;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Freeze extends Module {
     private static final Minecraft mc = Minecraft.getMinecraft();
+    private static final Logger LOGGER = Logger.getLogger(Freeze.class.getName());
 
     private final List<Packet<INetHandlerPlayClient>> packets = new ArrayList<>();
     private boolean delaying = false;
@@ -156,21 +159,22 @@ public class Freeze extends Module {
     }
 
     private void flush() {
-        if (this.packets.isEmpty()) {
-            this.delaying = false;
-            this.timeout = 0;
-            return;
+        List<Packet<INetHandlerPlayClient>> delayedPackets;
+        synchronized (this.packets) {
+            if (this.packets.isEmpty()) {
+                this.delaying = false;
+                this.timeout = 0;
+                return;
+            }
+            delayedPackets = new ArrayList<>(this.packets);
+            this.packets.clear();
         }
 
-        synchronized (this.packets) {
-            while (!this.packets.isEmpty()) {
-                Packet<INetHandlerPlayClient> packet = this.packets.remove(0);
-
-                try {
-                    packet.processPacket(mc.getNetHandler());
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+        for (Packet<INetHandlerPlayClient> packet : delayedPackets) {
+            try {
+                packet.processPacket(mc.getNetHandler());
+            } catch (Exception e) {
+                LOGGER.log(Level.WARNING, "Failed to process delayed packet: " + packet.getClass().getName(), e);
             }
         }
 

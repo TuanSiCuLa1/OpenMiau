@@ -13,12 +13,21 @@ import net.minecraft.util.ChatStyle;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class OnlineConfigCommand extends Command {
+    private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor(runnable -> {
+        Thread thread = new Thread(runnable, "OpenMyau OnlineConfig");
+        thread.setDaemon(true);
+        return thread;
+    });
+
     private final OnlineConfigClient client = new OnlineConfigClient();
-    private List<OnlineConfigEntry> cache = new ArrayList<>();
+    private volatile List<OnlineConfigEntry> cache = Collections.emptyList();
 
     public OnlineConfigCommand() {
         super(new ArrayList<>(Arrays.asList("onlineconfig", "onlinecfg", "ocfg", "online")));
@@ -32,13 +41,13 @@ public class OnlineConfigCommand extends Command {
         }
         String sub = args.get(1).toLowerCase(Locale.ROOT);
         if (sub.equals("list") || sub.equals("l")) {
-            async("OpenMyau OnlineConfig List", this::listConfigs);
+            async(this::listConfigs);
         } else if (sub.equals("load")) {
             if (args.size() < 3) {
                 ChatUtil.sendFormatted(Myau.clientName + "Missing online config id/name&r");
                 return;
             }
-            async("OpenMyau OnlineConfig Load", () -> loadConfig(String.join(" ", args.subList(2, args.size()))));
+            async(() -> loadConfig(String.join(" ", args.subList(2, args.size()))));
         } else {
             usage();
         }
@@ -46,12 +55,12 @@ public class OnlineConfigCommand extends Command {
 
     private void listConfigs() {
         try {
-            List<OnlineConfigEntry> entries = client.list();
+            List<OnlineConfigEntry> entries = Collections.unmodifiableList(new ArrayList<>(client.list()));
             runOnClientThread(() -> {
                 cache = entries;
                 ChatUtil.sendFormatted(
-                        Myau.clientName + (cache.isEmpty() ? "No online configs found&r" : "Online configs:&r"));
-                for (OnlineConfigEntry entry : cache) {
+                        Myau.clientName + (entries.isEmpty() ? "No online configs found&r" : "Online configs:&r"));
+                for (OnlineConfigEntry entry : entries) {
                     sendEntry(entry);
                 }
             });
@@ -89,10 +98,12 @@ public class OnlineConfigCommand extends Command {
     }
 
     private OnlineConfigEntry findEntry(String input) throws Exception {
-        if (cache.isEmpty()) {
-            cache = client.list();
+        List<OnlineConfigEntry> entries = cache;
+        if (entries.isEmpty()) {
+            entries = Collections.unmodifiableList(new ArrayList<>(client.list()));
+            cache = entries;
         }
-        for (OnlineConfigEntry entry : cache) {
+        for (OnlineConfigEntry entry : entries) {
             if (entry.getId().equalsIgnoreCase(input) || entry.getName().equalsIgnoreCase(input)) {
                 return entry;
             }
@@ -128,8 +139,8 @@ public class OnlineConfigCommand extends Command {
                 Myau.clientName + "Usage: .onlineconfig &olist&r | .onlineconfig &oload&r <&oid/name&r>");
     }
 
-    private void async(String name, Runnable task) {
-        new Thread(task, name).start();
+    private void async(Runnable task) {
+        EXECUTOR.execute(task);
     }
 
     private void runOnClientThread(Runnable task) {

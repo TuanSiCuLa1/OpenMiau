@@ -7,17 +7,11 @@ import myau.module.Module;
 import myau.property.properties.BooleanProperty;
 
 public class RPC extends Module {
-    private static final String CONFIG_URL = "https://api.rinbounce.wtf/api/rpc";
-
     public final BooleanProperty showServer = new BooleanProperty("show-server", true);
     public final BooleanProperty showModulesCount = new BooleanProperty("show-modules-count", true);
 
     public RPC() {
         super("RPC", true, false);
-    }
-
-    public String getConfigUrl() {
-        return CONFIG_URL;
     }
 
     @EventTarget

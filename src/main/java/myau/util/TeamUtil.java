@@ -11,6 +11,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.scoreboard.ScorePlayerTeam;
 
 import java.awt.*;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -18,11 +19,14 @@ public class TeamUtil {
     private static final Minecraft mc = Minecraft.getMinecraft();
 
     public static boolean isEntityLoaded(Entity entity) {
-        if (entity == null) return false;
+        if (entity == null || TeamUtil.mc.theWorld == null) return false;
         return TeamUtil.mc.theWorld.loadedEntityList.contains(entity);
     }
 
     public static List<Entity> getLoadedEntitiesSorted() {
+        if (TeamUtil.mc.theWorld == null || TeamUtil.mc.getRenderManager() == null) {
+            return Collections.emptyList();
+        }
         return TeamUtil.mc.theWorld.loadedEntityList.stream().sorted((entity1, entity2) -> {
             double dist1 = mc.getRenderManager().getDistanceToCamera(entity1.posX, entity1.posY, entity1.posZ);
             double dist2 = mc.getRenderManager().getDistanceToCamera(entity2.posX, entity2.posY, entity2.posZ);
@@ -37,14 +41,19 @@ public class TeamUtil {
     }
 
     public static float getHealthScore(EntityLivingBase entityLivingBase) {
-        return entityLivingBase.getHealth() * (20.0f / (float) entityLivingBase.getTotalArmorValue());
+        if (entityLivingBase == null) return 0.0f;
+        int armor = Math.max(1, entityLivingBase.getTotalArmorValue());
+        return entityLivingBase.getHealth() * (20.0f / (float) armor);
     }
 
     public static String stripName(Entity entity) {
-        return entity.getDisplayName().getFormattedText().replaceAll("§\\S$", "").replaceAll("(?i)§r", "§f").trim();
+        return entity == null || entity.getDisplayName() == null ? "" : entity.getDisplayName().getFormattedText().replaceAll("§\\S$", "").replaceAll("(?i)§r", "§f").trim();
     }
 
     public static Color getTeamColor(EntityPlayer player, float alpha) {
+        if (player == null || TeamUtil.mc.fontRendererObj == null) {
+            return new Color(0xFFFFFF | (int)(alpha * 255) << 24, true);
+        }
         int colorCode = 0xFFFFFF;
         ScorePlayerTeam playerTeam = (ScorePlayerTeam) player.getTeam();
         if (playerTeam != null) {
@@ -57,6 +66,9 @@ public class TeamUtil {
     }
 
     public static boolean isBot(EntityPlayer player) {
+        if (player == null || TeamUtil.mc.thePlayer == null || TeamUtil.mc.getNetHandler() == null) {
+            return false;
+        }
         if (player == TeamUtil.mc.thePlayer) {
             return false;
         }
@@ -78,6 +90,9 @@ public class TeamUtil {
     }
 
     public static boolean isSameTeam(EntityPlayer player) {
+        if (player == null || TeamUtil.mc.thePlayer == null || TeamUtil.mc.getNetHandler() == null) {
+            return false;
+        }
         if (player == TeamUtil.mc.thePlayer) {
             return true;
         }
@@ -101,6 +116,9 @@ public class TeamUtil {
     }
 
     public static boolean hasTeamColor(EntityLivingBase entity) {
+        if (entity == null || TeamUtil.mc.thePlayer == null || TeamUtil.mc.theWorld == null || TeamUtil.mc.getNetHandler() == null) {
+            return false;
+        }
         if (entity == TeamUtil.mc.thePlayer) {
             return true;
         }
@@ -123,6 +141,9 @@ public class TeamUtil {
     }
 
     public static boolean isShop(EntityLivingBase entity) {
+        if (entity == null || TeamUtil.mc.thePlayer == null || TeamUtil.mc.theWorld == null) {
+            return false;
+        }
         if (entity == TeamUtil.mc.thePlayer) {
             return false;
         }
@@ -137,10 +158,10 @@ public class TeamUtil {
     }
 
     public static boolean isFriend(EntityPlayer player) {
-        return Myau.friendManager.isFriend(player.getName());
+        return player != null && Myau.friendManager != null && Myau.friendManager.isFriend(player.getName());
     }
 
     public static boolean isTarget(EntityPlayer player) {
-        return Myau.targetManager.isFriend(player.getName());
+        return player != null && Myau.targetManager != null && Myau.targetManager.isFriend(player.getName());
     }
 }

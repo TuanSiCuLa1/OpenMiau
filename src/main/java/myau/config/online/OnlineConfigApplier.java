@@ -8,6 +8,7 @@ import myau.module.Module;
 import myau.property.Property;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class OnlineConfigApplier {
     public int apply(String json) throws Exception {
@@ -17,13 +18,19 @@ public class OnlineConfigApplier {
         }
 
         int applied = 0;
+        List<String> failedProperties = new ArrayList<>();
         JsonObject root = parsed.getAsJsonObject();
         for (Module module : Myau.moduleManager.modules.values()) {
             JsonObject object = findModuleObject(root, module);
             if (object == null) {
                 continue;
             }
-            applied += applyModule(module, object);
+            applied += applyModule(module, object, failedProperties);
+        }
+        if (!failedProperties.isEmpty()) {
+            throw new Exception("Applied " + applied + " setting(s), but failed " + failedProperties.size()
+                    + " propert" + (failedProperties.size() == 1 ? "y" : "ies") + ": "
+                    + String.join(", ", failedProperties.subList(0, Math.min(5, failedProperties.size()))));
         }
         return applied;
     }
@@ -36,7 +43,7 @@ public class OnlineConfigApplier {
         return element != null && element.isJsonObject() ? element.getAsJsonObject() : null;
     }
 
-    private int applyModule(Module module, JsonObject object) {
+    private int applyModule(Module module, JsonObject object, List<String> failedProperties) {
         int applied = 0;
         if (readBoolean(object, "toggled", module::setEnabled))
             applied++;
@@ -55,7 +62,8 @@ public class OnlineConfigApplier {
                     if (property.read(object)) {
                         applied++;
                     }
-                } catch (Exception ignored) {
+                } catch (Exception e) {
+                    failedProperties.add(module.getName() + "." + property.getName());
                 }
             }
         }

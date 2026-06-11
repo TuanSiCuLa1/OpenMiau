@@ -1,20 +1,14 @@
 package myau.management;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import myau.Myau;
 import myau.module.Module;
 import myau.module.modules.RPC;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ServerData;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
@@ -26,13 +20,19 @@ public class DiscordRichPresence {
     private static final int OP_HANDSHAKE = 0;
     private static final int OP_FRAME = 1;
     private static final int OP_CLOSE = 2;
+    private static final String CLIENT_ID = "1512760893895872602";
+    private static final String DEFAULT_DETAILS = "Playing Myau Client";
+    private static final String DEFAULT_STATE = "";
+    private static final String LARGE_IMAGE = "logo";
+    private static final String LARGE_IMAGE_TEXT = "Myau Client";
+    private static final String SMALL_IMAGE = "steve";
+    private static final String SMALL_IMAGE_TEXT = "Player";
 
     private RandomAccessFile pipe;
     private boolean running;
     private long startTimestamp;
     private long lastUpdate;
     private long nextStartAttempt;
-    private RpcConfig config = new RpcConfig();
 
     public boolean isRunning() {
         return this.running;
@@ -46,23 +46,17 @@ public class DiscordRichPresence {
         if (now < this.nextStartAttempt) {
             return;
         }
-        this.nextStartAttempt = now + 5000L;
-        this.refreshConfig(rpc);
-        String clientId = this.config.clientId.trim();
-        if (clientId.isEmpty() || clientId.equals("0") || !this.config.enabled) {
-            this.nextStartAttempt = now + 30000L;
-            return;
-        }
+        this.nextStartAttempt = now + 60000L;
         try {
             this.pipe = this.openPipe();
             this.running = true;
             this.startTimestamp = Instant.now().getEpochSecond();
             this.lastUpdate = 0L;
-            this.write(OP_HANDSHAKE, "{\"v\":1,\"client_id\":\"" + escape(clientId) + "\"}");
+            this.write(OP_HANDSHAKE, "{\"v\":1,\"client_id\":\"" + escape(CLIENT_ID) + "\"}");
             this.nextStartAttempt = 0L;
             this.update(rpc, true);
         } catch (Throwable ignored) {
-            this.nextStartAttempt = System.currentTimeMillis() + 5000L;
+            this.nextStartAttempt = System.currentTimeMillis() + 60000L;
             this.stop();
         }
     }
@@ -91,7 +85,7 @@ public class DiscordRichPresence {
             return;
         }
         long now = System.currentTimeMillis();
-        if (!force && now - this.lastUpdate < 1000L) {
+        if (!force && now - this.lastUpdate < 15000L) {
             return;
         }
         this.lastUpdate = now;
@@ -113,14 +107,8 @@ public class DiscordRichPresence {
     }
 
     private String buildActivity(RPC rpc) {
-        String details = this.config.details.trim();
-        if (rpc.showServer.getValue()) {
-            details = this.getServerText();
-        } else if (details.isEmpty()) {
-            details = "Playing Myau Client";
-        }
-
-        String state = rpc.showModulesCount.getValue() ? this.getModulesText() : this.config.state.trim();
+        String details = rpc.showServer.getValue() ? this.getServerText() : DEFAULT_DETAILS;
+        String state = rpc.showModulesCount.getValue() ? this.getModulesText() : DEFAULT_STATE;
 
         StringBuilder builder = new StringBuilder();
         builder.append("{");
@@ -130,72 +118,20 @@ public class DiscordRichPresence {
         }
         builder.append("\"timestamps\":{\"start\":").append(this.startTimestamp).append("}");
 
-        String largeImage = this.config.largeImage.trim();
-        String largeText = this.config.largeImageText.trim();
         String smallImage = this.getSmallImage();
         String smallText = this.getSmallImageText();
-        if (!largeImage.isEmpty() || !smallImage.isEmpty()) {
-            builder.append(",\"assets\":{");
-            boolean hasAsset = false;
-            if (!largeImage.isEmpty()) {
-                builder.append("\"large_image\":\"").append(escape(largeImage)).append("\"");
-                hasAsset = true;
-                if (!largeText.isEmpty()) {
-                    builder.append(",\"large_text\":\"").append(escape(largeText)).append("\"");
-                }
+        builder.append(",\"assets\":{");
+        builder.append("\"large_image\":\"").append(escape(LARGE_IMAGE)).append("\"");
+        builder.append(",\"large_text\":\"").append(escape(LARGE_IMAGE_TEXT)).append("\"");
+        if (!smallImage.isEmpty()) {
+            builder.append(",\"small_image\":\"").append(escape(smallImage)).append("\"");
+            if (!smallText.isEmpty()) {
+                builder.append(",\"small_text\":\"").append(escape(smallText)).append("\"");
             }
-            if (!smallImage.isEmpty()) {
-                if (hasAsset) {
-                    builder.append(",");
-                }
-                builder.append("\"small_image\":\"").append(escape(smallImage)).append("\"");
-                if (!smallText.isEmpty()) {
-                    builder.append(",\"small_text\":\"").append(escape(smallText)).append("\"");
-                }
-            }
-            builder.append("}");
         }
         builder.append("}");
+        builder.append("}");
         return builder.toString();
-    }
-
-    private void refreshConfig(RPC rpc) {
-        if (rpc == null) {
-            this.config = new RpcConfig();
-            return;
-        }
-        try {
-            HttpURLConnection connection = (HttpURLConnection) new URL(rpc.getConfigUrl()).openConnection();
-            connection.setRequestMethod("GET");
-            connection.setConnectTimeout(3000);
-            connection.setReadTimeout(3000);
-            connection.setRequestProperty("Accept", "application/json");
-            if (connection.getResponseCode() != 200) {
-                return;
-            }
-            BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8));
-            StringBuilder response = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                response.append(line);
-            }
-            reader.close();
-            JsonObject root = new JsonParser().parse(response.toString()).getAsJsonObject();
-            JsonObject rpcObject = root.has("rpc") ? root.getAsJsonObject("rpc") : root;
-            RpcConfig next = new RpcConfig();
-            next.enabled = getBoolean(rpcObject, "enabled", true);
-            next.clientId = getString(rpcObject, "clientId", "0");
-            next.details = getString(rpcObject, "details", "Playing Myau Client");
-            next.state = getString(rpcObject, "state", "");
-            next.largeImage = getString(rpcObject, "largeImage", "logo");
-            next.largeImageText = getString(rpcObject, "largeImageText", "Myau Client");
-            next.smallImage = getString(rpcObject, "smallImage", "steve");
-            next.smallImageText = getString(rpcObject, "smallImageText", "Minecraft Player");
-            next.showServer = getBoolean(rpcObject, "showServer", true);
-            next.showModulesCount = getBoolean(rpcObject, "showModulesCount", true);
-            this.config = next;
-        } catch (Throwable ignored) {
-        }
     }
 
     private String getServerText() {
@@ -274,38 +210,17 @@ public class DiscordRichPresence {
         if (mc.thePlayer != null && mc.thePlayer.getName() != null && !mc.thePlayer.getName().trim().isEmpty()) {
             return "https://minotar.net/avatar/" + escapeUrl(mc.thePlayer.getName()) + "/128.png";
         }
-        return this.config.smallImage.trim();
+        return SMALL_IMAGE;
     }
 
     private String getSmallImageText() {
         if (mc.thePlayer != null && mc.thePlayer.getName() != null && !mc.thePlayer.getName().trim().isEmpty()) {
             return mc.thePlayer.getName();
         }
-        return this.config.smallImageText.trim();
+        return SMALL_IMAGE_TEXT;
     }
 
     private static String escapeUrl(String value) {
         return value.replace(" ", "%20");
-    }
-
-    private static String getString(JsonObject object, String key, String fallback) {
-        return object.has(key) && !object.get(key).isJsonNull() ? object.get(key).getAsString() : fallback;
-    }
-
-    private static boolean getBoolean(JsonObject object, String key, boolean fallback) {
-        return object.has(key) && !object.get(key).isJsonNull() ? object.get(key).getAsBoolean() : fallback;
-    }
-
-    private static class RpcConfig {
-        private boolean enabled = true;
-        private String clientId = "0";
-        private String details = "Playing Myau Client";
-        private String state = "";
-        private String largeImage = "logo";
-        private String largeImageText = "Myau Client";
-        private String smallImage = "steve";
-        private String smallImageText = "Minecraft Player";
-        private boolean showServer = true;
-        private boolean showModulesCount = true;
     }
 }

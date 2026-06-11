@@ -60,7 +60,8 @@ public abstract class Module {
         boolean enabled = !this.enabled;
         this.setEnabled(enabled);
         if (this.enabled == enabled) {
-            if (((HUD) Myau.moduleManager.modules.get(HUD.class)).toggleSound.getValue()) {
+            HUD hud = (HUD) Myau.moduleManager.modules.get(HUD.class);
+            if (hud != null && hud.toggleSound.getValue()) {
                 Myau.moduleManager.playSound();
             }
             return true;

@@ -19,8 +19,11 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ClickGui extends GuiScreen {
+    private static final Logger LOGGER = Logger.getLogger(ClickGui.class.getName());
     private static ClickGui instance;
     private final File configFile = new File("./config/Myau/", "clickgui.txt");
     private final ArrayList<CategoryComponent> categoryList;
@@ -47,6 +50,7 @@ public class ClickGui extends GuiScreen {
         combatModules.add(Myau.moduleManager.getModule(Hitflick.class));
         combatModules.add(Myau.moduleManager.getModule(ProjectileAimBot.class));
         combatModules.add(Myau.moduleManager.getModule(TickBase.class));
+        combatModules.add(Myau.moduleManager.getModule(Displace.class));
         combatModules.add(Myau.moduleManager.getModule(KnockbackDelay.class));
 
         List<Module> movementModules = new ArrayList<>();
@@ -332,10 +336,16 @@ public class ClickGui extends GuiScreen {
             pos.addProperty("open", cat.isOpened());
             json.add(cat.getName(), pos);
         }
-        try (FileWriter writer = new FileWriter(configFile)) {
-            new GsonBuilder().setPrettyPrinting().create().toJson(json, writer);
+        try {
+            File parent = configFile.getParentFile();
+            if (parent != null && !parent.exists()) {
+                parent.mkdirs();
+            }
+            try (FileWriter writer = new FileWriter(configFile)) {
+                new GsonBuilder().setPrettyPrinting().create().toJson(json, writer);
+            }
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "Failed to save ClickGui positions", e);
         }
     }
 
@@ -343,17 +353,27 @@ public class ClickGui extends GuiScreen {
         if (!configFile.exists())
             return;
         try (FileReader reader = new FileReader(configFile)) {
-            JsonObject json = new JsonParser().parse(reader).getAsJsonObject();
+            com.google.gson.JsonElement element = new JsonParser().parse(reader);
+            if (element == null || !element.isJsonObject()) {
+                return;
+            }
+            JsonObject json = element.getAsJsonObject();
             for (CategoryComponent cat : categoryList) {
-                if (json.has(cat.getName())) {
+                if (json.has(cat.getName()) && json.get(cat.getName()).isJsonObject()) {
                     JsonObject pos = json.getAsJsonObject(cat.getName());
-                    cat.setX(pos.get("x").getAsInt());
-                    cat.setY(pos.get("y").getAsInt());
-                    cat.setOpened(pos.get("open").getAsBoolean());
+                    if (pos.has("x") && pos.get("x").isJsonPrimitive()) {
+                        cat.setX(pos.get("x").getAsInt());
+                    }
+                    if (pos.has("y") && pos.get("y").isJsonPrimitive()) {
+                        cat.setY(pos.get("y").getAsInt());
+                    }
+                    if (pos.has("open") && pos.get("open").isJsonPrimitive()) {
+                        cat.setOpened(pos.get("open").getAsBoolean());
+                    }
                 }
             }
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Failed to load ClickGui positions", e);
         }
     }
 }
