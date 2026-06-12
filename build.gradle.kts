@@ -16,9 +16,13 @@ val jarName: String by project
 
 group = baseGroup
 project.version = version
-val gitCommit: String = providers.exec {
-    commandLine("git", "rev-parse", "--short", "HEAD")
-}.standardOutput.asText.get().trim().ifEmpty { "unknown" }
+val gitCommit: String = try {
+    providers.exec {
+        commandLine("git", "rev-parse", "--short", "HEAD")
+    }.standardOutput.asText.get().trim().ifEmpty { "unknown" }
+} catch (e: Exception) {
+    "unknown"
+}
 val githubBuild: Boolean = providers.environmentVariable("GITHUB_ACTIONS").orNull.equals("true", ignoreCase = true)
 val transformerFile = file("src/main/resources/accesstransformer.cfg")
 // Toolchains:
