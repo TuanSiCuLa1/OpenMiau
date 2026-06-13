@@ -79,13 +79,14 @@ public class Targets extends Module {
         if (!this.players.getValue()) {
             return false;
         }
-        if (player.isInvisible() && !this.invisibles.getValue()) {
+        boolean isInvisible = player.isInvisible();
+        if (isInvisible && !this.invisibles.getValue()) {
             return false;
         }
         if (TeamUtil.isFriend(player)) {
             return false;
         }
-        return this.allowSameTeam(player) && !AntiBot.isBot(player);
+        return this.allowSameTeam(player) && (isInvisible || !AntiBot.isBot(player));
     }
 
     public boolean allowTeamColor(EntityLivingBase entityLivingBase) {

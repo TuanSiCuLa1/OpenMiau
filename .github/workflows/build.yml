@@ -1,4 +1,4 @@
-name: Build
+name: Miau
 
 on:
   push:
@@ -11,7 +11,7 @@ on:
 
 jobs:
   build:
-    name: Build Jar
+    name: MeowMiau
     runs-on: ubuntu-latest
 
     steps:
