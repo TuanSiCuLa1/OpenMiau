@@ -17,6 +17,7 @@ import myau.module.modules.render.*;
 import myau.module.modules.player.*;
 import myau.module.modules.misc.*;
 import myau.module.modules.latency.*;
+import myau.module.modules.minigames.BedwarUtils;
 import myau.property.Property;
 import myau.property.PropertyManager;
 
@@ -166,7 +167,6 @@ public class Myau {
         moduleManager.modules.put(Trajectories.class, new Trajectories());
         moduleManager.modules.put(Velocity.class, new Velocity());
         moduleManager.modules.put(ViewClip.class, new ViewClip());
-        moduleManager.modules.put(WaterMark.class, new WaterMark());
         moduleManager.modules.put(Wtap.class, new Wtap());
         moduleManager.modules.put(Xray.class, new Xray());
         commandManager.commands.add(new BindCommand());

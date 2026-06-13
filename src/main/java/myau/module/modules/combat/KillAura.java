@@ -17,7 +17,10 @@ import myau.event.types.Priority;
 import myau.events.*;
 import myau.management.RotationState;
 import myau.mixin.IAccessorPlayerControllerMP;
+import myau.mixin.IAccessorRenderManager;
 import myau.module.Module;
+import net.minecraft.client.renderer.GlStateManager;
+import org.lwjgl.opengl.GL11;
 import myau.property.properties.*;
 import myau.util.*;
 import net.minecraft.client.Minecraft;
@@ -103,6 +106,8 @@ public class KillAura extends Module {
     public final IntProperty smartMaxOwnHurtTime;
     public final FloatProperty smartMaxDirectionDiff;
     public final IntProperty smartMaxSwingProgress;
+    public final BooleanProperty ignoreTeammates;
+    private int ticks = 255;
 
     private long getAttackDelay() {
         return this.isBlocking ? (long) (1000.0F / RandomUtil.nextLong(this.autoBlockMinCPS.getValue().longValue(), this.autoBlockMaxCPS.getValue().longValue())) : 1000L / RandomUtil.nextLong(this.minCPS.getValue(), this.maxCPS.getValue());
@@ -284,6 +289,9 @@ public class KillAura extends Module {
     }
 
     private boolean isValidTarget(EntityLivingBase entityLivingBase) {
+        if (this.ignoreTeammates.getValue() && entityLivingBase instanceof EntityPlayer && TeamUtil.isSameTeam((EntityPlayer) entityLivingBase)) {
+            return false;
+        }
         Targets targets = (Targets) Myau.moduleManager.modules.get(Targets.class);
         return targets != null
                 && targets.isValid(entityLivingBase)
@@ -371,13 +379,14 @@ public class KillAura extends Module {
         this.smoothing = new PercentProperty("smoothing", 0);
         this.angleStep = new IntProperty("angle-step", 90, 30, 180);
         this.throughWalls = new BooleanProperty("through-walls", true);
+        this.ignoreTeammates = new BooleanProperty("ignore-teammates", true);
         this.requirePress = new BooleanProperty("require-press", false);
         this.allowMining = new BooleanProperty("allow-mining", true);
         this.whileScaffold = new BooleanProperty("while-scaffold", false);
         this.weaponsOnly = new BooleanProperty("weapons-only", true);
         this.allowTools = new BooleanProperty("allow-tools", false, this.weaponsOnly::getValue);
         this.inventoryCheck = new BooleanProperty("inventory-check", true);
-        this.showTarget = new ModeProperty("show-target", 0, new String[]{"NONE", "DEFAULT", "HUD"});
+        this.showTarget = new ModeProperty("show-target", 0, new String[]{"NONE", "SIGMA_RING", "ABOVE_BOX", "FULL_BOX"});
         this.debugLog = new ModeProperty("debug-log", 0, new String[]{"NONE", "HEALTH"});
         this.smartUnblockMode = new ModeProperty("unblock-mode", 0, new String[]{"STOP", "SWITCH", "EMPTY"}, () -> this.autoBlock.getValue() == 9);
         this.smartReleaseAutoBlock = new BooleanProperty("release-auto-block", true, () -> this.autoBlock.getValue() == 9);
@@ -940,21 +949,145 @@ public class KillAura extends Module {
             if (this.showTarget.getValue() != 0
                     && TeamUtil.isEntityLoaded(this.target.getEntity())
                     && this.isAttackAllowed()) {
-                Color color = new Color(-1);
-                switch (this.showTarget.getValue()) {
-                    case 1:
-                        if (this.target.getEntity().hurtTime > 0) {
-                            color = new Color(16733525);
-                        } else {
-                            color = new Color(5635925);
-                        }
-                        break;
-                    case 2:
-                        color = ((HUD) Myau.moduleManager.modules.get(HUD.class)).getColor(System.currentTimeMillis());
+                final float partialTicks = event.getPartialTicks();
+                EntityLivingBase player = this.target.getEntity();
+
+                if (mc.getRenderManager() == null || player == null) return;
+
+                final double x = player.prevPosX + (player.posX - player.prevPosX) * partialTicks - ((IAccessorRenderManager) mc.getRenderManager()).getRenderPosX();
+                final double y = player.prevPosY + (player.posY - player.prevPosY) * partialTicks - ((IAccessorRenderManager) mc.getRenderManager()).getRenderPosY();
+                final double z = player.prevPosZ + (player.posZ - player.prevPosZ) * partialTicks - ((IAccessorRenderManager) mc.getRenderManager()).getRenderPosZ();
+
+                if (this.showTarget.getValue() == 1) { // SIGMA_RING
+                    final Color color = ((HUD) Myau.moduleManager.modules.get(HUD.class)).getColor(System.currentTimeMillis());
+                    final double ringY = y + Math.sin(System.currentTimeMillis() / 2E+2) + 1;
+                    GL11.glPushMatrix();
+                    GL11.glDisable(3553);
+                    GL11.glEnable(2848);
+                    GL11.glEnable(2832);
+                    GL11.glEnable(3042);
+                    GL11.glBlendFunc(770, 771);
+                    GL11.glHint(3154, 4354);
+                    GL11.glHint(3155, 4354);
+                    GL11.glHint(3153, 4354);
+                    GL11.glDepthMask(false);
+                    GlStateManager.alphaFunc(GL11.GL_GREATER, 0.0F);
+                    GL11.glShadeModel(GL11.GL_SMOOTH);
+                    GlStateManager.disableCull();
+                    GL11.glBegin(GL11.GL_TRIANGLE_STRIP);
+
+                    for (float i = 0; i <= Math.PI * 2 + ((Math.PI * 2) / 25); i += (float) ((Math.PI * 2) / 25)) {
+                        double vecX = x + 0.67 * Math.cos(i);
+                        double vecZ = z + 0.67 * Math.sin(i);
+
+                        ColorUtil.glColor(ColorUtil.withAlpha(color, (int) (255 * 0.25)));
+                        GL11.glVertex3d(vecX, ringY, vecZ);
+                    }
+
+                    for (float i = 0; i <= Math.PI * 2 + (Math.PI * 2) / 25; i += (Math.PI * 2) / 25) {
+                        double vecX = x + 0.67 * Math.cos(i);
+                        double vecZ = z + 0.67 * Math.sin(i);
+
+                        ColorUtil.glColor(ColorUtil.withAlpha(color, (int) (255 * 0.25)));
+                        GL11.glVertex3d(vecX, ringY, vecZ);
+
+                        ColorUtil.glColor(ColorUtil.withAlpha(color, 0));
+                        GL11.glVertex3d(vecX, ringY - Math.cos(System.currentTimeMillis() / 2E+2) / 2.0F, vecZ);
+                    }
+
+                    GL11.glEnd();
+                    GL11.glShadeModel(GL11.GL_FLAT);
+                    GL11.glDepthMask(true);
+                    GL11.glEnable(2929);
+                    GlStateManager.alphaFunc(GL11.GL_GREATER, 0.1F);
+                    GlStateManager.enableCull();
+                    GL11.glDisable(2848);
+                    GL11.glDisable(2848);
+                    GL11.glEnable(2832);
+                    GL11.glEnable(3553);
+                    GL11.glPopMatrix();
+                    GlStateManager.resetColor();
+                } else if (this.showTarget.getValue() == 2) { // ABOVE_BOX
+                    final Color color = player.hurtTime > 0 ? Color.red : ((HUD) Myau.moduleManager.modules.get(HUD.class)).getColor(System.currentTimeMillis());
+                    GL11.glPushMatrix();
+                    GL11.glEnable(3042);
+                    GL11.glLineWidth(1.8F);
+                    GL11.glBlendFunc(770, 771);
+                    GL11.glEnable(2848);
+                    GlStateManager.depthMask(true);
+
+                    GL11.glEnable(GL11.GL_BLEND);
+                    GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+                    GL11.glDisable(GL11.GL_TEXTURE_2D);
+                    GL11.glEnable(GL11.GL_LINE_SMOOTH);
+                    GL11.glDisable(GL11.GL_DEPTH_TEST);
+                    GL11.glDepthMask(false);
+
+                    double renderY = y + player.getEyeHeight() * 1.2;
+                    float width = player.width;
+                    AxisAlignedBB aabb = new AxisAlignedBB(
+                            x - width / 1.75, renderY, z - width / 1.75,
+                            x + width / 1.75, renderY + 0.1, z + width / 1.75
+                    );
+
+                    RenderUtil.drawBoundingBox(aabb, color.getRed(), color.getGreen(), color.getBlue(), 40, 1.8F);
+
+                    GL11.glDisable(GL11.GL_LINE_SMOOTH);
+                    GL11.glEnable(GL11.GL_TEXTURE_2D);
+                    GL11.glEnable(GL11.GL_DEPTH_TEST);
+                    GL11.glDepthMask(true);
+                    GL11.glDisable(GL11.GL_BLEND);
+
+                    GL11.glDisable(3042);
+                    GL11.glDisable(2848);
+                    GL11.glPopMatrix();
+                    GlStateManager.resetColor();
+                } else if (this.showTarget.getValue() == 3) { // FULL_BOX
+                    boolean wasHurtRecently = false;
+                    if (player.hurtTime > 0) {
+                        wasHurtRecently = true;
+                        this.ticks = 0;
+                    }
+                    if (this.ticks <= 23) {
+                        wasHurtRecently = true;
+                    }
+                    this.ticks++;
+
+                    Color color = wasHurtRecently ? Color.red : ((HUD) Myau.moduleManager.modules.get(HUD.class)).getColor(System.currentTimeMillis());
+                    GL11.glPushMatrix();
+                    GL11.glEnable(3042);
+                    GL11.glLineWidth(1.8F);
+                    GL11.glBlendFunc(770, 771);
+                    GL11.glEnable(2848);
+                    GlStateManager.depthMask(true);
+
+                    GL11.glEnable(GL11.GL_BLEND);
+                    GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+                    GL11.glDisable(GL11.GL_TEXTURE_2D);
+                    GL11.glEnable(GL11.GL_LINE_SMOOTH);
+                    GL11.glDisable(GL11.GL_DEPTH_TEST);
+                    GL11.glDepthMask(false);
+
+                    float width = player.width / 1.15F;
+                    float height = player.height + (player.isSneaking() ? -0.2F : 0.1F);
+                    AxisAlignedBB aabb = new AxisAlignedBB(
+                            x - width + 0.1D, y, z - width + 0.1D,
+                            x + width - 0.1D, y + height + 0.1D, z + width - 0.1D
+                    );
+
+                    RenderUtil.drawBoundingBox(aabb, color.getRed(), color.getGreen(), color.getBlue(), 60, 1.8F);
+
+                    GL11.glDisable(GL11.GL_LINE_SMOOTH);
+                    GL11.glEnable(GL11.GL_TEXTURE_2D);
+                    GL11.glEnable(GL11.GL_DEPTH_TEST);
+                    GL11.glDepthMask(true);
+                    GL11.glDisable(GL11.GL_BLEND);
+
+                    GL11.glDisable(3042);
+                    GL11.glDisable(2848);
+                    GL11.glPopMatrix();
+                    GlStateManager.resetColor();
                 }
-                RenderUtil.enableRenderState();
-                RenderUtil.drawEntityBox(this.target.getEntity(), color.getRed(), color.getGreen(), color.getBlue());
-                RenderUtil.disableRenderState();
             }
         }
     }
@@ -1006,6 +1139,7 @@ public class KillAura extends Module {
         this.hitRegistered = false;
         this.attackDelayMS = 0L;
         this.blockTick = 0;
+        this.ticks = 255;
     }
 
     @Override

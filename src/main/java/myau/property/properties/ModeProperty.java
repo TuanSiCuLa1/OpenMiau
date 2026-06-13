@@ -17,6 +17,10 @@ public class ModeProperty extends Property<Integer> {
         this.modes = modes;
     }
 
+    public String[] getModes() {
+        return this.modes;
+    }
+
     @Override
     public String getValuePrompt() {
         return String.join(", ", this.modes);

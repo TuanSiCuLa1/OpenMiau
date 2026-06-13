@@ -1,7 +1,7 @@
 package myau.module.modules.render;
 
 import myau.module.Module;
-import myau.ui.ClickGui;
+import myau.ui.clickgui.ClickGui;
 import net.minecraft.client.Minecraft;
 import org.lwjgl.input.Keyboard;
 
