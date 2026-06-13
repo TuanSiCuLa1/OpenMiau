@@ -85,28 +85,22 @@ public abstract class MixinItemRenderer {
                 this.renderItemMap(player, pitch, equipProgress, swingProgress);
             } else if (player.getItemInUseCount() > 0) {
                 EnumAction action = this.itemToRender.getItemUseAction();
-                switch (action) {
-                    case NONE:
-                        this.transformFirstPersonItem(equipProgress, 0.0F);
-                        break;
-                    case EAT:
-                    case DRINK:
-                        this.performDrinking(player, partialTicks);
+                if (action == EnumAction.NONE) {
+                    this.transformFirstPersonItem(equipProgress, 0.0F);
+                } else if (action == EnumAction.EAT || action == EnumAction.DRINK) {
+                    this.performDrinking(player, partialTicks);
+                    this.transformFirstPersonItem(equipProgress, swingProgress);
+                } else if (action == EnumAction.BLOCK) {
+                    if (!Animations.apply(swingProgress, equipProgress, player)) {
                         this.transformFirstPersonItem(equipProgress, swingProgress);
-                        break;
-                    case BLOCK:
-                        if (!Animations.apply(swingProgress, equipProgress, player)) {
-                            this.transformFirstPersonItem(equipProgress, swingProgress);
-                            GlStateManager.translate(-0.5F, 0.2F, 0.0F);
-                            GlStateManager.rotate(30.0F, 0.0F, 1.0F, 0.0F);
-                            GlStateManager.rotate(-80.0F, 1.0F, 0.0F, 0.0F);
-                            GlStateManager.rotate(60.0F, 0.0F, 1.0F, 0.0F);
-                        }
-                        break;
-                    case BOW:
-                        this.transformFirstPersonItem(equipProgress, swingProgress);
-                        this.doBowTransformations(partialTicks, player);
-                        break;
+                        GlStateManager.translate(-0.5F, 0.2F, 0.0F);
+                        GlStateManager.rotate(30.0F, 0.0F, 1.0F, 0.0F);
+                        GlStateManager.rotate(-80.0F, 1.0F, 0.0F, 0.0F);
+                        GlStateManager.rotate(60.0F, 0.0F, 1.0F, 0.0F);
+                    }
+                } else if (action == EnumAction.BOW) {
+                    this.transformFirstPersonItem(equipProgress, swingProgress);
+                    this.doBowTransformations(partialTicks, player);
                 }
             } else {
                 if (!Animations.isOddSwing()) {
