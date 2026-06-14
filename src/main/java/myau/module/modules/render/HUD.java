@@ -295,25 +295,6 @@ public class HUD extends Module {
                 return false;
         }
     }
-        
-        switch (category) {
-            case "combat":
-                return this.hideCombat.getValue();
-            case "movement":
-                return this.hideMovement.getValue();
-            case "render":
-                return this.hideRender.getValue();
-            case "player":
-                return this.hidePlayer.getValue();
-            case "misc":
-                return this.hideMisc.getValue();
-            case "latency":
-                return this.hideLatency.getValue();
-            default:
-                return false;
-        }
-    }
-        
         switch (category) {
             case "combat":
                 return this.hideCombat.getValue();
