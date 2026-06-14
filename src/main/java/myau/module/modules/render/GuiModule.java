@@ -1,6 +1,7 @@
 package myau.module.modules.render;
 
 import myau.module.Module;
+import myau.property.properties.BooleanProperty;
 import myau.ui.clickgui.ClickGui;
 import net.minecraft.client.Minecraft;
 import org.lwjgl.input.Keyboard;
@@ -8,6 +9,8 @@ import org.lwjgl.input.Keyboard;
 public class GuiModule extends Module {
     private static final Minecraft mc = Minecraft.getMinecraft();
     private ClickGui clickGui;
+
+    public final BooleanProperty blur = new BooleanProperty("Blur", true);
 
     public GuiModule() {
         super("ClickGui", false);

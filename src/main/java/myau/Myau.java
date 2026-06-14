@@ -21,6 +21,7 @@ import myau.module.modules.minigames.BedwarUtils;
 import myau.module.modules.target.Targets;
 import myau.property.Property;
 import myau.property.PropertyManager;
+import myau.util.notification.NotificationManager;
 
 import org.lwjgl.opengl.Display;
 
@@ -45,6 +46,8 @@ public class Myau {
     public static ModuleManager moduleManager;
     public static CommandManager commandManager;
     public static DiscordRichPresence discordRichPresence;
+    public static NotificationManager notificationManager;
+    public static DragManager dragManager;
 
     public Myau() {
         this.init();
@@ -63,6 +66,8 @@ public class Myau {
         moduleManager = new ModuleManager();
         commandManager = new CommandManager();
         discordRichPresence = new DiscordRichPresence();
+        notificationManager = new NotificationManager();
+        dragManager = new DragManager();
         EventManager.register(rotationManager);
         EventManager.register(floatManager);
         EventManager.register(blinkManager);
@@ -71,6 +76,9 @@ public class Myau {
         EventManager.register(moduleManager);
         EventManager.register(commandManager);
         EventManager.register(discordRichPresence);
+        EventManager.register(notificationManager);
+        EventManager.register(dragManager);
+        EventManager.register(new myau.component.SlotComponent());
         moduleManager.modules.put(AimAssist.class, new AimAssist());
         moduleManager.modules.put(AntiAFK.class, new AntiAFK());
         moduleManager.modules.put(AntiDebuff.class, new AntiDebuff());
@@ -138,6 +146,7 @@ public class Myau {
         moduleManager.modules.put(MCF.class, new MCF());
         moduleManager.modules.put(MotionBlur.class, new MotionBlur());
         moduleManager.modules.put(MurderDetector.class, new MurderDetector());
+        moduleManager.modules.put(StaffDetector.class, new StaffDetector());
         moduleManager.modules.put(NameTags.class, new NameTags());
         moduleManager.modules.put(NickHider.class, new NickHider());
         moduleManager.modules.put(NoFall.class, new NoFall());
@@ -162,6 +171,7 @@ public class Myau {
         moduleManager.modules.put(Sprint.class, new Sprint());
         moduleManager.modules.put(TargetESP.class, new TargetESP());
         moduleManager.modules.put(TargetHUD.class, new TargetHUD());
+        moduleManager.modules.put(Scoreboard.class, new Scoreboard());
         moduleManager.modules.put(Targets.class, new Targets());
         moduleManager.modules.put(TargetStrafe.class, new TargetStrafe());
         moduleManager.modules.put(Tracers.class, new Tracers());

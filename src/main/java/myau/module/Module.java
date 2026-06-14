@@ -3,6 +3,8 @@ package myau.module;
 import myau.Myau;
 import myau.module.modules.render.HUD;
 import myau.util.KeyBindUtil;
+import myau.util.notification.NotificationManager;
+import myau.util.notification.NotificationType;
 
 public abstract class Module {
     protected final String name;
@@ -50,8 +52,10 @@ public abstract class Module {
             this.enabled = enabled;
             if (enabled) {
                 this.onEnabled();
+                NotificationManager.show(this.name, "was enabled.", NotificationType.SUCCESS);
             } else {
                 this.onDisabled();
+                NotificationManager.show(this.name, "was disabled.", NotificationType.ERROR);
             }
         }
     }

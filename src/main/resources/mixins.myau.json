@@ -5,6 +5,9 @@
   "minVersion": "0.7",
   "compatibilityLevel": "JAVA_8",
   "client": [
-    "MixinItemRenderer"
+    "MixinItemRenderer",
+    "MixinInventoryPlayer",
+    "MixinPlayerControllerMP",
+    "IAccessorPlayerControllerMP"
   ]
 }

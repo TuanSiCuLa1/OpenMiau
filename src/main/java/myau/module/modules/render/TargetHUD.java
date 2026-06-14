@@ -47,11 +47,9 @@ public class TargetHUD extends Module {
     private float maxHealth = 0.0F;
     public final ModeProperty style = new ModeProperty("style", 0, new String[]{"MYAU", "CLEAN", "RAVEN", "RAVEN_NEW"});
     public final ModeProperty color = new ModeProperty("color", 0, new String[]{"DEFAULT", "HUD"}, () -> this.style.getValue() == 0 || this.style.getValue() == 2 || this.style.getValue() == 3);
-    public final ModeProperty posX = new ModeProperty("position-x", 1, new String[]{"LEFT", "MIDDLE", "RIGHT"});
-    public final ModeProperty posY = new ModeProperty("position-y", 1, new String[]{"TOP", "MIDDLE", "BOTTOM"});
     public final FloatProperty scale = new FloatProperty("scale", 1.0F, 0.5F, 1.5F);
-    public final IntProperty offX = new IntProperty("offset-x", 0, -255, 255);
-    public final IntProperty offY = new IntProperty("offset-y", 40, -255, 255);
+    public final IntProperty offX = new IntProperty("offset-x", 150, -2000, 2000);
+    public final IntProperty offY = new IntProperty("offset-y", 150, -2000, 2000);
     public final PercentProperty background = new PercentProperty("background", 25, () -> this.style.getValue() == 0);
     public final BooleanProperty head = new BooleanProperty("head", true, () -> this.style.getValue() == 0);
     public final BooleanProperty indicator = new BooleanProperty("indicator", true, () -> this.style.getValue() == 0);
@@ -70,7 +68,7 @@ public class TargetHUD extends Module {
                 && TeamUtil.isEntityLoaded(this.lastTarget)) {
             return this.lastTarget;
         } else {
-            return this.chatPreview.getValue() && mc.currentScreen instanceof GuiChat ? mc.thePlayer : null;
+            return (this.chatPreview.getValue() || mc.currentScreen instanceof GuiChat || mc.currentScreen instanceof myau.ui.clickgui.ClickGui) ? mc.thePlayer : null;
         }
     }
 
@@ -176,23 +174,7 @@ public class TargetHUD extends Module {
                 float headIconOffset = this.head.getValue() && this.headTexture != null ? 25.0F : 0.0F;
                 float barTotalWidth = Math.max(headIconOffset + 70.0F, headIconOffset + 2.0F + barContentWidth + 2.0F);
                 float posX = this.offX.getValue().floatValue() / this.scale.getValue();
-                switch (this.posX.getValue()) {
-                    case 1:
-                        posX += (float) scaledResolution.getScaledWidth() / this.scale.getValue() / 2.0F - barTotalWidth / 2.0F;
-                        break;
-                    case 2:
-                        posX *= -1.0F;
-                        posX += (float) scaledResolution.getScaledWidth() / this.scale.getValue() - barTotalWidth;
-                }
                 float posY = this.offY.getValue().floatValue() / this.scale.getValue();
-                switch (this.posY.getValue()) {
-                    case 1:
-                        posY += (float) scaledResolution.getScaledHeight() / this.scale.getValue() / 2.0F - 13.5F;
-                        break;
-                    case 2:
-                        posY *= -1.0F;
-                        posY += (float) scaledResolution.getScaledHeight() / this.scale.getValue() - 27.0F;
-                }
                 GlStateManager.pushMatrix();
                 GlStateManager.scale(this.scale.getValue(), this.scale.getValue(), 0.0F);
                 GlStateManager.translate(posX, posY, -450.0F);
@@ -238,25 +220,7 @@ public class TargetHUD extends Module {
         int hudHeight = 30;
         ScaledResolution scaledResolution = new ScaledResolution(mc);
         float baseX = this.offX.getValue().floatValue() / this.scale.getValue();
-        switch (this.posX.getValue()) {
-            case 1:
-                baseX += (float) scaledResolution.getScaledWidth() / this.scale.getValue() / 2.0F - hudWidth / 2.0F;
-                break;
-            case 2:
-                baseX *= -1.0F;
-                baseX += (float) scaledResolution.getScaledWidth() / this.scale.getValue() - hudWidth;
-                break;
-        }
         float baseY = this.offY.getValue().floatValue() / this.scale.getValue();
-        switch (this.posY.getValue()) {
-            case 1:
-                baseY += (float) scaledResolution.getScaledHeight() / this.scale.getValue() / 2.0F - hudHeight / 2.0F;
-                break;
-            case 2:
-                baseY *= -1.0F;
-                baseY += (float) scaledResolution.getScaledHeight() / this.scale.getValue() - hudHeight;
-                break;
-        }
 
         float sc = this.scale.getValue();
         GL11.glPushMatrix();
@@ -357,8 +321,8 @@ public class TargetHUD extends Module {
         ScaledResolution scaledResolution = new ScaledResolution(mc);
         int padding = 8;
         int textWidth = mc.fontRendererObj.getStringWidth(name + healthText) + padding;
-        int x = scaledResolution.getScaledWidth() / 2 - textWidth / 2 + (int) this.offX.getValue().floatValue();
-        int y = scaledResolution.getScaledHeight() / 2 + 15 + (int) this.offY.getValue().floatValue();
+        int x = (int) this.offX.getValue().floatValue();
+        int y = (int) this.offY.getValue().floatValue();
         int minX = x - padding;
         int minY = y - padding;
         int maxX = x + textWidth;
@@ -428,8 +392,8 @@ public class TargetHUD extends Module {
 
         String renderText = name + " " + healthText;
         ScaledResolution scaled = new ScaledResolution(mc);
-        int minX = scaled.getScaledWidth() / 2 + (int) this.offX.getValue().floatValue();
-        int minY = scaled.getScaledHeight() / 2 + 15 + (int) this.offY.getValue().floatValue();
+        int minX = (int) this.offX.getValue().floatValue();
+        int minY = (int) this.offY.getValue().floatValue();
         int maxX = minX + mc.fontRendererObj.getStringWidth(renderText) + 12;
         int maxY = minY + 16 + 12;
         Color[] gradient = this.getRavenGradient(targetColor);
@@ -547,6 +511,76 @@ public class TargetHUD extends Module {
                 this.lastAttackTimer.reset();
                 this.lastTarget = (EntityLivingBase) entity;
             }
+        }
+    }
+
+    public static class TargetHUDBounds {
+        public float x, y, width, height;
+        public TargetHUDBounds(float x, float y, float width, float height) {
+            this.x = x;
+            this.y = y;
+            this.width = width;
+            this.height = height;
+        }
+    }
+
+    public TargetHUDBounds getBounds(ScaledResolution scaledResolution) {
+        if (mc.thePlayer == null) return new TargetHUDBounds(150, 150, 100, 30);
+        EntityLivingBase entity = resolveTarget();
+        if (entity == null) entity = mc.thePlayer;
+
+        float sc = this.scale.getValue();
+        float posX = this.offX.getValue().floatValue();
+        float posY = this.offY.getValue().floatValue();
+
+        if (this.style.getValue() == 1) { // CLEAN
+            String targetName = TeamUtil.stripName(entity);
+            String targetPrefix = "Target: ";
+            String healthPrefix = "Health: ";
+            String healthValue = healthFormat.format(entity.getHealth());
+            String status = getCleanStatus(entity);
+            int targetWidth = mc.fontRendererObj.getStringWidth(targetPrefix + targetName + (status.isEmpty() ? "" : " " + status));
+            int healthWidth = mc.fontRendererObj.getStringWidth(healthPrefix + healthValue);
+            int hudWidth = Math.max(98, Math.max(targetWidth, healthWidth) + 14);
+            int hudHeight = 30;
+            return new TargetHUDBounds(posX, posY, hudWidth * sc, hudHeight * sc);
+        } else if (this.style.getValue() == 2) { // RAVEN
+            String name = entity.getDisplayName().getFormattedText();
+            String healthText = " " + healthFormat.format(entity.getHealth());
+            int padding = 8;
+            int textWidth = mc.fontRendererObj.getStringWidth(name + healthText) + padding;
+            int minX = (int) posX - padding;
+            int minY = (int) posY - padding;
+            int maxX = (int) posX + textWidth;
+            int maxY = (int) posY + (mc.fontRendererObj.FONT_HEIGHT + 5) - 6 + padding;
+            return new TargetHUDBounds(minX, minY, (maxX - minX) * sc, (maxY + 13 - minY) * sc);
+        } else if (this.style.getValue() == 3) { // RAVEN_NEW
+            String name = entity.getDisplayName().getFormattedText();
+            String healthText = " " + (int) entity.getHealth();
+            String renderText = name + " " + healthText;
+            int minX = (int) posX;
+            int minY = (int) posY;
+            int maxX = minX + mc.fontRendererObj.getStringWidth(renderText) + 12;
+            int maxY = minY + 16 + 12;
+            return new TargetHUDBounds(minX, minY, (maxX - minX) * sc, (maxY - minY) * sc);
+        } else { // MYAU
+            float abs = entity.getAbsorptionAmount() / 2.0F;
+            float heal = entity.getHealth() / 2.0F + abs;
+            String targetNameText = ChatColors.formatColor(String.format("&r%s&r", TeamUtil.stripName(entity)));
+            int targetNameWidth = mc.fontRendererObj.getStringWidth(targetNameText);
+            String healthText = ChatColors.formatColor(String.format("&r&f%s%s\u2764&r", healthFormat.format(heal), abs > 0.0F ? "&6" : "&c"));
+            int healthTextWidth = mc.fontRendererObj.getStringWidth(healthText);
+            String statusText = ChatColors.formatColor(String.format("&r&l%s&r", "D"));
+            int statusTextWidth = mc.fontRendererObj.getStringWidth(statusText);
+            String healthDiffText = ChatColors.formatColor(String.format("&r%s&r", "0.0"));
+            int healthDiffWidth = mc.fontRendererObj.getStringWidth(healthDiffText);
+            float barContentWidth = Math.max(
+                    (float) targetNameWidth + (this.indicator.getValue() ? 2.0F + (float) statusTextWidth + 2.0F : 0.0F),
+                    (float) healthTextWidth + (this.indicator.getValue() ? 2.0F + (float) healthDiffWidth + 2.0F : 0.0F)
+            );
+            float headIconOffset = this.head.getValue() && this.getSkin(entity) != null ? 25.0F : 0.0F;
+            float barTotalWidth = Math.max(headIconOffset + 70.0F, headIconOffset + 2.0F + barContentWidth + 2.0F);
+            return new TargetHUDBounds(posX, posY, barTotalWidth * sc, 27.0F * sc);
         }
     }
 }
