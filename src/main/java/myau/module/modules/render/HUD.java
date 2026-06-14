@@ -274,22 +274,26 @@ public class HUD extends Module {
     }
 
     private boolean isCategoryHidden(Module module) {
-        if (this.hideCombat.getValue() && (module instanceof AimAssist || module instanceof AutoClicker || module instanceof KillAura || module instanceof Wtap || module instanceof Velocity || module instanceof Freeze || module instanceof Reach || module instanceof TargetStrafe || module instanceof NoHitDelay || module instanceof AntiFireball || module instanceof HitBox || module instanceof MoreKB || module instanceof Refill || module instanceof HitSelect || module instanceof Hitflick || module instanceof ProjectileAimBot || module instanceof TickBase)) {
-            return true;
+        String category = module.getCategory();
+        if (category == null) {
+            return false;
         }
-        if (this.hideMovement.getValue() && (module instanceof AntiAFK || module instanceof Fly || module instanceof Speed || module instanceof LongJump || module instanceof Sprint || module instanceof SafeWalk || module instanceof Jesus || module instanceof Blink || module instanceof NoFall || module instanceof NoSlow || module instanceof KeepSprint || module instanceof Eagle || module instanceof NoJumpDelay || module instanceof AntiVoid)) {
-            return true;
+        switch (category) {
+            case "combat":
+                return this.hideCombat.getValue();
+            case "movement":
+                return this.hideMovement.getValue();
+            case "render":
+                return this.hideRender.getValue();
+            case "player":
+                return this.hidePlayer.getValue();
+            case "misc":
+                return this.hideMisc.getValue();
+            case "latency":
+                return this.hideLatency.getValue();
+            default:
+                return false;
         }
-        if (this.hideRender.getValue() && (module instanceof ESP || module instanceof Chams || module instanceof FullBright || module instanceof Tracers || module instanceof NameTags || module instanceof Xray || module instanceof TargetHUD || module instanceof TargetESP || module instanceof Keystrokes || module instanceof BlockOverlay || module instanceof Indicators || module instanceof BedESP || module instanceof ItemESP || module instanceof ViewClip || module instanceof NoHurtCam || module instanceof HUD || module instanceof GuiModule || module instanceof ChestESP || module instanceof Trajectories || module instanceof Radar)) {
-            return true;
-        }
-        if (this.hidePlayer.getValue() && (module instanceof AutoHeal || module instanceof AutoPot || module instanceof AutoRod || module instanceof AutoTool || module instanceof ChestStealer || module instanceof InvManager || module instanceof InvWalk || module instanceof Scaffold || module instanceof AutoBlockIn || module instanceof AutoBedDef || module instanceof SpeedMine || module instanceof FastPlace || module instanceof GhostHand || module instanceof MCF || module instanceof BreakProgress || module instanceof AntiDebuff)) {
-            return true;
-        }
-        if (this.hideMisc.getValue() && (module instanceof AutoAuth || module instanceof Spammer || module instanceof BedNuker || module instanceof BedwarUtils || module instanceof MurderDetector || module instanceof LightningTracker || module instanceof NoRotate || module instanceof NickHider || module instanceof AntiObbyTrap || module instanceof AntiObfuscate || module instanceof AntiBot || module instanceof AntiCheatDetector || module instanceof HackerDetector || module instanceof RPC || module instanceof AutoAnduril || module instanceof InventoryClicker || module instanceof ClientSpoofer || module instanceof Panic)) {
-            return true;
-        }
-        return this.hideLatency.getValue() && (module instanceof BackTrack || module instanceof LagRange || module instanceof FakeLag);
     }
 
     private String getExhibitionWatermark() {

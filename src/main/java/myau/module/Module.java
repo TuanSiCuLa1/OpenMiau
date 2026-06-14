@@ -98,4 +98,18 @@ public abstract class Module {
 
     public void verifyValue(String string) {
     }
+
+    public String getCategory() {
+        String packageName = this.getClass().getPackage().getName();
+        String prefix = "myau.module.modules.";
+        if (!packageName.startsWith(prefix)) {
+            return null;
+        }
+        String categoryKey = packageName.substring(prefix.length());
+        int nestedPackage = categoryKey.indexOf('.');
+        if (nestedPackage >= 0) {
+            categoryKey = categoryKey.substring(0, nestedPackage);
+        }
+        return categoryKey;
+    }
 }
