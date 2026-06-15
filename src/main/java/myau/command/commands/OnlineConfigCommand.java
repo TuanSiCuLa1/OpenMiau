@@ -90,8 +90,7 @@ public class OnlineConfigCommand extends Command {
         try {
             showMetadata(entry);
             int applied = new OnlineConfigApplier().apply(json);
-            ChatUtil.display(String.format("%sOnline config loaded (&a&o%s&r) &7- applied %d setting(s)&r",
-                    Myau.clientName, entry.getName(), applied));
+            ChatUtil.display("%sOnline config loaded (&a&o%s&r) &7- applied %d setting(s)&r", entry.getName(), applied);
         } catch (Exception e) {
             ChatUtil.display(Myau.clientName + "Failed to load online config: &c" + e.getMessage() + "&r");
         }

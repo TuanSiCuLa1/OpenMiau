@@ -34,7 +34,7 @@ public class ConfigCommand extends Command {
         if (args.size() < 2) {
             String command = args.get(0).toLowerCase(Locale.ROOT);
             ChatUtil.display(
-                    String.format("%sUsage: .%s &oload&r/&osave&r <&oname&r> | .%s &olist&r | .%s &ofolder&r", Myau.clientName, command, command, command)
+                    String.format("%sUsage: .%s &oload&r/&osave&r <&oname&r> | .%s &olist&r | .%s &ofolder&r", command, command, command)
             );
         } else {
             String subCommand = args.get(1);
@@ -47,7 +47,7 @@ public class ConfigCommand extends Command {
                 case "reload":
                     if (args.size() < 3) {
                         ChatUtil.display(
-                                String.format("%sMissing config name (use '&odefault&r' or '&o!&r' to load default config)&r", Myau.clientName)
+                                String.format("%sMissing config name (use '&odefault&r' or '&o!&r' to load default config)&r")
                         );
                         return;
                     }
@@ -68,10 +68,10 @@ public class ConfigCommand extends Command {
                             throw new Exception();
                         }
                         if (configs.length == 0) {
-                            ChatUtil.display(String.format("%sNo configs found (&o%s&r)&r", Myau.clientName, "./config/Myau/"));
+                            ChatUtil.display("%sNo configs found (&o%s&r)&r" , "./config/Myau/");
                         }
                         Arrays.sort(configs, LastModifiedFileComparator.LASTMODIFIED_REVERSE);
-                        ChatUtil.display(String.format("%sConfigs:&r", Myau.clientName));
+                        ChatUtil.display("%sConfigs:&r");
                         for (File file : configs) {
                             String formatted = ChatColors.formatColor(String.format("&7»&r &o%s&r", file.getName()));
                             String config = String.format(".config load %s", FilenameUtils.removeExtension(file.getName()));
@@ -85,7 +85,7 @@ public class ConfigCommand extends Command {
                             );
                         }
                     } catch (Exception e) {
-                        ChatUtil.display(String.format("%sFailed to read (&o%s&r)&r", Myau.clientName, "./config/Myau/"));
+                        ChatUtil.display("%sFailed to read (&o%s&r)&r", "./config/Myau/");
                     }
                     return;
                 case "f":
@@ -95,11 +95,11 @@ public class ConfigCommand extends Command {
                     try {
                         Desktop.getDesktop().open(new File("./config/Myau/"));
                     } catch (Exception e) {
-                        ChatUtil.display(String.format("%sFailed to open (&o%s&r)&r", Myau.clientName, "./config/Myau/"));
+                        ChatUtil.display("%sFailed to open (&o%s&r)&r", "./config/Myau/");
                     }
                     return;
                 default:
-                    ChatUtil.display(String.format("%sInvalid argument (&o%s&r)&r", Myau.clientName, args.get(1)));
+                    ChatUtil.display("%sInvalid argument (&o%s&r)&r", args.get(1));
             }
         }
     }

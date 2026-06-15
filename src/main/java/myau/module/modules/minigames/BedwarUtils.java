@@ -647,8 +647,8 @@ public class BedwarUtils extends Module {
                         if (!this.trackedPearls.contains(enderPearl)) {
                             this.trackedPearls.add(enderPearl);
                             if (this.alertOnPearl.getValue()) {
-                                ChatUtil.display(String.format("%s%s: &fDetected &5Ender Pearl&r &e&l⚠&r",
-                                        Myau.clientName, this.getName()));
+                                ChatUtil.display("%s%s: &fDetected &5Ender Pearl&r &e&l⚠&r",
+                                        Myau.clientName, this.getName());
                                 pearl = true;
                             }
                             if (this.marcoOnPreal.getValue()
@@ -695,7 +695,7 @@ public class BedwarUtils extends Module {
                                     || cooldown + (long) this.alertFrequency.getValue() * 1000L <= millis) {
                                 this.alertCooldowns.put(name, millis);
                                 ChatUtil.display(
-                                        String.format("%s%s: %s&r &fhas &5Ender Pearl&r &e&l⚠&r", Myau.clientName,
+                                        String.format("%s%s: %s&r &fhas &5Ender Pearl&r &e&l⚠&r",
                                                 this.getName(), text));
                                 pearl = true;
                             }

@@ -18,23 +18,23 @@ public class HideCommand extends Command {
     public void runCommand(ArrayList<String> args) {
         if (args.size() < 2) {
             ChatUtil.display(
-                    String.format("%sUsage: .%s <&omodule&r>&r", Myau.clientName, args.get(0).toLowerCase(Locale.ROOT))
+                    String.format("%sUsage: .%s <&omodule&r>&r", args.get(0).toLowerCase(Locale.ROOT))
             );
         } else if (!args.get(1).equals("*")) {
             Module module = Myau.moduleManager.getModule(args.get(1));
             if (module == null) {
-                ChatUtil.display(String.format("%sModule &o%s&r not found&r", Myau.clientName, args.get(1)));
+                ChatUtil.display("%sModule &o%s&r not found&r", args.get(1));
             } else if (module.isHidden()) {
-                ChatUtil.display(String.format("%s&o%s&r is already hidden in HUD&r", Myau.clientName, module.getName()));
+                ChatUtil.display("%s&o%s&r is already hidden in HUD&r", module.getName());
             } else {
                 module.setHidden(true);
-                ChatUtil.display(String.format("%s&o%s&r has been hidden in HUD&r", Myau.clientName, module.getName()));
+                ChatUtil.display("%s&o%s&r has been hidden in HUD&r", module.getName());
             }
         } else {
             for (Module module : Myau.moduleManager.modules.values()) {
                 module.setHidden(true);
             }
-            ChatUtil.display(String.format("%sAll modules have been hidden in HUD&r", Myau.clientName));
+            ChatUtil.display(("%sAll modules have been hidden in HUD&r"));
         }
     }
 }

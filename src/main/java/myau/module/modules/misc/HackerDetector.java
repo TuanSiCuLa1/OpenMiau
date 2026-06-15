@@ -148,7 +148,7 @@ public class HackerDetector extends Module implements ClientAntiCheatContext {
         int maxFlagCount = this.maxFlagsFor(cheatName);
         int lastAlert = this.alertCooldowns.getOrDefault(flagKey, -ALERT_COOLDOWN_SECONDS);
         if (flagData[0] >= maxFlagCount && currentTime - lastAlert >= ALERT_COOLDOWN_SECONDS) {
-            ChatUtil.display(String.format(
+            ChatUtil.display(
                     "%s%s%s%s failed %s%s",
                     Myau.clientName,
                     EnumChatFormatting.RED,
@@ -156,7 +156,7 @@ public class HackerDetector extends Module implements ClientAntiCheatContext {
                     EnumChatFormatting.GRAY,
                     EnumChatFormatting.RED,
                     cheatName
-            ));
+            );
             if (this.sound.getValue()) {
                 mc.thePlayer.playSound("random.orb", 0.3F, 1.0F);
             }
