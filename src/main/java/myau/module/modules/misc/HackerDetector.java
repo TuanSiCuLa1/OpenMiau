@@ -150,7 +150,6 @@ public class HackerDetector extends Module implements ClientAntiCheatContext {
         if (flagData[0] >= maxFlagCount && currentTime - lastAlert >= ALERT_COOLDOWN_SECONDS) {
             ChatUtil.display(
                     "%s%s%s%s failed %s%s",
-                    Myau.clientName,
                     EnumChatFormatting.RED,
                     playerName,
                     EnumChatFormatting.GRAY,
