@@ -1,11 +1,11 @@
 package myau.ui.clickgui;
 
+import myau.module.modules.render.ClickGUI;
 import myau.ui.clickgui.components.Component;
 import myau.ui.clickgui.components.impl.BindComponent;
 import myau.ui.clickgui.components.impl.CategoryComponent;
 import myau.ui.clickgui.components.impl.ModuleComponent;
 import myau.ui.clickgui.components.impl.SearchBarComponent;
-import myau.module.modules.render.GuiModule;
 import myau.util.shader.BlurUtils;
 import myau.util.Timer;
 import myau.util.shader.RoundedUtils;
@@ -27,7 +27,6 @@ public class ClickGui extends GuiScreen {
     private ScaledResolution sr;
     public static ArrayList<CategoryComponent> categories;
 
-    // Giao diện Config Window mới
     private ConfigWindow configWindow;
 
     private int actualScreenWidth;
@@ -37,7 +36,7 @@ public class ClickGui extends GuiScreen {
 
     public ClickGui() {
         categories = new ArrayList<>();
-        String[] values = new String[]{"Combat", "Target", "Movement", "Player", "Render", "Themes", "Misc", "Latency", "Search", "Minigames"};
+        String[] values = new String[]{"Combat", "Target", "Movement", "Player", "Render", "Themes", "Misc", "Latency", "Config", "Search", "Minigames"};
 
         float startX = 15;
         float marginX = 105;
@@ -54,6 +53,35 @@ public class ClickGui extends GuiScreen {
         (this.blurSmooth = this.backgroundFade = new Timer(500.0F)).start();
     }
 
+    private void updateAutoLayout(float delta) {
+        float startX = 15, startY = 15;
+        float marginX = 105, marginY = 10;
+
+        for (int col = 0; col < 15; col++) {
+            final int currentCol = col;
+            List<CategoryComponent> inCol = new ArrayList<>();
+            for (CategoryComponent c : categories) {
+                int cCol = Math.round((c.getX() - startX) / marginX);
+                if (cCol == currentCol) inCol.add(c);
+            }
+            inCol.sort(Comparator.comparingDouble(CategoryComponent::getY));
+
+            float currentY = startY;
+            for (CategoryComponent c : inCol) {
+                if (!c.dragging) {
+                    c.setY(lerp(c.getY(), currentY, 0.015f * delta), false);
+                } else {
+                    currentY = c.getY();
+                }
+                currentY += (c.lastHeight - c.getY()) + marginY;
+            }
+        }
+    }
+
+    private float lerp(float start, float end, float delta) {
+        return start + (end - start) * delta;
+    }
+
     @Override
     public void initGui() {
         super.initGui();
@@ -67,6 +95,7 @@ public class ClickGui extends GuiScreen {
             categoryComponent.reloadModules();
         }
 
+        // Khởi tạo ConfigWindow nếu chưa có (Để góc dưới cùng bên phải)
         if (configWindow == null) {
             configWindow = new ConfigWindow(actualScreenWidth - 350, actualScreenHeight - 250);
         } else {
@@ -98,7 +127,7 @@ public class ClickGui extends GuiScreen {
 
         updateAutoLayout(delta);
 
-        GuiModule guiModule = (GuiModule) myau.Myau.moduleManager.modules.get(GuiModule.class);
+        ClickGUI guiModule = (ClickGUI) myau.Myau.moduleManager.modules.get(ClickGUI.class);
         if (guiModule != null && guiModule.blur.getValue()) {
             BlurUtils.prepareBlur();
             RoundedUtils.drawRound(0, 0, this.width, this.height, 0.0f, true, Color.black);
@@ -196,35 +225,6 @@ public class ClickGui extends GuiScreen {
                 category.onScroll(wheelInput);
             }
         }
-    }
-
-    private void updateAutoLayout(float delta) {
-        float startX = 15, startY = 15;
-        float marginX = 105, marginY = 10;
-
-        for (int col = 0; col < 15; col++) {
-            final int currentCol = col;
-            List<CategoryComponent> inCol = new ArrayList<>();
-            for (CategoryComponent c : categories) {
-                int cCol = Math.round((c.getX() - startX) / marginX);
-                if (cCol == currentCol) inCol.add(c);
-            }
-            inCol.sort(Comparator.comparingDouble(CategoryComponent::getY));
-
-            float currentY = startY;
-            for (CategoryComponent c : inCol) {
-                if (!c.dragging) {
-                    c.setY(lerp(c.getY(), currentY, 0.015f * delta), false);
-                } else {
-                    currentY = c.getY();
-                }
-                currentY += (c.lastHeight - c.getY()) + marginY;
-            }
-        }
-    }
-
-    private float lerp(float start, float end, float delta) {
-        return start + (end - start) * delta;
     }
 
     @Override
