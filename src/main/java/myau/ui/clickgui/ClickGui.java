@@ -7,7 +7,7 @@ import myau.ui.clickgui.components.impl.ModuleComponent;
 import myau.ui.clickgui.components.impl.OnlineConfigComponent;
 import myau.config.online.OnlineConfigEntry;
 import myau.util.Timer;
-import myau.module.modules.render.GuiModule;
+import myau.module.modules.render.ClickGUI;
 import myau.util.shader.BlurUtils;
 import myau.util.shader.RoundedUtils;
 import net.minecraft.client.Minecraft;
@@ -97,7 +97,7 @@ public class ClickGui extends GuiScreen {
 
     public void drawScreen(int x, int y, float p) {
         // Draw background blur
-        GuiModule guiModule = (GuiModule) myau.Myau.moduleManager.modules.get(GuiModule.class);
+        ClickGUI guiModule = (ClickGUI) myau.Myau.moduleManager.modules.get(ClickGUI.class);
         if (guiModule != null && guiModule.blur.getValue()) {
             BlurUtils.prepareBlur();
             RoundedUtils.drawRound(0, 0, this.width, this.height, 0.0f, true, Color.black);
