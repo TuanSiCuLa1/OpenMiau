@@ -6,21 +6,21 @@ import myau.ui.clickgui.ClickGui;
 import net.minecraft.client.Minecraft;
 import org.lwjgl.input.Keyboard;
 
-public class GuiModule extends Module {
+public class ClickGUI extends Module {
     private static final Minecraft mc = Minecraft.getMinecraft();
     private ClickGui clickGui;
 
     public final BooleanProperty blur = new BooleanProperty("Blur", true);
 
-    public GuiModule() {
-        super("ClickGui", false);
+    public ClickGUI() {
+        super("ClickGUI", false);
         setKey(Keyboard.KEY_RSHIFT);
     }
 
     @Override
     public void onEnabled() {
         setEnabled(false);
-        if(clickGui == null){
+        if (clickGui == null) {
             clickGui = new ClickGui();
         }
         mc.displayGuiScreen(clickGui);
