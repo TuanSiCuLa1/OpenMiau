@@ -359,7 +359,7 @@ public class KillAura extends Module {
         this.mode = new ModeProperty("mode", 0, new String[]{"SINGLE", "SWITCH"});
         this.sort = new ModeProperty("sort", 0, new String[]{"DISTANCE", "HEALTH", "HURT_TIME", "FOV"});
         this.autoBlock = new ModeProperty(
-                "auto-block", 2, new String[]{"NONE", "VANILLA", "SPOOF", "HYPIXEL", "BLINK", "INTERACT", "SWAP", "LEGIT", "FAKE", "SMART"}
+                "auto-block", 2, new String[]{"NONE", "VANILLA", "SPOOF", "HYPIXEL", "BLINK", "INTERACT", "SWAP", "LEGIT", "FAKE", "SMART", "RIGHT_HOLD"}
         );
         this.autoBlockRequirePress = new BooleanProperty("auto-block-require-press", false);
         this.autoBlockMinCPS = new FloatProperty("auto-block-min-aps", 8.0F, 1.0F, 20.0F);
@@ -427,7 +427,8 @@ public class KillAura extends Module {
                     || this.autoBlock.getValue() == 5 // INTERACT
                     || this.autoBlock.getValue() == 6 // SWAP
                     || this.autoBlock.getValue() == 7 // LEGIT
-                    || this.autoBlock.getValue() == 9); // SMART
+                    || this.autoBlock.getValue() == 9 // SMART
+                    || this.autoBlock.getValue() == 10);
         } else {
             return false;
         }
@@ -748,6 +749,23 @@ public class KillAura extends Module {
                                 this.isBlocking = false;
                                 this.fakeBlockState = false;
                                 this.blockTick = 0;
+                            }
+                            break;
+                        case 10:
+                            if (this.hasValidTarget() && PlayerUtil.isUsingItem()) {
+                                if (!this.isPlayerBlocking() && !Myau.playerStateManager.digging && !Myau.playerStateManager.placing) {
+                                    swap = true;
+                                }
+                                Myau.blinkManager.setBlinkState(false, BlinkModules.AUTO_BLOCK);
+                                this.isBlocking = true;
+                                this.fakeBlockState = false;
+                            } else {
+                                Myau.blinkManager.setBlinkState(false, BlinkModules.AUTO_BLOCK);
+                                if (this.isPlayerBlocking() && !Myau.playerStateManager.digging && !Myau.playerStateManager.placing) {
+                                    this.stopBlock();
+                                }
+                                this.isBlocking = false;
+                                this.fakeBlockState = false;
                             }
                             break;
                     }
@@ -1153,7 +1171,8 @@ public class KillAura extends Module {
                 || this.autoBlock.getValue() == 4
                 || this.autoBlock.getValue() == 5
                 || this.autoBlock.getValue() == 6
-                || this.autoBlock.getValue() == 7;
+                || this.autoBlock.getValue() == 7
+                || this.autoBlock.getValue() == 10;
         if (!this.autoBlock.getName().equals(value)) {
             if (this.swingRange.getName().equals(value)) {
                 if (this.swingRange.getValue() < this.attackRange.getValue()) {

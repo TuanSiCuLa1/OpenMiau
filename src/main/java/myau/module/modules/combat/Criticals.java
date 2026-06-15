@@ -5,6 +5,7 @@ import myau.event.EventTarget;
 import myau.event.types.EventType;
 import myau.events.AttackEvent;
 import myau.events.PacketEvent;
+import myau.events.UpdateEvent; // Cần import UpdateEvent
 import myau.mixin.IAccessorC03PacketPlayer;
 import myau.module.Module;
 import myau.module.modules.movement.Fly;
@@ -14,15 +15,23 @@ import myau.property.properties.ModeProperty;
 import myau.util.PacketUtil;
 import myau.util.TimerUtil;
 import net.minecraft.client.Minecraft;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.network.play.client.C03PacketPlayer;
 
 public class Criticals extends Module {
     private static final Minecraft mc = Minecraft.getMinecraft();
-    public final ModeProperty mode = new ModeProperty("mode", 0, new String[]{"Packet", "NCPPacket", "OldBlocksMC", "OldBlocksMC2", "NoGround", "Hop", "TPHop", "Jump", "LowJump", "CustomMotion", "Visual"});
+
+    // Thêm DistanceJump vào vị trí index 11
+    public final ModeProperty mode = new ModeProperty("mode", 0, new String[]{"Packet", "NCPPacket", "OldBlocksMC", "OldBlocksMC2", "NoGround", "Hop", "TPHop", "Jump", "LowJump", "CustomMotion", "Visual", "DistanceJump"});
     public final IntProperty delay = new IntProperty("delay", 0, 0, 500);
     public final IntProperty hurtTime = new IntProperty("hurt-time", 10, 0, 10);
     public final FloatProperty customMotionY = new FloatProperty("custom-y", 0.2F, 0.01F, 0.42F);
+
+    // Thêm 2 property cho DistanceJump (Hiển thị khi mode = DistanceJump)
+    public final FloatProperty minJumpDist = new FloatProperty("min-jump-dist", 4.0F, 0.0F, 50.0F, () -> (Integer) this.mode.getValue() == 11);
+    public final FloatProperty maxJumpDist = new FloatProperty("max-jump-dist", 10.0F, 0.0F, 50.0F, () -> (Integer) this.mode.getValue() == 11);
+
     private final TimerUtil timer = new TimerUtil();
 
     public Criticals() {
@@ -36,11 +45,54 @@ public class Criticals extends Module {
     }
 
     @EventTarget
+    public void onUpdate(UpdateEvent event) {
+        // Xử lý logic tự động nhảy cho DistanceJump
+        if (this.isEnabled() && (Integer) this.mode.getValue() == 11) {
+            if (mc.thePlayer == null || mc.theWorld == null) return;
+
+            EntityLivingBase target = null;
+            double minDistance = Double.MAX_VALUE;
+
+            // Tìm mục tiêu sống gần nhất (không phải bản thân, còn sống, và có thể nhìn thấy)
+            for (Entity entity : mc.theWorld.loadedEntityList) {
+                if (entity instanceof EntityLivingBase && entity != mc.thePlayer && entity.isEntityAlive()) {
+                    EntityLivingBase livingBase = (EntityLivingBase) entity;
+                    if (mc.thePlayer.canEntityBeSeen(livingBase)) {
+                        double distance = mc.thePlayer.getDistanceToEntity(livingBase);
+                        if (distance < minDistance) {
+                            minDistance = distance;
+                            target = livingBase;
+                        }
+                    }
+                }
+            }
+
+            if (target != null) {
+                double distance = mc.thePlayer.getDistanceToEntity(target);
+
+                // Nếu mục tiêu trong khoảng cài đặt và người chơi đang đứng trên mặt đất hợp lệ -> Nhảy
+                if (distance >= (Float) this.minJumpDist.getValue() && distance <= (Float) this.maxJumpDist.getValue()) {
+                    if (mc.thePlayer.onGround && !mc.thePlayer.isOnLadder() && !mc.thePlayer.isInWater() && !mc.thePlayer.isInLava()) {
+                        mc.thePlayer.jump();
+                    }
+                }
+            }
+        }
+    }
+
+    @EventTarget
     public void onAttack(AttackEvent event) {
         if (this.isEnabled()) {
             if (mc.thePlayer != null && mc.theWorld != null) {
                 if (event.getTarget() instanceof EntityLivingBase) {
                     EntityLivingBase target = (EntityLivingBase) event.getTarget();
+
+                    // Xử lý riêng biệt cho DistanceJump Particle
+                    if ((Integer) this.mode.getValue() == 11) {
+                        mc.thePlayer.onCriticalHit(target); // Ép hiển thị Particle Crit
+                        return; // Kết thúc sớm để không chạy vào logic delay bên dưới
+                    }
+
                     if (mc.thePlayer.onGround) {
                         if (!mc.thePlayer.isUsingItem()) {
                             if (!mc.thePlayer.isInWater() && !mc.thePlayer.isInLava()) {
@@ -98,6 +150,7 @@ public class Criticals extends Module {
                                                         break;
                                                     case 10:
                                                         mc.thePlayer.attackTargetEntityWithCurrentItem(target);
+                                                        break;
                                                 }
 
                                                 this.timer.reset();
@@ -125,7 +178,8 @@ public class Criticals extends Module {
     }
 
     public String[] getSuffix() {
-        String[] modes = new String[]{"Packet", "NCPPacket", "OldBlocksMC", "OldBlocksMC2", "NoGround", "Hop", "TPHop", "Jump", "LowJump", "CustomMotion", "Visual"};
+        // Cập nhật Suffix để render đúng tên mode
+        String[] modes = new String[]{"Packet", "NCPPacket", "OldBlocksMC", "OldBlocksMC2", "NoGround", "Hop", "TPHop", "Jump", "LowJump", "CustomMotion", "Visual", "DistanceJump"};
         return new String[]{modes[(Integer) this.mode.getValue()]};
     }
 }
