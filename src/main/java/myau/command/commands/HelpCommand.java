@@ -15,10 +15,10 @@ public class HelpCommand extends Command {
     @Override
     public void runCommand(ArrayList<String> args) {
         if (!Myau.moduleManager.modules.isEmpty()) {
-            ChatUtil.sendFormatted(String.format("%sCommands:&r", Myau.clientName));
+            ChatUtil.display(String.format("%sCommands:&r", Myau.clientName));
             for (Command command : Myau.commandManager.commands) {
                 if (!(command instanceof ModuleCommand)) {
-                    ChatUtil.sendFormatted(String.format("&7»&r .%s&r", String.join(" &7/&r .", command.names)));
+                    ChatUtil.display(String.format("&7»&r .%s&r", String.join(" &7/&r .", command.names)));
                 }
             }
         }

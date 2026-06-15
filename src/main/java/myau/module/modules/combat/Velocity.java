@@ -240,7 +240,7 @@ public class Velocity extends Module {
                         this.hasReceivedVelocity = true;
                     }
                     if (this.debugLog.getValue()) {
-                        ChatUtil.sendFormatted(
+                        ChatUtil.display(
                                 String.format(
                                         "%sVelocity (&otick: %d, x: %.2f, y: %.2f, z: %.2f&r)&r",
                                         Myau.clientName,
@@ -268,7 +268,7 @@ public class Velocity extends Module {
                         event.setCancelled(true);
                     }
                     if (this.debugLog.getValue()) {
-                        ChatUtil.sendFormatted(
+                        ChatUtil.display(
                                 String.format(
                                         "%sExplosion (&otick: %d, x: %.2f, y: %.2f, z: %.2f&r)&r",
                                         Myau.clientName,

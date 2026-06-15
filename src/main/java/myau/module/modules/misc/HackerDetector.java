@@ -1,9 +1,5 @@
 package myau.module.modules.misc;
 
-import myau.module.modules.combat.KillAura;
-import myau.module.modules.movement.NoFall;
-import myau.module.modules.player.Scaffold;
-import myau.module.modules.combat.Velocity;
 import myau.Myau;
 import myau.clientanticheat.AimDuplicateLookCheck;
 import myau.clientanticheat.AimModulo360Check;
@@ -152,7 +148,7 @@ public class HackerDetector extends Module implements ClientAntiCheatContext {
         int maxFlagCount = this.maxFlagsFor(cheatName);
         int lastAlert = this.alertCooldowns.getOrDefault(flagKey, -ALERT_COOLDOWN_SECONDS);
         if (flagData[0] >= maxFlagCount && currentTime - lastAlert >= ALERT_COOLDOWN_SECONDS) {
-            ChatUtil.sendFormatted(String.format(
+            ChatUtil.display(String.format(
                     "%s%s%s%s failed %s%s",
                     Myau.clientName,
                     EnumChatFormatting.RED,

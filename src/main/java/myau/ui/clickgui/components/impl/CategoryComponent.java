@@ -50,7 +50,7 @@ public class CategoryComponent {
     private static final int REGULAR_OUTLINE2 = new Color(97, 67, 133).getRGB();
     private static final int CATEGORY_NAME_COLOR = new Color(220, 220, 220).getRGB();
 
-    private float lastHeight;
+    public float lastHeight;
     private float lastNamePos;
     private float animationStartNamePos;
     public float moduleY;
@@ -85,7 +85,7 @@ public class CategoryComponent {
 
     public CategoryComponent(String category) {
         this.category = category;
-        this.width = 92;
+        this.width = this.category.equalsIgnoreCase("Config") ? 135 : 92;
         this.x = 5;
         this.moduleY = this.y = 5;
         this.titleHeight = 13;
@@ -110,34 +110,27 @@ public class CategoryComponent {
     }
 
     public void reloadModules() {
-        if (this.category.equalsIgnoreCase("Config")) {
-            // Config category: load online configs AND local config management
-            Map<String, Boolean> openStates = captureModuleOpenStates();
-            this.modules.clear();
-            this.titleHeight = 13;
-            float moduleRenderY = this.titleHeight + 3;
-
-            // Add local config management components first
-            moduleRenderY = addLocalConfigComponents(moduleRenderY, openStates);
-
-            // Then load modules from ModuleManager (if any)
-            List<Module> mods = myau.Myau.moduleManager.getModulesByCategory().get(this.category);
-            if (mods != null) {
-                for (Module mod : mods) {
-                    ModuleComponent component = new ModuleComponent(mod, this, moduleRenderY);
-                    component.restoreOpenState(Boolean.TRUE.equals(openStates.get(mod.getName())));
-                    this.modules.add(component);
-                    moduleRenderY += 16;
-                }
-            }
-
-            syncAfterModuleReload();
-            return;
-        }
         Map<String, Boolean> openStates = captureModuleOpenStates();
         this.modules.clear();
         this.titleHeight = 13;
         float moduleRenderY = this.titleHeight + 3;
+
+        if (this.category.equalsIgnoreCase("Search")) {
+            SearchBarComponent searchBar = new SearchBarComponent(this, moduleRenderY);
+            this.modules.add(searchBar);
+            syncAfterModuleReload();
+            return;
+        }
+
+        if (this.category.equalsIgnoreCase("Themes")) {
+            for (myau.util.Themes theme : myau.util.Themes.values()) {
+                ThemeSelectComponent tsc = new ThemeSelectComponent(this, moduleRenderY, theme);
+                this.modules.add(tsc);
+                moduleRenderY += tsc.getHeightF();
+            }
+            syncAfterModuleReload();
+            return;
+        }
 
         List<Module> mods = myau.Myau.moduleManager.getModulesByCategory().get(this.category);
         if (mods != null) {
@@ -148,14 +141,51 @@ public class CategoryComponent {
                 moduleRenderY += 16;
             }
         }
-
         syncAfterModuleReload();
     }
 
-    private float addLocalConfigComponents(float moduleRenderY, Map<String, Boolean> openStates) {
-        moduleRenderY += 16;
+    public void updateSearchResults(String query) {
+        if (!this.category.equalsIgnoreCase("Search")) return;
 
-        return moduleRenderY;
+        Map<String, Boolean> openStates = captureModuleOpenStates();
+
+        // Lấy lại cái SearchBar (luôn ở vị trí 0)
+        Component searchBar = null;
+        if (!this.modules.isEmpty() && this.modules.get(0) instanceof SearchBarComponent) {
+            searchBar = this.modules.get(0);
+        }
+
+        // Xóa sạch danh sách hiện tại
+        this.modules.clear();
+
+        float moduleRenderY = this.titleHeight + 3;
+
+        // Add lại SearchBar lên đầu
+        if (searchBar != null) {
+            this.modules.add(searchBar);
+            moduleRenderY += searchBar.getHeightF();
+        }
+
+        // Quét toàn bộ module trong Client
+        if (query != null && !query.trim().isEmpty()) {
+            String lowerQuery = query.toLowerCase().replace(" ", "");
+
+            for (Module mod : myau.Myau.moduleManager.modules.values()) {
+                // Bỏ qua các module dạng GUI
+                if (mod.getName().equalsIgnoreCase("ClickGUI") || mod.getName().equalsIgnoreCase("GUI")) continue;
+
+                // Nếu tên module chứa từ khóa tìm kiếm
+                if (mod.getName().toLowerCase().replace(" ", "").contains(lowerQuery)) {
+                    ModuleComponent component = new ModuleComponent(mod, this, moduleRenderY);
+                    component.restoreOpenState(Boolean.TRUE.equals(openStates.get(mod.getName())));
+                    this.modules.add(component);
+                    moduleRenderY += component.getHeightF(); // Cộng dồn chiều cao
+                }
+            }
+        }
+
+        // Cập nhật lại thanh Scroll cho mượt
+        syncAfterModuleReload();
     }
 
     private Map<String, Boolean> captureModuleOpenStates() {
@@ -260,7 +290,7 @@ public class CategoryComponent {
     }
 
     public void render(FontRenderer renderer) {
-        this.width = 92;
+        this.width = this.category.equalsIgnoreCase("Config") ? 135 : 92;
         Font titleRenderer = Fonts.MINECRAFT.get(24);
 
         if (smoothTimer != null && System.currentTimeMillis() - smoothTimer.last >= 280) {
@@ -543,7 +573,8 @@ public class CategoryComponent {
 
     private static Map<String, CategoryIconStacks> buildCategoryIconStacks() {
         Map<String, CategoryIconStacks> iconStacks = new HashMap<>();
-        String[] categories = new String[]{"Combat", "Movement", "Render", "Player", "Misc", "Latency", "Minigames", "Target", "Config"};
+        // 👉 FIX: Thêm chữ "Search" vào mảng này
+        String[] categories = new String[]{"Combat", "Movement", "Render", "Player", "Misc", "Latency", "Minigames", "Target", "Search", "Themes"};
         for (String cat : categories) {
             ItemStack normalStack = createCategoryIconStack(cat, false);
             ItemStack activeStack = createCategoryIconStack(cat, true);
@@ -570,10 +601,13 @@ public class CategoryComponent {
             itemStack = new ItemStack(Items.compass);
         } else if (category.equalsIgnoreCase("Minigames")) {
             itemStack = new ItemStack(Items.gold_ingot);
-        } else if (category.equalsIgnoreCase("Config")) {
-            itemStack = new ItemStack(Items.writable_book);
         } else if (category.equalsIgnoreCase("Target")) {
             itemStack = new ItemStack(Items.arrow);
+            // ... (các else if cũ)
+        } else if (category.equalsIgnoreCase("Search")) {
+            itemStack = new ItemStack(Items.name_tag);
+        } else if (category.equalsIgnoreCase("Themes")) {
+            itemStack = new ItemStack(Items.dye, 1, 9);
         } else {
             return null;
         }

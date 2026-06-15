@@ -16,9 +16,9 @@ public class ListCommand extends Command {
     @Override
     public void runCommand(ArrayList<String> args) {
         if (!Myau.moduleManager.modules.isEmpty()) {
-            ChatUtil.sendFormatted(String.format("%sModules:&r", Myau.clientName));
+            ChatUtil.display(String.format("%sModules:&r", Myau.clientName));
             for (Module module : Myau.moduleManager.modules.values()) {
-                ChatUtil.sendFormatted(String.format("%s»&r %s&r", module.isHidden() ? "&8" : "&7", module.formatModule()));
+                ChatUtil.display(String.format("%s»&r %s&r", module.isHidden() ? "&8" : "&7", module.formatModule()));
             }
         }
     }

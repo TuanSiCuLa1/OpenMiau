@@ -23,7 +23,7 @@ public class CommandManager {
         List<String> params = Arrays.asList(string.substring(1).trim().split("\\s+"));
         ArrayList<String> arrayList = new ArrayList<>(params);
         if (params.get(0).isEmpty()) {
-            ChatUtil.sendFormatted(String.format("%sUnknown command&r", Myau.clientName).replace("&", "§"));
+            ChatUtil.display(String.format("%sUnknown command&r", Myau.clientName).replace("&", "§"));
         } else {
             for (Command command : Myau.commandManager.commands) {
                 for (String name : command.names) {
@@ -33,7 +33,7 @@ public class CommandManager {
                     }
                 }
             }
-            ChatUtil.sendFormatted(String.format("%sUnknown command (&o%s&r)&r", Myau.clientName, params.get(0)).replace("&", "§"));
+            ChatUtil.display(String.format("%sUnknown command (&o%s&r)&r", Myau.clientName, params.get(0)).replace("&", "§"));
         }
     }
 

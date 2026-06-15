@@ -27,9 +27,9 @@ public class IgnCommand extends Command {
             if (!StringUtils.isNullOrEmpty(username)) {
                 try {
                     Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(username), null);
-                    ChatUtil.sendFormatted(String.format("%sYour username has been copied to the clipboard (&o%s&r)&r", Myau.clientName, username));
+                    ChatUtil.display(String.format("%sYour username has been copied to the clipboard (&o%s&r)&r", Myau.clientName, username));
                 } catch (Exception e) {
-                    ChatUtil.sendFormatted(String.format("%sFailed to copy&r", Myau.clientName));
+                    ChatUtil.display(String.format("%sFailed to copy&r", Myau.clientName));
                 }
             }
         }

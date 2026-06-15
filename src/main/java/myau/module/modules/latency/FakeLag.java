@@ -330,7 +330,7 @@ public class FakeLag extends Module {
 
     private void dynamicMessage(String message) {
         if (dynamicDebug.getValue()) {
-            myau.util.ChatUtil.sendFormatted(Myau.clientName + this.getName() + ": &7" + message);
+            myau.util.ChatUtil.display(Myau.clientName + this.getName() + ": &7" + message);
         }
     }
 

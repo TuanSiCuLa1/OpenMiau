@@ -22,9 +22,9 @@ public class ModuleCommand extends Command {
         if (args.size() >= 2) {
             Property<?> property = Myau.propertyManager.getProperty(module, args.get(1));
             if (property == null) {
-                ChatUtil.sendFormatted(String.format("%s%s has no property &o%s&r", Myau.clientName, module.getName(), args.get(1)));
+                ChatUtil.display(String.format("%s%s has no property &o%s&r", Myau.clientName, module.getName(), args.get(1)));
             } else if (args.size() < 3 && !(property instanceof BooleanProperty)) {
-                ChatUtil.sendFormatted(
+                ChatUtil.display(
                         String.format(
                                 "%s%s: &o%s&r is set to %s&r (%s)&r",
                                 Myau.clientName,
@@ -38,14 +38,14 @@ public class ModuleCommand extends Command {
                 String newValue = args.size() < 3 ? null : String.join(" ", args.subList(2, args.size()));
                 try {
                     if (property.parseString(newValue)) {
-                        ChatUtil.sendFormatted(
+                        ChatUtil.display(
                                 String.format("%s%s: &o%s&r has been set to %s&r", Myau.clientName, module.getName(), property.getName(), property.formatValue())
                         );
                         return;
                     }
                 } catch (Exception e) {
                 }
-                ChatUtil.sendFormatted(
+                ChatUtil.display(
                         String.format("%sInvalid value for property &o%s&r (%s)&r", Myau.clientName, property.getName(), property.getValuePrompt())
                 );
             }
@@ -54,14 +54,14 @@ public class ModuleCommand extends Command {
             if (properties != null) {
                 List<Property<?>> visible = properties.stream().filter(Property::isVisible).collect(Collectors.toList());
                 if (!visible.isEmpty()) {
-                    ChatUtil.sendFormatted(String.format("%s%s:&r", Myau.clientName, module.formatModule()));
+                    ChatUtil.display(String.format("%s%s:&r", Myau.clientName, module.formatModule()));
                     for (Property<?> property : visible) {
-                        ChatUtil.sendFormatted(String.format("&7»&r %s: %s&r", property.getName(), property.formatValue()));
+                        ChatUtil.display(String.format("&7»&r %s: %s&r", property.getName(), property.formatValue()));
                     }
                     return;
                 }
             }
-            ChatUtil.sendFormatted(String.format("%s%s has no properties&r", Myau.clientName, module.formatModule()));
+            ChatUtil.display(String.format("%s%s has no properties&r", Myau.clientName, module.formatModule()));
         }
     }
 }

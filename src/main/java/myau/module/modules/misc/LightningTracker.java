@@ -50,7 +50,7 @@ public class LightningTracker extends Module {
                 double z = (double) packet.func_149049_f() / 32.0;
                 double distance = mc.thePlayer.getDistance(x, y, z);
                 String direction = this.getDirection(mc.thePlayer.posX, mc.thePlayer.posZ, x, z);
-                ChatUtil.sendFormatted(
+                ChatUtil.display(
                         String.format(
                                 "&8[&e%s&8] &7X: &f&l%d&r &7Y: &f&l%d&r &7Z: &f&l%d&r &7D: &6&l%d&r &6%s&r",
                                 this.getName(),

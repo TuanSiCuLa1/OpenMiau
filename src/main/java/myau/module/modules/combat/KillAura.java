@@ -886,7 +886,7 @@ public class KillAura extends Module {
                     float packet = ((S06PacketUpdateHealth) event.getPacket()).getHealth() - mc.thePlayer.getHealth();
                     if (packet != 0.0F && this.lastTickProcessed != mc.thePlayer.ticksExisted) {
                         this.lastTickProcessed = mc.thePlayer.ticksExisted;
-                        ChatUtil.sendFormatted(
+                        ChatUtil.display(
                                 String.format(
                                         "%sHealth: %s&l%s&r (&otick: %d&r)&r",
                                         Myau.clientName,
@@ -905,7 +905,7 @@ public class KillAura extends Module {
                                 float diff = (Float) watchableObject.getObject() - mc.thePlayer.getHealth();
                                 if (diff != 0.0F && this.lastTickProcessed != mc.thePlayer.ticksExisted) {
                                     this.lastTickProcessed = mc.thePlayer.ticksExisted;
-                                    ChatUtil.sendFormatted(
+                                    ChatUtil.display(
                                             String.format(
                                                     "%sHealth: %s&l%s&r (&otick: %d&r)&r",
                                                     Myau.clientName,

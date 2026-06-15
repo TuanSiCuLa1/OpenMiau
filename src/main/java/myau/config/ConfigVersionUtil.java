@@ -27,7 +27,7 @@ public final class ConfigVersionUtil {
         }
         String clientVersion = getClientVersion();
         if (compareVersions(clientVersion, configVersion) < 0) {
-            ChatUtil.sendFormatted(String.format(
+            ChatUtil.display(String.format(
                     "%s&cWarning:&r config &o%s&r was made for &e%s&r, your client is &e%s&r. Some settings may not load correctly.&r",
                     Myau.clientName,
                     sourceName,

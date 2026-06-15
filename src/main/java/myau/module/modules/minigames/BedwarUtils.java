@@ -365,7 +365,7 @@ public class BedwarUtils extends Module {
             long last = this.invisAlertCooldowns.getOrDefault(key, 0L);
             if (suspicious && now - last > 5000L) {
                 this.invisAlertCooldowns.put(key, now);
-                ChatUtil.sendFormatted(this.getMyauPrefix() + " &cSuspicious/invis player near bed: &f"
+                ChatUtil.display(this.getMyauPrefix() + " &cSuspicious/invis player near bed: &f"
                         + player.getDisplayName().getFormattedText());
                 SoundUtil.playSound("note.pling");
             }
@@ -598,7 +598,7 @@ public class BedwarUtils extends Module {
                         if (this.isBed(blockPos)) {
                             this.bedPos = blockPos;
                             this.scannedThisGame = true;
-                            ChatUtil.sendFormatted(
+                            ChatUtil.display(
                                     String.format(
                                             "%s%s: &fWhitelisted your bed at (%d, %d, %d) &a&l\u2714&r",
                                             Myau.clientName,
@@ -647,7 +647,7 @@ public class BedwarUtils extends Module {
                         if (!this.trackedPearls.contains(enderPearl)) {
                             this.trackedPearls.add(enderPearl);
                             if (this.alertOnPearl.getValue()) {
-                                ChatUtil.sendFormatted(String.format("%s%s: &fDetected &5Ender Pearl&r &e&l⚠&r",
+                                ChatUtil.display(String.format("%s%s: &fDetected &5Ender Pearl&r &e&l⚠&r",
                                         Myau.clientName, this.getName()));
                                 pearl = true;
                             }
@@ -680,7 +680,7 @@ public class BedwarUtils extends Module {
                             if (cooldown == null
                                     || cooldown + (long) this.alertFrequency.getValue() * 1000L <= millis) {
                                 this.alertCooldowns.put(name, millis);
-                                ChatUtil.sendFormatted(
+                                ChatUtil.display(
                                         String.format("%s%s: %s&r &fis %d blocks away from your bed &e&l⚠&r",
                                                 Myau.clientName, this.getName(), text, (int) distance + 1));
                                 pearl = true;
@@ -694,7 +694,7 @@ public class BedwarUtils extends Module {
                             if (cooldown == null
                                     || cooldown + (long) this.alertFrequency.getValue() * 1000L <= millis) {
                                 this.alertCooldowns.put(name, millis);
-                                ChatUtil.sendFormatted(
+                                ChatUtil.display(
                                         String.format("%s%s: %s&r &fhas &5Ender Pearl&r &e&l⚠&r", Myau.clientName,
                                                 this.getName(), text));
                                 pearl = true;

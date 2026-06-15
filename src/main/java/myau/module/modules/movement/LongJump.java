@@ -246,7 +246,7 @@ public class LongJump extends Module {
         this.jumpTimer.reset();
         if (this.isAutoMode() && this.findFireballInHotbar() == -1) {
             this.setEnabled(false);
-            ChatUtil.sendFormatted(String.format("%s%s: &cNo fireball found in your hotbar!&r", Myau.clientName, this.getName()));
+            ChatUtil.display(String.format("%s%s: &cNo fireball found in your hotbar!&r", Myau.clientName, this.getName()));
         }
     }
 

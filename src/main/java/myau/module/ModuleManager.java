@@ -96,7 +96,7 @@ public class ModuleManager {
             if (shouldNotify) {
                 String status = module.isEnabled() ? "&a&lON" : "&c&lOFF";
                 String message = String.format("%s%s: %s&r", Myau.clientName, module.getName(), status);
-                ChatUtil.sendFormatted(message);
+                ChatUtil.display(message);
             }
         }
     }

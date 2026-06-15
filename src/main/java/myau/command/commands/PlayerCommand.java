@@ -24,7 +24,7 @@ public class PlayerCommand extends Command {
             players.add(playerInfo.getGameProfile().getName().replace("§", "&"));
         }
         if (players.isEmpty()) {
-            ChatUtil.sendFormatted(String.format("%sNo players&r", Myau.clientName));
+            ChatUtil.display(String.format("%sNo players&r", Myau.clientName));
         } else {
             ChatUtil.sendRaw(
                     String.format(

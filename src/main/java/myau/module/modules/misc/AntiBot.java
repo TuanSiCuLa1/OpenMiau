@@ -110,7 +110,7 @@ public class AntiBot extends Module {
         for (EntityPlayer bot : bots) {
             mc.theWorld.removeEntity(bot);
             if (debug.getValue()) {
-                ChatUtil.sendFormatted(String.format("%sAntiBot: &fRemoved &r%s &fdue to it being a bot.", Myau.clientName, bot.getName()));
+                ChatUtil.display(String.format("%sAntiBot: &fRemoved &r%s &fdue to it being a bot.", Myau.clientName, bot.getName()));
             }
         }
     }
@@ -179,7 +179,7 @@ public class AntiBot extends Module {
                 mc.theWorld.removeEntity(bot);
                 matrixSamples.remove(bot);
                 if (debug.getValue()) {
-                    ChatUtil.sendFormatted(String.format("%sAntiBot/MatrixBot: &fRemoved &r%s&f. Speed: &b%.2f&f.", Myau.clientName, bot.getName(), getHorizontalSpeed(bot)));
+                    ChatUtil.display(String.format("%sAntiBot/MatrixBot: &fRemoved &r%s&f. Speed: &b%.2f&f.", Myau.clientName, bot.getName(), getHorizontalSpeed(bot)));
                 }
             }
         }

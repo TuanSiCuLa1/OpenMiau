@@ -83,10 +83,10 @@ public class NoFall extends Module {
                             }
                         } else if (!allowed) {
                             Myau.blinkManager.setBlinkState(false, BlinkModules.NO_FALL);
-                            ChatUtil.sendFormatted(String.format("%s%s: &cFailed player check!&r", Myau.clientName, this.getName()));
+                            ChatUtil.display(String.format("%s%s: &cFailed player check!&r", Myau.clientName, this.getName()));
                         } else if (PlayerUtil.checkInWater(mc.thePlayer.getEntityBoundingBox().expand(2.0, 0.0, 2.0))) {
                             Myau.blinkManager.setBlinkState(false, BlinkModules.NO_FALL);
-                            ChatUtil.sendFormatted(String.format("%s%s: &cFailed void check!&r", Myau.clientName, this.getName()));
+                            ChatUtil.display(String.format("%s%s: &cFailed void check!&r", Myau.clientName, this.getName()));
                         } else if (packet.isOnGround()) {
                             for (Packet<?> blinkedPacket : Myau.blinkManager.blinkedPackets) {
                                 if (blinkedPacket instanceof C03PacketPlayer) {

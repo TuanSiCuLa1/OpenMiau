@@ -1,32 +1,30 @@
 package myau.util.vector;
 
-public class Vector2d {
-    public double x;
-    public double y;
+public final class Vector2d {
 
-    public Vector2d(double x, double y) {
+    public double x, y;
+
+    public Vector2d() {
+    }
+
+    public Vector2d(final double x, final double y) {
         this.x = x;
         this.y = y;
+    }
+
+    public Vector2d offset(final double x, final double y) {
+        return new Vector2d(this.x + x, this.y + y);
+    }
+
+    public Vector2d offset(Vector2d xy) {
+        return offset(xy.x, xy.y);
     }
 
     public double getX() {
-        return x;
+        return 0;
     }
 
     public double getY() {
-        return y;
-    }
-
-    public void setX(double x) {
-        this.x = x;
-    }
-
-    public void setY(double y) {
-        this.y = y;
-    }
-
-    @Override
-    public String toString() {
-        return "Vector2d{x=" + x + ", y=" + y + "}";
+        return 0;
     }
 }

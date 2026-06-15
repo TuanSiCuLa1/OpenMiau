@@ -1,15 +1,15 @@
-
 package myau.ui.clickgui.components.impl;
 
 import myau.ui.clickgui.components.Component;
-import myau.module.Module;
 import myau.util.render.RenderUtils;
-import myau.util.render.Theme;
 import myau.util.font.Font;
 import myau.util.font.Fonts;
-import net.minecraft.util.ResourceLocation;
+import myau.util.Themes;
+import myau.util.vector.Vector2d;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
+
+import java.awt.Color;
 
 public class BindComponent extends Component {
     private static final String EYE_ICON_PATH = "/assets/keystrokesmod/textures/gui/eye.png";
@@ -49,9 +49,11 @@ public class BindComponent extends Component {
         float textHeight = renderer.getFontHeight() * 0.5f;
         float iconY = getRenderTextY() + (textHeight - iconSize) / 2f;
 
+        // Cập nhật lấy màu dựa trên Themes.java và Vector2d thay vì Theme.java
         int themeColor = !moduleComponent.mod.isHidden()
-                ? Theme.getGradient(Theme.descriptor[0], Theme.descriptor[1], 0)
-                : Theme.getGradient(Theme.hiddenBind[0], Theme.hiddenBind[1], 0);
+                ? Themes.getCurrentTheme().getAccentColor(new Vector2d(this.x, this.y)).getRGB()
+                : Color.GRAY.getRGB(); // Thay thế hiddenBind bằng màu xám tĩnh
+
         String iconPath = moduleComponent.mod.isHidden() ? EYE_OFF_ICON_PATH : EYE_ICON_PATH;
         RenderUtils.drawIcon(RenderUtils.getIcon(iconPath), iconX, iconY, iconSize, themeColor);
     }
@@ -168,7 +170,9 @@ public class BindComponent extends Component {
     @Override public int getHeight() { return Math.round(getHeightF()); }
 
     private void drawString(Font renderer, String s) {
-        renderer.draw(s, (float) ((this.moduleComponent.categoryComponent.getX() + 4) * 2) + xOffset, (float) ((this.moduleComponent.categoryComponent.getY() + this.o + 3) * 2), Theme.getGradient(Theme.descriptor[0], Theme.descriptor[1], 0), true);
+        // Cập nhật text color bằng Themes thay vì Theme
+        int color = Themes.getCurrentTheme().getAccentColor(new Vector2d(this.x, this.y)).getRGB();
+        renderer.draw(s, (float) ((this.moduleComponent.categoryComponent.getX() + 4) * 2) + xOffset, (float) ((this.moduleComponent.categoryComponent.getY() + this.o + 3) * 2), color, true);
     }
 
     public void onGuiClosed() { isBinding = false; }
