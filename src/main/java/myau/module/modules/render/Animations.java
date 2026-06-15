@@ -9,24 +9,31 @@ import myau.property.properties.ModeProperty;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.AbstractClientPlayer;
 import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.util.MathHelper;
 import org.lwjgl.opengl.GL11;
 
-public class Animations extends Module {
+public final class Animations extends Module {
     private static final Minecraft mc = Minecraft.getMinecraft();
-    private static final String[] MODES = new String[]{
-            "OneSeven", "OldPushdown", "NewPushdown", "Old", "Helium", "Argon", "Cesium", "Sulfur"
+
+    private static final String[] BLOCK_MODES = new String[]{
+            "None", "1.7", "Sunny", "Lucid", "Astro", "Smooth", "Spin", "Leaked", "Old", "Exhibition", "Exhibition Old", "Exhibition New", "Swong", "Stella", "Flup", "Noov", "Komorebi", "Rhys", "Swing", "?", "Stab", "Beta", "Dortware", "Avatar", "Tap", "Slide"
     };
 
-    public final ModeProperty mode = new ModeProperty("Mode", 2, MODES);
-    public final BooleanProperty oddSwing = new BooleanProperty("OddSwing", false);
-    public final IntProperty swingSpeed = new IntProperty("SwingSpeed", 15, 0, 20);
-    public final FloatProperty itemScale = new FloatProperty("ItemScale", 0.0F, -5.0F, 5.0F);
-    public final FloatProperty x = new FloatProperty("X", 0.0F, -5.0F, 5.0F);
-    public final FloatProperty y = new FloatProperty("Y", 0.0F, -5.0F, 5.0F);
-    public final FloatProperty positionRotationX = new FloatProperty("PositionRotationX", 0.0F, -50.0F, 50.0F);
-    public final FloatProperty positionRotationY = new FloatProperty("PositionRotationY", 0.0F, -50.0F, 50.0F);
-    public final FloatProperty positionRotationZ = new FloatProperty("PositionRotationZ", 0.0F, -50.0F, 50.0F);
+    private static final String[] SWING_MODES = new String[]{
+            "None", "Punch", "Shove", "Smooth", "1.9+"
+    };
+
+    public final ModeProperty blockAnimation = new ModeProperty("Block Animation", 0, BLOCK_MODES);
+    public final ModeProperty swingAnimation = new ModeProperty("Swing Animation", 0, SWING_MODES);
+    public final BooleanProperty onlyWhenBlocking = new BooleanProperty("Update Position Only When Blocking", true);
+    public final IntProperty swingSpeed = new IntProperty("Swing Speed", 1, -200, 50);
+
+    public final FloatProperty x = new FloatProperty("X", 0.0F, -2.0F, 2.0F);
+    public final FloatProperty y = new FloatProperty("Y", 0.0F, -2.0F, 2.0F);
+    public final FloatProperty z = new FloatProperty("Z", 0.0F, -2.0F, 2.0F);
+    public final FloatProperty scale = new FloatProperty("Scale", 1.0F, 0.1F, 2.0F);
+    public final BooleanProperty alwaysShow = new BooleanProperty("Always Show", false);
 
     public Animations() {
         super("Animations", false);
@@ -34,7 +41,7 @@ public class Animations extends Module {
 
     @Override
     public String[] getSuffix() {
-        return new String[]{this.mode.getModeString()};
+        return new String[]{this.blockAnimation.getModeString()};
     }
 
     public static boolean apply(float swingProgress, float equipProgress, AbstractClientPlayer player) {
@@ -42,152 +49,363 @@ public class Animations extends Module {
         if (animations == null || !animations.isEnabled() || player == null) {
             return false;
         }
-        animations.transform(swingProgress, equipProgress, player);
+        animations.renderBlock(swingProgress, equipProgress, player);
         return true;
     }
 
-    public static int getSwingSpeed() {
+    public static boolean applySwing(float swingProgress, float equipProgress) {
         Animations animations = (Animations) Myau.moduleManager.modules.get(Animations.class);
-        return animations != null && animations.isEnabled() ? animations.swingSpeed.getValue() : 6;
-    }
-
-    public static boolean isOddSwing() {
-        Animations animations = (Animations) Myau.moduleManager.modules.get(Animations.class);
-        return animations != null && animations.isEnabled() && animations.oddSwing.getValue();
-    }
-
-    private void transform(float swingProgress, float equipProgress, AbstractClientPlayer player) {
-        GlStateManager.translate(this.x.getValue(), this.y.getValue(), 0.0F);
-        float scale = 1.0F + this.itemScale.getValue() * 0.1F;
-        GlStateManager.scale(scale, scale, scale);
-
-        switch (this.mode.getValue()) {
-            case 0:
-                oneSeven(swingProgress, equipProgress, player);
-                break;
-            case 1:
-                oldPushdown(swingProgress, equipProgress, player);
-                break;
-            case 2:
-                newPushdown(swingProgress, equipProgress, player);
-                break;
-            case 3:
-                old(swingProgress, equipProgress, player);
-                break;
-            case 4:
-                helium(swingProgress, equipProgress, player);
-                break;
-            case 5:
-                argon(swingProgress, equipProgress, player);
-                break;
-            case 6:
-                cesium(swingProgress, equipProgress, player);
-                break;
-            case 7:
-                sulfur(swingProgress, equipProgress, player);
-                break;
-            default:
-                newPushdown(swingProgress, equipProgress, player);
-                break;
+        if (animations == null || !animations.isEnabled()) {
+            return false;
         }
+        animations.renderSwing(swingProgress, equipProgress);
+        return true;
     }
 
-    private void oneSeven(float swingProgress, float equipProgress, AbstractClientPlayer player) {
-        transformFirstPersonItem(equipProgress, swingProgress);
-        doBlockTransformations();
-        GlStateManager.translate(-0.5F, 0.2F, 0.0F);
-    }
-
-    private void old(float swingProgress, float equipProgress, AbstractClientPlayer player) {
-        transformFirstPersonItem(equipProgress, swingProgress);
-        doBlockTransformations();
-    }
-
-    private void oldPushdown(float swingProgress, float equipProgress, AbstractClientPlayer player) {
-        GlStateManager.translate(0.56D, -0.52D, -0.5D);
-        GlStateManager.translate(0.0D, -equipProgress * 0.3D, 0.0D);
-        GlStateManager.rotate(45.5F, 0.0F, 1.0F, 0.0F);
-        float var3 = MathHelper.sin(0.0F);
-        float var4 = MathHelper.sin(0.0F);
-        GlStateManager.rotate(var3 * -20.0F, 0.0F, 1.0F, 0.0F);
-        GlStateManager.rotate(var4 * -20.0F, 0.0F, 0.0F, 1.0F);
-        GlStateManager.rotate(var4 * -80.0F, 1.0F, 0.0F, 0.0F);
-        GlStateManager.scale(0.32D, 0.32D, 0.32D);
-        float var15 = MathHelper.sin(MathHelper.sqrt_float(swingProgress) * 3.1415927F);
-        GlStateManager.rotate(-var15 * 125.0F / 1.75F, 3.95F, 0.35F, 8.0F);
-        GlStateManager.rotate(-var15 * 35.0F, 0.0F, var15 / 100.0F, -10.0F);
-        GlStateManager.translate(-1.0D, 0.6D, -0.0D);
-        doBlockTransformations();
-        GL11.glTranslated(1.05D, 0.35D, 0.4D);
-        GL11.glTranslatef(-1.0F, 0.0F, 0.0F);
-    }
-
-    private void newPushdown(float swingProgress, float equipProgress, AbstractClientPlayer player) {
-        double tx = this.positionRotationX.getValue() - 0.08D;
-        double ty = this.positionRotationY.getValue() + 0.12D;
-        double tz = this.positionRotationZ.getValue();
-        GlStateManager.translate(tx, ty, tz);
-        float var9 = MathHelper.sin(MathHelper.sqrt_float(swingProgress) * 3.1415927F);
-        transformFirstPersonItem(equipProgress / 1.4F, 0.0F);
-        GlStateManager.rotate(-var9 * 65.0F / 2.0F, var9 / 2.0F, 1.0F, 4.0F);
-        GlStateManager.rotate(-var9 * 60.0F, 1.0F, var9 / 3.0F, -0.0F);
-        doBlockTransformations();
-        GlStateManager.scale(1.0D, 1.0D, 1.0D);
-    }
-
-    private void helium(float swingProgress, float equipProgress, AbstractClientPlayer player) {
-        transformFirstPersonItem(equipProgress, 0.0F);
-        float c0 = MathHelper.sin(swingProgress * equipProgress * 3.1415927F);
-        float c1 = MathHelper.sin(MathHelper.sqrt_float(swingProgress) * 3.1415927F);
-        GlStateManager.rotate(-c1 * 55.0F, 30.0F, c0 / 5.0F, 0.0F);
-        doBlockTransformations();
-    }
-
-    private void argon(float swingProgress, float equipProgress, AbstractClientPlayer player) {
-        transformFirstPersonItem(equipProgress / 2.5F, swingProgress);
-        float c2 = MathHelper.sin(MathHelper.sqrt_float(swingProgress) * 3.1415927F);
-        float c3 = MathHelper.cos(MathHelper.sqrt_float(equipProgress) * 3.1415927F);
-        GlStateManager.rotate(c3 * 50.0F / 10.0F, -c2, -0.0F, 100.0F);
-        GlStateManager.rotate(c2 * 50.0F, 200.0F, -c2 / 2.0F, -0.0F);
-        GlStateManager.translate(0.0D, 0.3D, 0.0D);
-        doBlockTransformations();
-    }
-
-    private void cesium(float swingProgress, float equipProgress, AbstractClientPlayer player) {
-        float c4 = MathHelper.sin(MathHelper.sqrt_float(swingProgress) * 3.1415927F);
-        transformFirstPersonItem(equipProgress, 0.0F);
-        GlStateManager.rotate(-c4 * 10.0F / 20.0F, c4 / 2.0F, 0.0F, 4.0F);
-        GlStateManager.rotate(-c4 * 30.0F, 0.0F, c4 / 3.0F, 0.0F);
-        GlStateManager.rotate(-c4 * 10.0F, 1.0F, c4 / 10.0F, 0.0F);
-        GlStateManager.translate(0.0D, 0.2D, 0.0D);
-        doBlockTransformations();
-    }
-
-    private void sulfur(float swingProgress, float equipProgress, AbstractClientPlayer player) {
-        float c5 = MathHelper.sin(MathHelper.sqrt_float(swingProgress) * 3.1415927F);
-        float c6 = MathHelper.cos(MathHelper.sqrt_float(swingProgress) * 3.1415927F);
-        transformFirstPersonItem(equipProgress, 0.0F);
-        GlStateManager.rotate(-c5 * 30.0F, c5 / 10.0F, c6 / 10.0F, 0.0F);
-        GlStateManager.translate(c5 / 1.5D, 0.2D, 0.0D);
-        doBlockTransformations();
-    }
-
-    private void doBlockTransformations() {
-        GlStateManager.translate(-0.5F, 0.2F, 0.0F);
-        GlStateManager.rotate(30.0F, 0.0F, 1.0F, 0.0F);
-        GlStateManager.rotate(-80.0F, 1.0F, 0.0F, 0.0F);
-        GlStateManager.rotate(60.0F, 0.0F, 1.0F, 0.0F);
+    public static int getSwingAnimationEnd(EntityLivingBase entity, int original) {
+        Animations animations = (Animations) Myau.moduleManager.modules.get(Animations.class);
+        if (animations != null && animations.isEnabled() && entity == mc.thePlayer) {
+            float speedVal = animations.swingSpeed.getValue();
+            float multiplier = (-speedVal / 100.0F) + 1.0F;
+            return (int) (original * multiplier);
+        }
+        return original;
     }
 
     private void transformFirstPersonItem(float equipProgress, float swingProgress) {
         GlStateManager.translate(0.56F, -0.52F, -0.71999997F);
         GlStateManager.translate(0.0F, equipProgress * -0.6F, 0.0F);
         GlStateManager.rotate(45.0F, 0.0F, 1.0F, 0.0F);
-        float f = MathHelper.sin(swingProgress * swingProgress * 3.1415927F);
-        float f1 = MathHelper.sin(MathHelper.sqrt_float(swingProgress) * 3.1415927F);
+        float f = MathHelper.sin(swingProgress * swingProgress * (float) Math.PI);
+        float f1 = MathHelper.sin(MathHelper.sqrt_float(swingProgress) * (float) Math.PI);
         GlStateManager.rotate(f * -20.0F, 0.0F, 1.0F, 0.0F);
         GlStateManager.rotate(f1 * -20.0F, 0.0F, 0.0F, 1.0F);
         GlStateManager.rotate(f1 * -80.0F, 1.0F, 0.0F, 0.0F);
         GlStateManager.scale(0.4F, 0.4F, 0.4F);
+    }
+
+    private void blockTransformation() {
+        GlStateManager.translate(-0.5F, 0.2F, 0.0F);
+        GlStateManager.rotate(30.0F, 0.0F, 1.0F, 0.0F);
+        GlStateManager.rotate(-80.0F, 1.0F, 0.0F, 0.0F);
+        GlStateManager.rotate(60.0F, 0.0F, 1.0F, 0.0F);
+    }
+
+    private void doItemUsedTransformations(float swingProgress) {
+        float f = MathHelper.sin(swingProgress * swingProgress * (float) Math.PI);
+        float f1 = MathHelper.sin(MathHelper.sqrt_float(swingProgress) * (float) Math.PI);
+        GlStateManager.rotate(f * -15.0F, 0.0F, 1.0F, 0.0F);
+        GlStateManager.rotate(f1 * -50.0F, 1.0F, 0.0F, 0.0F);
+    }
+
+    private void renderBlock(float swingProgress, float equipProgress, AbstractClientPlayer player) {
+        if (!onlyWhenBlocking.getValue()) {
+            GlStateManager.translate(x.getValue(), y.getValue(), z.getValue());
+        }
+
+        double var7 = scale.getValue().doubleValue();
+        float animationProgression = alwaysShow.getValue() ? 0.0F : equipProgress;
+        float convertedProgress = MathHelper.sin(MathHelper.sqrt_float(swingProgress) * (float) Math.PI);
+
+        if (onlyWhenBlocking.getValue()) {
+            GlStateManager.translate(x.getValue(), y.getValue(), z.getValue());
+        }
+
+        switch (blockAnimation.getValue()) {
+            case 0: // None
+                transformFirstPersonItem(animationProgression, 0.0F);
+                GlStateManager.scale(var7, var7, var7);
+                blockTransformation();
+                break;
+
+            case 1: // 1.7
+                transformFirstPersonItem(animationProgression, swingProgress);
+                GlStateManager.scale(var7, var7, var7);
+                blockTransformation();
+                break;
+
+            case 2: // Sunny
+                var7 = 0.99D;
+                GlStateManager.translate(0.05F, -0.05F, -0.12F);
+                transformFirstPersonItem(animationProgression + 0.15F, swingProgress);
+                GlStateManager.scale(var7, var7, var7);
+                blockTransformation();
+                GlStateManager.translate(-0.5F, 0.2F, 0.0F);
+                break;
+
+            case 3: // Lucid
+                transformFirstPersonItem(animationProgression - 0.1F, swingProgress);
+                GlStateManager.scale(var7, var7, var7);
+                blockTransformation();
+                break;
+
+            case 4: // Astro
+                GlStateManager.translate(0.0F, 0.03F, -0.05F);
+                transformFirstPersonItem(animationProgression / 2.0F, swingProgress);
+                GlStateManager.scale(var7, var7, var7);
+                GlStateManager.rotate(convertedProgress * 30.0F / 2.0F, -convertedProgress, -0.0F, 9.0F);
+                GlStateManager.rotate(convertedProgress * 40.0F, 1.0F, -convertedProgress / 2.0F, -0.0F);
+                blockTransformation();
+                break;
+
+            case 5: // Smooth
+                transformFirstPersonItem(animationProgression, 0.0F);
+                GlStateManager.scale(var7, var7, var7);
+                float ySmooth = -convertedProgress * 2.0F;
+                GlStateManager.translate(0.0F, ySmooth / 10.0F + 0.1F, 0.0F);
+                GlStateManager.rotate(ySmooth * 10.0F, 0.0F, 1.0F, 0.0F);
+                GlStateManager.rotate(250.0F, 0.2F, 1.0F, -0.6F);
+                GlStateManager.rotate(-10.0F, 1.0F, 0.5F, 1.0F);
+                GlStateManager.rotate(-ySmooth * 20.0F, 1.0F, 0.5F, 1.0F);
+                break;
+
+            case 6: // Spin
+                transformFirstPersonItem(animationProgression, 0.0F);
+                GlStateManager.scale(var7, var7, var7);
+                GlStateManager.translate(0.0F, 0.2F, -1.0F);
+                GlStateManager.rotate(-59.0F, -1.0F, 0.0F, 3.0F);
+                GlStateManager.rotate(-(System.currentTimeMillis() / 2 % 360), 1.0F, 0.0F, 0.0F);
+                GlStateManager.rotate(60.0F, 0.0F, 1.0F, 0.0F);
+                break;
+
+            case 7: // Leaked
+                GlStateManager.translate(0.0F, -0.03F, -0.13F);
+                transformFirstPersonItem(animationProgression / 3.0F, 0.0F);
+                GlStateManager.scale(var7, var7, var7);
+                GlStateManager.translate(0.0F, 0.1F, 0.0F);
+                blockTransformation();
+                GlStateManager.rotate(convertedProgress * 20.0F / 2.0F, 0.0F, 1.0F, 1.5F);
+                GlStateManager.rotate(-convertedProgress * 200.0F / 4.0F, 1.0F, 0.9F, 0.0F);
+                break;
+
+            case 8: // Old
+                GlStateManager.translate(0.0F, 0.1F, 0.0F);
+                transformFirstPersonItem(animationProgression / 2.0F - 0.2F, swingProgress);
+                GlStateManager.scale(var7, var7, var7);
+                blockTransformation();
+                break;
+
+            case 9: // Exhibition
+                GlStateManager.translate(0.0F, -0.05F, 0.0F);
+                transformFirstPersonItem(animationProgression / 2.0F, 0.0F);
+                GlStateManager.scale(var7, var7, var7);
+                GlStateManager.translate(0.0F, 0.3F, -0.0F);
+                GlStateManager.rotate(-convertedProgress * 31.0F, 1.0F, 0.0F, 2.0F);
+                GlStateManager.rotate(-convertedProgress * 33.0F, 1.5F, (convertedProgress / 1.1F), 0.0F);
+                blockTransformation();
+                break;
+
+            case 10: // Exhibition Old
+                GlStateManager.translate(0.0F, -0.05F, 0.0F);
+                GlStateManager.translate(-0.04F, 0.13F, 0.0F);
+                transformFirstPersonItem(animationProgression / 2.5F, 0.0F);
+                GlStateManager.scale(var7, var7, var7);
+                GlStateManager.rotate(-convertedProgress * 40.0F / 2.0F, convertedProgress / 2.0F, 1.0F, 4.0F);
+                GlStateManager.rotate(-convertedProgress * 30.0F, 1.0F, convertedProgress / 3.0F, -0.0F);
+                blockTransformation();
+                break;
+
+            case 11: // Exhibition New
+                GlStateManager.translate(0.0F, -0.04F, -0.01F);
+                transformFirstPersonItem(animationProgression / 2.0F, 0.0F);
+                GlStateManager.scale(var7, var7, var7);
+                GlStateManager.translate(0.0F, 0.3F, -0.0F);
+                GlStateManager.rotate(-convertedProgress * 30.0F, 1.0F, 0.0F, 2.0F);
+                GlStateManager.rotate(-convertedProgress * 44.0F, 1.5F, (convertedProgress / 1.2F), 0.0F);
+                blockTransformation();
+                break;
+
+            case 12: // Swong
+                GlStateManager.translate(0.0F, 0.1F, -0.05F);
+                transformFirstPersonItem(animationProgression / 2.0F, swingProgress);
+                GlStateManager.scale(var7, var7, var7);
+                GlStateManager.rotate(convertedProgress * 30.0F, -convertedProgress, -0.0F, 9.0F);
+                GlStateManager.rotate(convertedProgress * 40.0F, 1.0F, -convertedProgress, -0.0F);
+                blockTransformation();
+                break;
+
+            case 13: // Stella
+                transformFirstPersonItem(-0.1F, swingProgress);
+                GlStateManager.scale(var7, var7, var7);
+                GlStateManager.translate(-0.5F, 0.4F, -0.2F);
+                GlStateManager.rotate(30.0F, 0.0F, 1.0F, 0.0F);
+                GlStateManager.rotate(-70.0F, 1.0F, 0.0F, 0.0F);
+                GlStateManager.rotate(40.0F, 0.0F, 1.0F, 0.0F);
+                break;
+
+            case 14: // Flup
+                GlStateManager.translate(0.0F, 0.1F, -0.05F);
+                transformFirstPersonItem(animationProgression, 0.0F);
+                GlStateManager.scale(var7, var7, var7);
+                blockTransformation();
+                GlStateManager.translate(-0.05F, 0.2F, 0.0F);
+                GlStateManager.rotate(-convertedProgress * 70.0F / 2.0F, -8.0F, -0.0F, 9.0F);
+                GlStateManager.rotate(-convertedProgress * 70.0F, 1.0F, -0.4F, -0.0F);
+                break;
+
+            case 15: // Noov
+                transformFirstPersonItem(animationProgression / 1.5F, 0.0F);
+                GlStateManager.scale(var7, var7, var7);
+                blockTransformation();
+                GlStateManager.translate(-0.05F, 0.3F, 0.3F);
+                GlStateManager.rotate(-convertedProgress * 140.0F, 8.0F, 0.0F, 8.0F);
+                GlStateManager.rotate(convertedProgress * (float) Math.PI, 8.0F, 0.0F, 8.0F);
+                break;
+
+            case 16: // Komorebi
+                transformFirstPersonItem(-0.25F, 1.0F + convertedProgress / 10.0F);
+                GlStateManager.scale(var7, var7, var7);
+                GL11.glRotated(-convertedProgress * 25.0F, 1.0D, 0.0D, 0.0D);
+                blockTransformation();
+                break;
+
+            case 17: // Rhys
+                GlStateManager.translate(0.41F, -0.25F, -0.5555557F);
+                GlStateManager.translate(0.0F, 0.0F, 0.0F);
+                GlStateManager.rotate(35.0F, 0.0F, 1.5F, 0.0F);
+                float racism = MathHelper.sin(swingProgress * swingProgress / 64.0F * (float) Math.PI);
+                GlStateManager.rotate(racism * -5.0F, 0.0F, 0.0F, 0.0F);
+                GlStateManager.rotate(convertedProgress * -12.0F, 0.0F, 0.0F, 1.0F);
+                GlStateManager.rotate(convertedProgress * -65.0F, 1.0F, 0.0F, 0.0F);
+                GlStateManager.scale(var7, var7, var7);
+                blockTransformation();
+                break;
+
+            case 18: // Swing
+                transformFirstPersonItem(animationProgression, swingProgress);
+                GlStateManager.scale(var7, var7, var7);
+                blockTransformation();
+                GlStateManager.translate(-0.3F, -0.1F, -0.0F);
+                break;
+
+            case 19: // ?
+                transformFirstPersonItem(animationProgression, swingProgress);
+                GlStateManager.scale(var7, var7, var7);
+                GL11.glTranslatef(-0.35F, 0.1F, 0.0F);
+                GL11.glTranslatef(-0.05F, -0.1F, 0.1F);
+                blockTransformation();
+                break;
+
+            case 20: // Stab
+                float spin = MathHelper.sin(MathHelper.sqrt_float(swingProgress) * (float) Math.PI);
+                GlStateManager.translate(0.6F, 0.3F, -0.6F + -spin * 0.7F);
+                GlStateManager.rotate(6090.0F, 0.0F, 0.0F, 0.1F);
+                GlStateManager.rotate(6085.0F, 0.0F, 0.1F, 0.0F);
+                GlStateManager.rotate(6110.0F, 0.1F, 0.0F, 0.0F);
+                transformFirstPersonItem(0.0F, 0.0F);
+                GlStateManager.scale(var7, var7, var7);
+                blockTransformation();
+                break;
+
+            case 21: // Beta
+                GL11.glTranslatef(0.0F, 0.3F, 0.0F);
+                float var15 = MathHelper.sin(swingProgress * swingProgress * (float) Math.PI);
+                transformFirstPersonItem(equipProgress * 0.5F, 0.0F);
+                GlStateManager.scale(var7, var7, var7);
+                GlStateManager.rotate(-var15 * 55.0F / 2.0F, -8.0F, -0.0F, 9.0F);
+                GlStateManager.rotate(-var15 * 45.0F, 1.0F, var15 / 2.0F, -0.0F);
+                blockTransformation();
+                GL11.glTranslated(1.2D, 0.3D, 0.5D);
+                GL11.glTranslatef(-1.0F, mc.thePlayer.isSneaking() ? -0.1F : -0.2F, 0.2F);
+                break;
+
+            case 22: // Dortware
+                float var1_dort = MathHelper.sin((float) (swingProgress * swingProgress * Math.PI - 3.0D));
+                float var_dort = MathHelper.sin((float) (MathHelper.sqrt_float(swingProgress) * Math.PI));
+                transformFirstPersonItem(animationProgression, 1.0F);
+                GlStateManager.rotate(-var_dort * 10.0F, 0.0F, 15.0F, 200.0F);
+                GlStateManager.rotate(-var_dort * 10.0F, 300.0F, var_dort / 2.0F, 1.0F);
+                blockTransformation();
+                GL11.glTranslated(2.4D, 0.3D, 0.5D);
+                GL11.glTranslatef(-2.10F, -0.2F, 0.1F);
+                GlStateManager.rotate(var1_dort * 13.0F, -10.0F, -1.4F, -10.0F);
+                break;
+
+            case 23: // Avatar
+                GlStateManager.translate(0.56F, -0.52F, -0.71999997F);
+                GlStateManager.rotate(45.0F, 0.0F, 1.0F, 0.0F);
+                float f_av = MathHelper.sin(swingProgress * swingProgress * (float) Math.PI);
+                float f1_av = MathHelper.sin(MathHelper.sqrt_float(swingProgress) * (float) Math.PI);
+                GlStateManager.rotate(f_av * -20.0F, 0.0F, 1.0F, 0.0F);
+                GlStateManager.rotate(f1_av * -20.0F, 0.0F, 0.0F, 1.0F);
+                GlStateManager.rotate(f1_av * -40.0F, 1.0F, 0.0F, 0.0F);
+                GlStateManager.scale(0.4F, 0.4F, 0.4F);
+                blockTransformation();
+                break;
+
+            case 24: // Tap
+                GL11.glTranslatef(0.0F, 0.3F, 0.0F);
+                float smooth = (swingProgress * 0.8F - (swingProgress * swingProgress) * 0.8F);
+                GlStateManager.scale(var7, var7, var7);
+                GlStateManager.translate(0.56F, -0.52F, -0.71999997F);
+                GlStateManager.rotate(45.0F, 0.0F, 1.0F, 0.0F);
+                GlStateManager.rotate(smooth * -90.0F, 0.0F, 1.0F, 0.0F);
+                GlStateManager.scale(0.37F, 0.37F, 0.37F);
+                blockTransformation();
+                break;
+
+            case 25: // Slide
+                GL11.glTranslatef(0.0F, 0.3F, 0.0F);
+                float smooth2 = (swingProgress * 0.8F - (swingProgress * swingProgress) * 0.8F);
+                GlStateManager.scale(var7, var7, var7);
+                GlStateManager.translate(0.56F, -0.52F, -0.71999997F);
+                GlStateManager.translate(0.0F, equipProgress * 0.3F * -0.6F, 0.0F);
+                GlStateManager.rotate(45.0F, 0.0F, 2.0F + smooth2 * 0.5F, smooth2 * 3.0F);
+                GlStateManager.rotate(0.0F, 0.0F, 1.0F, 0.0F);
+                GlStateManager.scale(0.37F, 0.37F, 0.37F);
+                blockTransformation();
+                break;
+        }
+    }
+
+    private void renderSwing(float swingProgress, float equipProgress) {
+        if (!onlyWhenBlocking.getValue()) {
+            GlStateManager.translate(x.getValue(), y.getValue(), z.getValue());
+        }
+
+        double var7 = scale.getValue().doubleValue();
+        float animationProgression = alwaysShow.getValue() ? 0.0F : equipProgress;
+
+        switch (swingAnimation.getValue()) {
+            case 0: // None
+                doItemUsedTransformations(swingProgress);
+                transformFirstPersonItem(animationProgression, swingProgress);
+                if (!onlyWhenBlocking.getValue()) {
+                    GlStateManager.scale(var7, var7, var7);
+                }
+                break;
+
+            case 1: // Punch
+                transformFirstPersonItem(animationProgression, swingProgress);
+                doItemUsedTransformations(swingProgress);
+                if (!onlyWhenBlocking.getValue()) {
+                    GlStateManager.scale(var7, var7, var7);
+                }
+                break;
+
+            case 2: // Shove
+                transformFirstPersonItem(animationProgression, animationProgression);
+                doItemUsedTransformations(swingProgress);
+                if (!onlyWhenBlocking.getValue()) {
+                    GlStateManager.scale(var7, var7, var7);
+                }
+                break;
+
+            case 3: // Smooth
+                transformFirstPersonItem(animationProgression, swingProgress);
+                doItemUsedTransformations(animationProgression);
+                if (!onlyWhenBlocking.getValue()) {
+                    GlStateManager.scale(var7, var7, var7);
+                }
+                break;
+
+            case 4: // 1.9+
+                doItemUsedTransformations(swingProgress);
+                transformFirstPersonItem(animationProgression, swingProgress);
+                if (!onlyWhenBlocking.getValue()) {
+                    GlStateManager.scale(var7, var7, var7);
+                }
+                break;
+        }
     }
 }

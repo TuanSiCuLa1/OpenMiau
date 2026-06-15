@@ -32,7 +32,7 @@ public class NotificationManager {
         // Bắt đầu vẽ từ dưới lên (cách đáy màn hình 20px)
         float currentY = screenHeight - 20;
 
-        // Load custom fonts từ OpenMiau client
+        // Load custom fonts từ OpenMiau Myau
         Font titleFont = Fonts.MAIN.get(16, Weight.SEMI_BOLD);
         Font descFont = Fonts.MAIN.get(14, Weight.NONE);
 
@@ -130,3 +130,8 @@ public class NotificationManager {
         }
     }
 }
+
+
+
+
+

@@ -72,7 +72,7 @@ public class AntiCheatDetector extends Module {
         this.ticksPassed = 0;
 
         if (this.debug.getValue()) {
-            ChatUtil.sendFormatted(PREFIX + "ID: &e" + action);
+            ChatUtil.display(PREFIX + "ID: &e" + action);
         }
 
         if (this.actionNumbers.size() >= this.sampleSize.getValue()) {
@@ -170,7 +170,7 @@ public class AntiCheatDetector extends Module {
         if (key.equals(this.lastDetection)) return;
         this.lastDetection = key;
 
-        ChatUtil.sendFormatted(PREFIX + "Anticheat detected: " + name + " (" + confidence + ")");
+        ChatUtil.display(PREFIX + "Anticheat detected: " + name + " (" + confidence + ")");
     }
 
     private List<Integer> getDiffs() {
@@ -182,8 +182,8 @@ public class AntiCheatDetector extends Module {
     }
 
     private void logNumbers() {
-        ChatUtil.sendFormatted(PREFIX + "Action Numbers: &e" + this.join(this.actionNumbers));
-        ChatUtil.sendFormatted(PREFIX + "Differences: &e" + this.join(this.getDiffs()));
+        ChatUtil.display(PREFIX + "Action Numbers: &e" + this.join(this.actionNumbers));
+        ChatUtil.display(PREFIX + "Differences: &e" + this.join(this.getDiffs()));
     }
 
     private String join(List<Integer> values) {

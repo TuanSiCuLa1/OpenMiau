@@ -1,34 +1,47 @@
 package myau.ui.clickgui.animation;
 
+import myau.util.animation.Easing;
+
 public class ScrollOffsetAnimation {
     private float from;
     private float to;
     private long startMs;
     private final long durationMs;
+    private final Easing easing;
+    private boolean finished;
 
     public ScrollOffsetAnimation(long durationMs) {
+        this(durationMs, Easing.EASE_OUT_QUINT);
+    }
+
+    public ScrollOffsetAnimation(long durationMs, Easing easing) {
         this.durationMs = durationMs;
+        this.easing = easing;
         this.from = 0f;
         this.to = 0f;
         this.startMs = 0L;
+        this.finished = true;
     }
 
     public void reset(float value) {
         this.from = value;
         this.to = value;
         this.startMs = 0L;
+        this.finished = true;
     }
 
     public void setTarget(float newTarget) {
         this.from = getValue();
         this.to = newTarget;
         this.startMs = System.currentTimeMillis();
+        this.finished = false;
     }
 
     public void extend(float delta) {
         this.from = getValue();
         this.to += delta;
         this.startMs = System.currentTimeMillis();
+        this.finished = false;
     }
 
     public void clampTarget(float min, float max) {
@@ -43,34 +56,29 @@ public class ScrollOffsetAnimation {
         if (elapsed >= durationMs) {
             startMs = 0L;
             from = to;
+            finished = true;
             return to;
         }
+
         float t = (float) elapsed / (float) durationMs;
-        float ease = expoOut(t);
-        return from + (to - from) * ease;
+        float eased = (float) easing.apply(t);
+
+        return from + (to - from) * eased;
     }
 
     public boolean isAnimating() {
-        if (startMs == 0L) {
-            return false;
-        }
-        return System.currentTimeMillis() - startMs < durationMs;
+        return !finished;
     }
 
     public float getTarget() {
         return to;
     }
 
-    private static float expoOut(float t) {
-        if (t <= 0f) {
-            return 0f;
-        }
-        if (t >= 1f) {
-            return 1f;
-        }
-        if ((t /= 0.5f) < 1f) {
-            return 0.5f * (float) Math.pow(2.0, 10.0 * (t - 1f));
-        }
-        return 0.5f * (-(float) Math.pow(2.0, -10.0 * --t) + 2f);
+    public Easing getEasing() {
+        return easing;
+    }
+
+    public boolean isFinished() {
+        return finished;
     }
 }

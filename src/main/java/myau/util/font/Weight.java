@@ -2,6 +2,7 @@ package myau.util.font;
 
 public enum Weight {
     NONE(0, "Regular", "Normal"),
+    REGULAR(0, "Regular", "Normal"),
     LIGHT(1, "Light", "Thin"),
     MEDIUM(2, "Medium"),
     SEMI_BOLD(3, "SemiBold"),

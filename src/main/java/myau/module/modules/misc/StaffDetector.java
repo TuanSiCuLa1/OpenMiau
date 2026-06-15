@@ -56,7 +56,7 @@ public class StaffDetector extends Module {
                 for (S38PacketPlayerListItem.AddPlayerData player : item.getEntries()) {
                     if (player != null && player.getProfile() != null && player.getProfile().getName() != null) {
                         if (staff.contains(player.getProfile().getName().toLowerCase())) {
-                            ChatUtil.sendFormatted("&c[WARNING] &fStaff " + player.getProfile().getName() + " is online!");
+                            ChatUtil.display("&c[WARNING] &fStaff " + player.getProfile().getName() + " is online!");
                             triggerAutoLeave(player.getProfile().getName());
                         }
                     }
@@ -67,7 +67,7 @@ public class StaffDetector extends Module {
             if (teams.getPlayers() != null) {
                 for (String name : teams.getPlayers()) {
                     if (name != null && staff.contains(name.toLowerCase())) {
-                        ChatUtil.sendFormatted("&c[WARNING] &fStaff " + name + " detected!");
+                        ChatUtil.display("&c[WARNING] &fStaff " + name + " detected!");
                         triggerAutoLeave(name);
                     }
                 }
@@ -95,7 +95,7 @@ public class StaffDetector extends Module {
 
         if (!validEntities.contains(entityId) && !flaggedStaff.contains(entityId)) {
             flaggedStaff.add(entityId);
-            ChatUtil.sendFormatted("&c[EXPLOIT] &fGhost/Vanished Entity Detected! (ID: " + entityId + ")");
+            ChatUtil.display("&c[EXPLOIT] &fGhost/Vanished Entity Detected! (ID: " + entityId + ")");
             triggerAutoLeave("Ghost (ID " + entityId + ")");
         }
     }

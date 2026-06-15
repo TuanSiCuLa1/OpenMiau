@@ -23,7 +23,7 @@ import net.minecraft.util.Vec3;
 
 import java.util.Comparator;
 
-public class AutoRod extends Module {
+public class    AutoRod extends Module {
     private static final Minecraft mc = Minecraft.getMinecraft();
 
     public final BooleanProperty onlyWhileKillAura = new BooleanProperty("only-while-killaura", false);

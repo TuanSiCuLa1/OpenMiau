@@ -49,3 +49,5 @@ public class MinecraftFontRenderer extends Font {
         fr.drawStringWithShadow(String.valueOf(character), x, y, color.getRGB());
     }
 }
+
+

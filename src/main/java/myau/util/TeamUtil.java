@@ -165,3 +165,5 @@ public class TeamUtil {
         return player != null && Myau.targetManager != null && Myau.targetManager.isFriend(player.getName());
     }
 }
+
+

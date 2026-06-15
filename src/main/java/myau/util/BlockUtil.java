@@ -108,3 +108,5 @@ public class BlockUtil {
         return new Vec3((double) blockPos.getX() + block.getBlockBoundsMinX(), vec3.yCoord, vec3.zCoord);
     }
 }
+
+

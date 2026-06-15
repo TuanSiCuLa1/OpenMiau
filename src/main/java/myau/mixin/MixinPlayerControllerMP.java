@@ -6,14 +6,12 @@ import myau.events.CancelUseEvent;
 import myau.events.WindowClickEvent;
 import myau.events.BlockDamageEvent;
 import myau.events.BlockBreakEvent;
-import myau.component.SlotComponent; 
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.PlayerControllerMP;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
-import net.minecraft.network.play.client.C09PacketHeldItemChange;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.EnumFacing;
 import net.minecraftforge.fml.relauncher.Side;
@@ -29,25 +27,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @SideOnly(Side.CLIENT)
 @Mixin(value = {PlayerControllerMP.class}, priority = 9999)
 public abstract class MixinPlayerControllerMP {
-
-    @Shadow private int currentPlayerItem;
-
-    @Inject(method = "syncCurrentPlayItem", at = @At("HEAD"), cancellable = true)
-    private void onSyncCurrentPlayItem(CallbackInfo ci) {
-        if (SlotComponent.alternativeSlot) {
-            int spoofedSlot = SlotComponent.alternativeCurrentItem;
-            
-            if (spoofedSlot != this.currentPlayerItem) {
-                this.currentPlayerItem = spoofedSlot;
- 
-                if (Minecraft.getMinecraft().getNetHandler() != null) {
-                    Minecraft.getMinecraft().getNetHandler().addToSendQueue(new C09PacketHeldItemChange(this.currentPlayerItem));
-                }
-            }
-            ci.cancel();
-        }
-    }
-
     @Inject(
             method = "attackEntity",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/multiplayer/PlayerControllerMP;syncCurrentPlayItem()V"))

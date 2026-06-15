@@ -23,10 +23,10 @@ public class MCF extends Module {
                 String hitName = mc.objectMouseOver.entityHit.getName();
                 if (!Myau.friendManager.isFriend(hitName)) {
                     Myau.friendManager.add(hitName);
-                    ChatUtil.sendFormatted(String.format("%sAdded &o%s&r to your friend list&r", Myau.clientName, hitName));
+                    ChatUtil.display("%sAdded &o%s&r to your friend list&r", hitName);
                 } else {
                     Myau.friendManager.remove(hitName);
-                    ChatUtil.sendFormatted(String.format("%sRemoved &o%s&r from your friend list&r", Myau.clientName, hitName));
+                    ChatUtil.display("%sRemoved &o%s&r from your friend list&r", hitName);
                 }
             }
         }

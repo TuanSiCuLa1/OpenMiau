@@ -163,7 +163,7 @@ public class MurderDetector extends Module {
         }
 
         if (this.chat.getValue()) {
-            ChatUtil.sendFormatted("&7[&cMurdererDetector&7] &e" + player.getName() + " &fis Murderer!");
+            ChatUtil.display("&7[&cMurdererDetector&7] &e" + player.getName() + " &fis Murderer!");
         }
     }
 

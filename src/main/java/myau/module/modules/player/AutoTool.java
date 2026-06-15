@@ -5,39 +5,35 @@ import myau.Myau;
 import myau.event.EventTarget;
 import myau.event.types.EventType;
 import myau.events.TickEvent;
+import myau.events.Render2DEvent;
 import myau.module.Module;
-import myau.property.properties.BooleanProperty;
-import myau.property.properties.IntProperty;
 import myau.util.ItemUtil;
-import myau.util.KeyBindUtil;
 import myau.util.PacketUtil;
 import myau.util.TeamUtil;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.ScaledResolution;
+import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.renderer.RenderHelper;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 import net.minecraft.network.play.client.C09PacketHeldItemChange;
 import net.minecraft.util.BlockPos;
-import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.MovingObjectPosition.MovingObjectType;
+import myau.util.font.Fonts;
+import myau.util.shader.RoundedUtils;
+
+import java.awt.Color;
 
 public class AutoTool extends Module {
     private static final Minecraft mc = Minecraft.getMinecraft();
 
     private int serverSlot = -1;
     private int spoofedToolSlot = -1;
-    private int previousSlot = -1;
-    private int tickCounter;
-    private int attackHeldSince = -1;
-    private int hoverStartedAt = -1;
-    private BlockPos lastHoverPos;
-    private boolean swapped;
 
-    public final IntProperty activationTime = new IntProperty("activation-time", 0, 0, 1000);
-    public final IntProperty hoverDelay = new IntProperty("hover-delay", 0, 0, 1000);
-    public final BooleanProperty switchBack = new BooleanProperty("switch-back", true);
-    public final BooleanProperty overrideSwitchBack = new BooleanProperty("override-switch-back", true);
-    public final BooleanProperty spoofItem = new BooleanProperty("spoof-item", false);
-    public final BooleanProperty sneakOnly = new BooleanProperty("sneak-only", false);
-    public final BooleanProperty requireLeftMouse = new BooleanProperty("require-left-mouse", true);
+    private float animationProgress = 0f;
+    private long lastFrame = System.currentTimeMillis();
+    private ItemStack lastSpoofedStack = null;
 
     public AutoTool() {
         super("AutoTool", false);
@@ -53,16 +49,12 @@ public class AutoTool extends Module {
     public void onTick(TickEvent event) {
         if (!this.isEnabled() || event.getType() != EventType.PRE) return;
         if (mc.thePlayer == null || mc.theWorld == null) {
-            this.resetState(true, false);
+            this.resetState();
             return;
         }
 
-        int currentTick = ++this.tickCounter;
-        boolean attackDown = mc.gameSettings.keyBindAttack.isKeyDown();
-        this.updateAttackState(attackDown, currentTick);
-
-        if (!this.canAutoTool(currentTick)) {
-            this.resetState(false, this.switchBack.getValue());
+        if (!this.canAutoTool()) {
+            this.resetState();
             return;
         }
 
@@ -71,54 +63,17 @@ public class AutoTool extends Module {
         int slot = this.findBestHotbarTool(block);
         if (slot == -1 || slot == mc.thePlayer.inventory.currentItem) return;
 
-        if (this.previousSlot == -1) {
-            this.previousSlot = mc.thePlayer.inventory.currentItem;
-        } else if (this.overrideSwitchBack.getValue() && !this.swapped) {
-            this.previousSlot = mc.thePlayer.inventory.currentItem;
-        }
-
         this.selectTool(slot);
     }
 
-    private boolean canAutoTool(int currentTick) {
+    private boolean canAutoTool() {
         if (mc.currentScreen != null || mc.thePlayer.isDead || !mc.thePlayer.capabilities.allowEdit) return false;
         if (mc.objectMouseOver == null || mc.objectMouseOver.typeOfHit != MovingObjectType.BLOCK) return false;
         if (this.isKillAura() || mc.thePlayer.isUsingItem()) return false;
-        if (this.sneakOnly.getValue() && !KeyBindUtil.isKeyDown(mc.gameSettings.keyBindSneak.getKeyCode())) return false;
-        if (this.requireLeftMouse.getValue()) {
-            if (!mc.gameSettings.keyBindAttack.isKeyDown()) return false;
-            if (!this.hasElapsed(this.attackHeldSince, this.activationTime.getValue(), currentTick)) return false;
-        }
-        this.updateHoverState(mc.objectMouseOver, currentTick);
-        if (!this.hasElapsed(this.hoverStartedAt, this.hoverDelay.getValue(), currentTick)) return false;
+        if (!mc.gameSettings.keyBindAttack.isKeyDown()) return false;
+        
         Block block = mc.theWorld.getBlockState(mc.objectMouseOver.getBlockPos()).getBlock();
         return block.getBlockHardness(mc.theWorld, mc.objectMouseOver.getBlockPos()) != 0.0F;
-    }
-
-    private void updateAttackState(boolean attackDown, int currentTick) {
-        if (attackDown) {
-            if (this.attackHeldSince == -1) this.attackHeldSince = currentTick;
-        } else {
-            this.attackHeldSince = -1;
-        }
-    }
-
-    private void updateHoverState(MovingObjectPosition mop, int currentTick) {
-        BlockPos hoverPos = mop == null || mop.typeOfHit != MovingObjectType.BLOCK ? null : mop.getBlockPos();
-        if (hoverPos == null) {
-            this.hoverStartedAt = -1;
-            this.lastHoverPos = null;
-            return;
-        }
-        if (!hoverPos.equals(this.lastHoverPos)) {
-            this.lastHoverPos = hoverPos;
-            this.hoverStartedAt = currentTick;
-        }
-    }
-
-    private boolean hasElapsed(int startTick, int requiredMs, int currentTick) {
-        int requiredTicks = requiredMs <= 0 ? 0 : (int) Math.ceil(requiredMs / 50.0D);
-        return requiredTicks <= 0 || startTick != -1 && currentTick - startTick >= requiredTicks;
     }
 
     private int findBestHotbarTool(Block block) {
@@ -128,12 +83,7 @@ public class AutoTool extends Module {
     }
 
     private void selectTool(int slot) {
-        if (this.spoofItem.getValue()) {
-            this.selectToolSilently(slot);
-        } else if (slot != mc.thePlayer.inventory.currentItem) {
-            this.switchToSlot(slot);
-        }
-        this.swapped = true;
+        this.selectToolSilently(slot);
     }
 
     private void selectToolSilently(int slot) {
@@ -149,24 +99,8 @@ public class AutoTool extends Module {
         PacketUtil.sendPacket(new C09PacketHeldItemChange(slot));
     }
 
-    private void resetState(boolean resetTimers, boolean switchBackToPrevious) {
-        if (switchBackToPrevious) {
-            if (this.spoofItem.getValue()) {
-                this.resetSilentSlot(true);
-            } else if (this.previousSlot != -1 && this.previousSlot != mc.thePlayer.inventory.currentItem) {
-                this.switchToSlot(this.previousSlot);
-            }
-        } else {
-            this.resetSilentSlot(false);
-        }
-        this.previousSlot = -1;
-        this.swapped = false;
-        if (resetTimers) {
-            this.tickCounter = 0;
-            this.attackHeldSince = -1;
-            this.hoverStartedAt = -1;
-            this.lastHoverPos = null;
-        }
+    private void resetState() {
+        this.resetSilentSlot(true);
     }
 
     private void resetSilentSlot(boolean sendSwitchBack) {
@@ -177,8 +111,74 @@ public class AutoTool extends Module {
         this.spoofedToolSlot = -1;
     }
 
+    @EventTarget
+    public void onRender(Render2DEvent event) {
+        if (mc.thePlayer == null) return;
+
+        long currentFrame = System.currentTimeMillis();
+        float delta = (currentFrame - lastFrame) / 1000f;
+        lastFrame = currentFrame;
+
+        boolean shouldShow = this.isEnabled() && this.spoofedToolSlot != -1;
+
+        float target = shouldShow ? 1f : 0f;
+        animationProgress += (target - animationProgress) * 12f * delta;
+        animationProgress = Math.max(0f, Math.min(1f, animationProgress));
+
+        if (animationProgress <= 0.01f) return;
+
+        ItemStack itemStack = null;
+        if (this.spoofedToolSlot != -1) {
+            itemStack = mc.thePlayer.inventory.getStackInSlot(this.spoofedToolSlot);
+            if (itemStack != null) {
+                lastSpoofedStack = itemStack;
+            }
+        } else {
+            itemStack = lastSpoofedStack;
+        }
+
+        if (itemStack == null) return;
+
+        ScaledResolution sr = new ScaledResolution(mc);
+        String toolName = itemStack.getDisplayName();
+
+        float textWidth = Fonts.MAIN.get(18).width(toolName);
+        float width = 16f + 8f + textWidth + 8f;
+        float height = 22f;
+        float x = (sr.getScaledWidth() - width) / 2f;
+        float y = sr.getScaledHeight() - 90f;
+
+        GlStateManager.pushMatrix();
+
+        float centerX = x + width / 2f;
+        float centerY = y + height / 2f;
+        GlStateManager.translate(centerX, centerY, 0);
+        GlStateManager.scale(animationProgress, animationProgress, 1f);
+        GlStateManager.translate(-centerX, -centerY, 0);
+
+        int bgAlpha = (int) (150 * animationProgress);
+        RoundedUtils.drawRound(x, y, width, height, 4f, new Color(0, 0, 0, bgAlpha));
+
+        GlStateManager.pushMatrix();
+        RenderHelper.enableGUIStandardItemLighting();
+        mc.getRenderItem().renderItemAndEffectIntoGUI(itemStack, (int) x + 4, (int) y + 3);
+        RenderHelper.disableStandardItemLighting();
+        GlStateManager.popMatrix();
+
+        GlStateManager.enableBlend();
+        int textAlpha = (int) (255 * animationProgress);
+        float fontY = y + (height / 2f) - (Fonts.MAIN.get(18).height() / 2f);
+        float textX = x + 24f;
+
+        Fonts.MAIN.get(18).drawWithShadow(toolName, textX, fontY, new Color(255, 255, 255, textAlpha).getRGB());
+
+        GlStateManager.popMatrix();
+    }
+
     @Override
     public void onDisabled() {
-        this.resetState(true, true);
+        this.resetState();
+        this.lastSpoofedStack = null;
+        this.animationProgress = 0f;
     }
 }

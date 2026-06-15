@@ -110,7 +110,7 @@ public class Freeze extends Module {
             // Check timeout
             if (this.delaying && ++this.timeout >= this.maxTimeout.getValue()) {
                 this.flush();
-                ChatUtil.sendFormatted(Myau.clientName + "&cFreeze timed out.");
+                ChatUtil.display(Myau.clientName + "&cFreeze timed out.");
             }
 
             // Reset S08 flag

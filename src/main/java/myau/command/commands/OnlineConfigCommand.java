@@ -44,7 +44,7 @@ public class OnlineConfigCommand extends Command {
             async(this::listConfigs);
         } else if (sub.equals("load")) {
             if (args.size() < 3) {
-                ChatUtil.sendFormatted(Myau.clientName + "Missing online config id/name&r");
+                ChatUtil.display(Myau.clientName + "Missing online config id/name&r");
                 return;
             }
             async(() -> loadConfig(String.join(" ", args.subList(2, args.size()))));
@@ -58,7 +58,7 @@ public class OnlineConfigCommand extends Command {
             List<OnlineConfigEntry> entries = Collections.unmodifiableList(new ArrayList<>(client.list()));
             runOnClientThread(() -> {
                 cache = entries;
-                ChatUtil.sendFormatted(
+                ChatUtil.display(
                         Myau.clientName + (entries.isEmpty() ? "No online configs found&r" : "Online configs:&r"));
                 for (OnlineConfigEntry entry : entries) {
                     sendEntry(entry);
@@ -75,7 +75,7 @@ public class OnlineConfigCommand extends Command {
             OnlineConfigEntry entry = findEntry(input);
             if (entry == null) {
                 runOnClientThread(
-                        () -> ChatUtil.sendFormatted(Myau.clientName + "Online config not found (&o" + input + "&r)&r"));
+                        () -> ChatUtil.display(Myau.clientName + "Online config not found (&o" + input + "&r)&r"));
                 return;
             }
             String json = client.load(entry.getId());
@@ -90,10 +90,9 @@ public class OnlineConfigCommand extends Command {
         try {
             showMetadata(entry);
             int applied = new OnlineConfigApplier().apply(json);
-            ChatUtil.sendFormatted(String.format("%sOnline config loaded (&a&o%s&r) &7- applied %d setting(s)&r",
-                    Myau.clientName, entry.getName(), applied));
+            ChatUtil.display("%sOnline config loaded (&a&o%s&r) &7- applied %d setting(s)&r", entry.getName(), applied);
         } catch (Exception e) {
-            ChatUtil.sendFormatted(Myau.clientName + "Failed to load online config: &c" + e.getMessage() + "&r");
+            ChatUtil.display(Myau.clientName + "Failed to load online config: &c" + e.getMessage() + "&r");
         }
     }
 
@@ -124,22 +123,22 @@ public class OnlineConfigCommand extends Command {
     }
 
     private void showMetadata(OnlineConfigEntry entry) {
-        ChatUtil.sendFormatted(Myau.clientName + "Loading online config...&r");
-        ChatUtil.sendFormatted("&fName: &a" + entry.getName() + "&r");
-        ChatUtil.sendFormatted("&fUpload time: &b" + safe(entry.date) + "&r");
-        ChatUtil.sendFormatted("&fAuthor: &a" + entry.getAuthor() + "&r");
-        ChatUtil.sendFormatted("&fType: &b" + safe(entry.setting_type) + "&r");
-        ChatUtil.sendFormatted("&fStatus: &e" + safe(entry.status_type) + "&r");
+        ChatUtil.display(Myau.clientName + "Loading online config...&r");
+        ChatUtil.display("&fName: &a" + entry.getName() + "&r");
+        ChatUtil.display("&fUpload time: &b" + safe(entry.date) + "&r");
+        ChatUtil.display("&fAuthor: &a" + entry.getAuthor() + "&r");
+        ChatUtil.display("&fType: &b" + safe(entry.setting_type) + "&r");
+        ChatUtil.display("&fStatus: &e" + safe(entry.status_type) + "&r");
         if (!entry.getVersion().isEmpty()) {
-            ChatUtil.sendFormatted("&fVersion: &e" + entry.getVersion() + "&r");
+            ChatUtil.display("&fVersion: &e" + entry.getVersion() + "&r");
         }
         if (entry.description != null && !entry.description.trim().isEmpty()) {
-            ChatUtil.sendFormatted("&fDescription: &7" + entry.description + "&r");
+            ChatUtil.display("&fDescription: &7" + entry.description + "&r");
         }
     }
 
     private void usage() {
-        ChatUtil.sendFormatted(
+        ChatUtil.display(
                 Myau.clientName + "Usage: .onlineconfig &olist&r | .onlineconfig &oload&r <&oid/name&r>");
     }
 

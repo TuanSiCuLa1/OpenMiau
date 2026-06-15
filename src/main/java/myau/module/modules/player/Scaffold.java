@@ -33,6 +33,9 @@ import net.minecraft.util.*;
 import net.minecraft.util.MovingObjectPosition.MovingObjectType;
 import net.minecraft.world.WorldSettings.GameType;
 import org.lwjgl.opengl.GL11;
+import myau.util.font.Fonts;
+import myau.util.shader.RoundedUtils;
+import net.minecraft.client.renderer.RenderHelper;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -98,24 +101,10 @@ public class Scaffold extends Module {
             () -> this.keepY.getValue() != 0);
     public final BooleanProperty multiplace = new BooleanProperty("multi-place", true);
     public final BooleanProperty safeWalk = new BooleanProperty("safe-walk", true);
-    public final BooleanProperty swing = new BooleanProperty("swing", true);
     public final BooleanProperty itemSpoof = new BooleanProperty("item-spoof", false);
     public final BooleanProperty blockCounter = new BooleanProperty("block-counter", true);
-    public final BooleanProperty blockRender = new BooleanProperty("block-render", false);
-    public final ModeProperty blockRenderColorMode = new ModeProperty("block-render-color", 0,
-            new String[] { "HUD", "CUSTOM" }, () -> this.blockRender.getValue());
-    public final ColorProperty blockRenderColor = new ColorProperty("block-render-custom-color", 0xFF55AAFF,
-            () -> this.blockRender.getValue() && this.blockRenderColorMode.getValue() == 1);
-    public final BooleanProperty blockRenderRaytrace = new BooleanProperty("block-render-raytrace", false,
-            () -> this.blockRender.getValue());
-    public final IntProperty blockRenderAlpha = new IntProperty("block-render-alpha", 200, 0, 255,
-            () -> this.blockRender.getValue() && this.blockRenderRaytrace.getValue());
-    public final BooleanProperty blockRenderOutline = new BooleanProperty("block-render-outline", true,
-            () -> this.blockRender.getValue());
-    public final BooleanProperty blockRenderShade = new BooleanProperty("block-render-shade", false,
-            () -> this.blockRender.getValue());
-    private MovingObjectPosition lastBlockRenderRaytrace = null;
-    private final Map<BlockPos, TimerUtil> blockRenderHighlights = new HashMap<>();
+    private float animationProgress = 0f;
+    private long lastFrame = System.currentTimeMillis();
 
     private boolean shouldStopSprint() {
         if (this.isTowering()) {
@@ -214,17 +203,7 @@ public class Scaffold extends Module {
                 if (mc.playerController.getCurrentGameType() != GameType.CREATIVE) {
                     this.blockCount--;
                 }
-                if (this.swing.getValue()) {
-                    mc.thePlayer.swingItem();
-                } else {
-                    PacketUtil.sendPacket(new C0APacketAnimation());
-                }
-                if (this.blockRender.getValue()) {
-                    TimerUtil timer = new TimerUtil();
-                    timer.reset();
-                    this.blockRenderHighlights.put(blockPos.offset(enumFacing), timer);
-                    this.lastBlockRenderRaytrace = new MovingObjectPosition(vec3, enumFacing, blockPos);
-                }
+                PacketUtil.sendPacket(new C0APacketAnimation());
             }
         }
     }
@@ -734,198 +713,81 @@ public class Scaffold extends Module {
 
     @EventTarget
     public void onRender(Render2DEvent event) {
-        if (this.isEnabled()) {
-            if (this.blockCounter.getValue()) {
-                int count = 0;
-                for (int i = 0; i < 9; i++) {
-                    ItemStack stack = mc.thePlayer.inventory.getStackInSlot(i);
-                    if (stack != null && stack.stackSize > 0) {
-                        Item item = stack.getItem();
-                        if (item instanceof ItemBlock) {
-                            Block block = ((ItemBlock) item).getBlock();
-                            if (!BlockUtil.isInteractable(block) && BlockUtil.isSolid(block)) {
-                                count += stack.stackSize;
-                            }
+        if (mc.thePlayer == null) return;
+
+        long currentFrame = System.currentTimeMillis();
+        float delta = (currentFrame - lastFrame) / 1000f;
+        lastFrame = currentFrame;
+
+        boolean shouldShow = this.isEnabled() && this.blockCounter.getValue();
+
+        float target = shouldShow ? 1f : 0f;
+        animationProgress += (target - animationProgress) * 12f * delta;
+        animationProgress = Math.max(0f, Math.min(1f, animationProgress));
+
+        if (animationProgress <= 0.01f) return;
+
+        ItemStack itemStack = null;
+        int count = 0;
+        ItemStack held = mc.thePlayer.getHeldItem();
+        if (held != null && held.getItem() instanceof ItemBlock) {
+            itemStack = held;
+        }
+
+        for (int i = 0; i < 9; i++) {
+            ItemStack stack = mc.thePlayer.inventory.getStackInSlot(i);
+            if (stack != null && stack.stackSize > 0) {
+                Item item = stack.getItem();
+                if (item instanceof ItemBlock) {
+                    Block block = ((ItemBlock) item).getBlock();
+                    if (!BlockUtil.isInteractable(block) && BlockUtil.isSolid(block)) {
+                        count += stack.stackSize;
+                        if (itemStack == null) {
+                            itemStack = stack;
                         }
                     }
                 }
-                HUD hud = (HUD) Myau.moduleManager.modules.get(HUD.class);
-                float scale = hud.scale.getValue();
-                GlStateManager.pushMatrix();
-                GlStateManager.scale(scale, scale, 0.0F);
-                GlStateManager.disableDepth();
-                GlStateManager.enableBlend();
-                GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-                mc.fontRendererObj
-                        .drawString(
-                                String.format("%d block%s left", count, count != 1 ? "s" : ""),
-                                ((float) new ScaledResolution(mc).getScaledWidth() / 2.0F
-                                        + (float) mc.fontRendererObj.FONT_HEIGHT * 1.5F) / scale,
-                                (float) new ScaledResolution(mc).getScaledHeight() / 2.0F / scale
-                                        - (float) mc.fontRendererObj.FONT_HEIGHT / 2.0F + 1.0F,
-                                (count > 0 ? Color.WHITE.getRGB() : new Color(255, 85, 85).getRGB()) | -1090519040,
-                                hud.shadow.getValue());
-                GlStateManager.disableBlend();
-                GlStateManager.enableDepth();
-                GlStateManager.popMatrix();
             }
         }
-    }
 
-    @EventTarget
-    public void onRender3D(Render3DEvent event) {
-        if (!this.isEnabled() || !this.blockRender.getValue()) {
-            return;
-        }
-        Color renderColor = this.getBlockRenderColor();
-        if (!this.blockRenderRaytrace.getValue()) {
-            Iterator<Map.Entry<BlockPos, TimerUtil>> iterator = this.blockRenderHighlights.entrySet().iterator();
-            while (iterator.hasNext()) {
-                Map.Entry<BlockPos, TimerUtil> entry = iterator.next();
-                long elapsed = entry.getValue().getElapsedTime();
-                int alpha = 210 - (int) (210.0F * elapsed / 750.0F);
-                if (alpha <= 0) {
-                    iterator.remove();
-                    continue;
-                }
-                this.renderScaffoldBlock(entry.getKey(), this.mergeAlpha(renderColor, alpha));
-            }
-            return;
-        }
+        if (itemStack == null) return;
 
-        MovingObjectPosition hitResult = mc.objectMouseOver;
-        if (hitResult != null && hitResult.typeOfHit == MovingObjectType.MISS) {
-            hitResult = this.lastBlockRenderRaytrace;
-        } else if (hitResult != null) {
-            this.lastBlockRenderRaytrace = hitResult;
-        }
-        if (hitResult == null) {
-            hitResult = this.lastBlockRenderRaytrace;
-        }
-        if (hitResult != null && hitResult.typeOfHit == MovingObjectType.BLOCK) {
-            this.renderScaffoldBlock(hitResult.getBlockPos(), this.mergeAlpha(renderColor, this.blockRenderAlpha.getValue()));
-        }
-    }
+        ScaledResolution sr = new ScaledResolution(mc);
+        String amount = String.valueOf(count);
+        String prefix = "Amount: ";
 
-    private Color getBlockRenderColor() {
-        if (this.blockRenderColorMode.getValue() == 0) {
-            HUD hud = (HUD) Myau.moduleManager.modules.get(HUD.class);
-            return hud != null ? hud.getColor(System.currentTimeMillis()) : Color.WHITE;
-        }
-        return new Color(this.blockRenderColor.getValue());
-    }
+        float textWidth = Fonts.MAIN.get(18).width(prefix) + Fonts.MAIN.get(18).width(amount);
+        float width = 16f + 8f + textWidth + 8f;
+        float height = 22f;
+        float x = (sr.getScaledWidth() - width) / 2f;
+        float y = sr.getScaledHeight() - 90f;
 
-    private int mergeAlpha(Color color, int alpha) {
-        int clampedAlpha = Math.max(0, Math.min(255, alpha));
-        return (clampedAlpha << 24) | (color.getRed() << 16) | (color.getGreen() << 8) | color.getBlue();
-    }
+        GlStateManager.pushMatrix();
 
-    private void renderScaffoldBlock(BlockPos blockPos, int color) {
-        if (blockPos == null) {
-            return;
-        }
-        this.renderScaffoldBox(blockPos.getX(), blockPos.getY(), blockPos.getZ(), 1.0D, 1.0D, 1.0D, color,
-                this.blockRenderOutline.getValue(), this.blockRenderShade.getValue());
-    }
+        float centerX = x + width / 2f;
+        float centerY = y + height / 2f;
+        GlStateManager.translate(centerX, centerY, 0);
+        GlStateManager.scale(animationProgress, animationProgress, 1f);
+        GlStateManager.translate(-centerX, -centerY, 0);
 
-    private void renderScaffoldBox(int x, int y, int z, double x2, double y2, double z2, int color, boolean outline, boolean shade) {
-        double xPos = x - mc.getRenderManager().viewerPosX;
-        double yPos = y - mc.getRenderManager().viewerPosY;
-        double zPos = z - mc.getRenderManager().viewerPosZ;
-        GL11.glPushMatrix();
-        GL11.glBlendFunc(770, 771);
-        GL11.glEnable(3042);
-        GL11.glLineWidth(2.0F);
-        GL11.glDisable(GL11.GL_TEXTURE_2D);
-        GL11.glDisable(2929);
-        GL11.glDepthMask(false);
-        float alpha = (color >> 24 & 0xFF) / 255.0F;
-        float red = (color >> 16 & 0xFF) / 255.0F;
-        float green = (color >> 8 & 0xFF) / 255.0F;
-        float blue = (color & 0xFF) / 255.0F;
-        GL11.glColor4f(red, green, blue, alpha);
-        AxisAlignedBB bb = new AxisAlignedBB(xPos, yPos, zPos, xPos + x2, yPos + y2, zPos + z2);
-        if (outline) {
-            RenderGlobal.drawSelectionBoundingBox(bb);
-        }
-        if (shade) {
-            drawScaffoldFilledBox(bb, red, green, blue);
-        }
-        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-        GL11.glEnable(GL11.GL_TEXTURE_2D);
-        GL11.glEnable(2929);
-        GL11.glDepthMask(true);
-        GL11.glDisable(GL11.GL_BLEND);
-        GL11.glPopMatrix();
-    }
+        int bgAlpha = (int) (150 * animationProgress);
+        RoundedUtils.drawRound(x, y, width, height, 4f, new Color(0, 0, 0, bgAlpha));
 
-    private static void drawScaffoldFilledBox(AxisAlignedBB bb, float red, float green, float blue) {
-        drawScaffoldFilledBox(bb, red, green, blue, 0.25F);
-    }
+        GlStateManager.pushMatrix();
+        RenderHelper.enableGUIStandardItemLighting();
+        mc.getRenderItem().renderItemAndEffectIntoGUI(itemStack, (int) x + 4, (int) y + 3);
+        RenderHelper.disableStandardItemLighting();
+        GlStateManager.popMatrix();
 
-    private static void drawScaffoldFilledBox(AxisAlignedBB bb, float red, float green, float blue, float alpha) {
-        Tessellator tessellator = Tessellator.getInstance();
-        WorldRenderer worldRenderer = tessellator.getWorldRenderer();
-        worldRenderer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
-        worldRenderer.pos(bb.minX, bb.minY, bb.minZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.minX, bb.maxY, bb.minZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.maxX, bb.minY, bb.minZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.maxX, bb.maxY, bb.minZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.maxX, bb.minY, bb.maxZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.maxX, bb.maxY, bb.maxZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.minX, bb.minY, bb.maxZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.minX, bb.maxY, bb.maxZ).color(red, green, blue, alpha).endVertex();
-        tessellator.draw();
-        worldRenderer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
-        worldRenderer.pos(bb.maxX, bb.maxY, bb.minZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.maxX, bb.minY, bb.minZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.minX, bb.maxY, bb.minZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.minX, bb.minY, bb.minZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.minX, bb.maxY, bb.maxZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.minX, bb.minY, bb.maxZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.maxX, bb.maxY, bb.maxZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.maxX, bb.minY, bb.maxZ).color(red, green, blue, alpha).endVertex();
-        tessellator.draw();
-        worldRenderer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
-        worldRenderer.pos(bb.minX, bb.maxY, bb.minZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.maxX, bb.maxY, bb.minZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.maxX, bb.maxY, bb.maxZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.minX, bb.maxY, bb.maxZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.minX, bb.maxY, bb.minZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.minX, bb.maxY, bb.maxZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.maxX, bb.maxY, bb.maxZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.maxX, bb.maxY, bb.minZ).color(red, green, blue, alpha).endVertex();
-        tessellator.draw();
-        worldRenderer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
-        worldRenderer.pos(bb.minX, bb.minY, bb.minZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.maxX, bb.minY, bb.minZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.maxX, bb.minY, bb.maxZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.minX, bb.minY, bb.maxZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.minX, bb.minY, bb.minZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.minX, bb.minY, bb.maxZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.maxX, bb.minY, bb.maxZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.maxX, bb.minY, bb.minZ).color(red, green, blue, alpha).endVertex();
-        tessellator.draw();
-        worldRenderer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
-        worldRenderer.pos(bb.minX, bb.minY, bb.minZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.minX, bb.maxY, bb.minZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.minX, bb.minY, bb.maxZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.minX, bb.maxY, bb.maxZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.maxX, bb.minY, bb.maxZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.maxX, bb.maxY, bb.maxZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.maxX, bb.minY, bb.minZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.maxX, bb.maxY, bb.minZ).color(red, green, blue, alpha).endVertex();
-        tessellator.draw();
-        worldRenderer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
-        worldRenderer.pos(bb.minX, bb.maxY, bb.maxZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.minX, bb.minY, bb.maxZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.minX, bb.maxY, bb.minZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.minX, bb.minY, bb.minZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.maxX, bb.maxY, bb.minZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.maxX, bb.minY, bb.minZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.maxX, bb.maxY, bb.maxZ).color(red, green, blue, alpha).endVertex();
-        worldRenderer.pos(bb.maxX, bb.minY, bb.maxZ).color(red, green, blue, alpha).endVertex();
-        tessellator.draw();
+        GlStateManager.enableBlend();
+        int textAlpha = (int) (255 * animationProgress);
+        float fontY = y + (height / 2f) - (Fonts.MAIN.get(18).height() / 2f);
+        float textX = x + 24f;
+
+        Fonts.MAIN.get(18).drawWithShadow(prefix, textX, fontY, new Color(200, 200, 200, textAlpha).getRGB());
+        Fonts.MAIN.get(18).drawWithShadow(amount, textX + Fonts.MAIN.get(18).width(prefix), fontY, new Color(81, 99, 149, textAlpha).getRGB());
+
+        GlStateManager.popMatrix();
     }
 
     @EventTarget

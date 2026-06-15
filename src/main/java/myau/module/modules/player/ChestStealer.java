@@ -120,7 +120,7 @@ public class ChestStealer extends Module {
                             }
                             if (mc.thePlayer.inventory.getFirstEmptyStack() == -1) {
                                 if (!this.warnedFull) {
-                                    ChatUtil.sendFormatted(String.format("%s%s: &cYour inventory is full!&r", Myau.clientName, this.getName()));
+                                    ChatUtil.display("%s%s: &cYour inventory is full!&r", this.getName());
                                     this.warnedFull = true;
                                 }
                                 if (this.autoClose.getValue()) {

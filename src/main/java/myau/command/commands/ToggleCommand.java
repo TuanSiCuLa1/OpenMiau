@@ -17,13 +17,13 @@ public class ToggleCommand extends Command {
     @Override
     public void runCommand(ArrayList<String> args) {
         if (args.size() < 2) {
-            ChatUtil.sendFormatted(
-                    String.format("%sUsage: .%s <&omodule&r>&r", Myau.clientName, args.get(0).toLowerCase(Locale.ROOT))
+            ChatUtil.display(
+                    String.format("%sUsage: .%s <&omodule&r>&r", args.get(0).toLowerCase(Locale.ROOT))
             );
         } else {
             Module module = Myau.moduleManager.getModule(args.get(1));
             if (module == null) {
-                ChatUtil.sendFormatted(String.format("%sModule not found (&o%s&r)&r", Myau.clientName, args.get(1)));
+                ChatUtil.display("%sModule not found (&o%s&r)&r", args.get(1));
             } else {
                 boolean changed = true;
                 if (args.size() >= 3) {
@@ -38,7 +38,7 @@ public class ToggleCommand extends Command {
                     }
                 }
                 if (changed && module.toggle()) {
-                    ChatUtil.sendFormatted(String.format("%s%s: %s&r", Myau.clientName, module.getName(), module.isEnabled() ? "&a&lON" : "&c&lOFF"));
+                    ChatUtil.display("%s%s: %s&r", module.getName(), module.isEnabled() ? "&a&lON" : "&c&lOFF");
                 }
             }
         }
