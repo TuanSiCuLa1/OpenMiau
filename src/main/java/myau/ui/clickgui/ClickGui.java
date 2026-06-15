@@ -6,9 +6,11 @@ import myau.ui.clickgui.components.impl.CategoryComponent;
 import myau.ui.clickgui.components.impl.ModuleComponent;
 import myau.ui.clickgui.components.impl.OnlineConfigComponent;
 import myau.config.online.OnlineConfigEntry;
-import myau.util.Timer;
+import myau.config.Config;
+import myau.util.ChatUtil;
 import myau.module.modules.render.GuiModule;
 import myau.util.shader.BlurUtils;
+import myau.util.Timer;
 import myau.util.shader.RoundedUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
@@ -43,7 +45,7 @@ public class ClickGui extends GuiScreen {
     public ClickGui() {
         categories = new ArrayList<>();
         int xOffset = 5;
-        String[] values = new String[]{"Combat", "Movement", "Render", "Player", "Misc", "Latency", "Minigames", "Target", "OnlineConfig"};
+        String[] values = new String[]{"Combat", "Movement", "Render", "Player", "Misc", "Latency", "Minigames", "Target", "Config"};
 
         for (int i = 0; i < values.length; ++i) {
             String c = values[i];
@@ -53,8 +55,14 @@ public class ClickGui extends GuiScreen {
             categories.add(categoryComponent);
             xOffset += 98; // width is 92, leaving a gap of 6 pixels between categories
         }
+        // add Search category
+        CategoryComponent searchCategory = new CategoryComponent("Search");
+        searchCategory.setY(5, false);
+        searchCategory.setX(xOffset, false);
+        categories.add(searchCategory);
+        xOffset += 98;
         for (CategoryComponent c : categories) {
-            if (c.category.equalsIgnoreCase("OnlineConfig")) {
+            if (c.category.equalsIgnoreCase("Config")) {
                 this.onlineConfigCategory = c;
                 break;
             }
@@ -117,11 +125,11 @@ public class ClickGui extends GuiScreen {
                 m.drawScreen(x, y);
             }
         }
-
         GL11.glColor3f(1.0f, 1.0f, 1.0f);
     }
 
     public void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
+
         List<CategoryComponent> inputOrder = new ArrayList<>(categories);
         inputOrder.sort((a, b) -> Long.compare(b.lastInteractedTime, a.lastInteractedTime));
         CategoryComponent topmostCategory = null;
@@ -181,10 +189,6 @@ public class ClickGui extends GuiScreen {
         if (wheelInput != 0) {
             int mouseX = Mouse.getEventX() * this.width / mc.displayWidth;
             int mouseY = this.height - Mouse.getEventY() * this.height / mc.displayHeight - 1;
-            
-            for (CategoryComponent category : categories) {
-                category.onScroll(wheelInput, mouseX, mouseY);
-            }
         }
     }
 
@@ -202,17 +206,6 @@ public class ClickGui extends GuiScreen {
                 for (Component module : category.getModules()) {
                     module.keyTyped(t, k);
                 }
-            }
-        }
-    }
-
-    @Override
-    public void onGuiClosed() {
-        for (CategoryComponent c : categories) {
-            c.dragging = false;
-            c.onGuiClosed();
-            for (Component m : c.getModules()) {
-                m.onGuiClosed();
             }
         }
     }

@@ -103,10 +103,10 @@ public abstract class MixinItemRenderer {
                     this.doBowTransformations(partialTicks, player);
                 }
             } else {
-                if (!Animations.isOddSwing()) {
+                if (!Animations.applySwing(swingProgress, equipProgress)) {
                     this.doItemUsedTransformations(swingProgress);
+                    this.transformFirstPersonItem(equipProgress, swingProgress);
                 }
-                this.transformFirstPersonItem(equipProgress, swingProgress);
             }
 
             this.renderItem(player, this.itemToRender, ItemCameraTransforms.TransformType.FIRST_PERSON);

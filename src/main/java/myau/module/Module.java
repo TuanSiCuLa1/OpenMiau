@@ -2,6 +2,10 @@ package myau.module;
 
 import myau.Myau;
 import myau.module.modules.render.HUD;
+import myau.property.Property;
+import myau.property.PropertyManager;
+import java.util.List;
+import java.util.ArrayList;
 import myau.util.KeyBindUtil;
 import myau.util.notification.NotificationManager;
 import myau.util.notification.NotificationType;
@@ -58,6 +62,12 @@ public abstract class Module {
                 NotificationManager.show(this.name, "was disabled.", NotificationType.ERROR);
             }
         }
+    }
+
+    public List<Property<?>> getValues() {
+        ArrayList<Property<?>> props = Myau.propertyManager.properties.get(this.getClass());
+        if (props == null) return new ArrayList<>();
+        return props;
     }
 
     public boolean toggle() {

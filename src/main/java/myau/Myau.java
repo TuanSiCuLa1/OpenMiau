@@ -29,9 +29,10 @@ import java.io.InputStreamReader;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.Objects;
-
 public class Myau {
+    public static final boolean DEVELOPMENT_SWITCH = false;
     public static String clientName = "&7[&cM&6i&ea&au&7]&r ";
     public static String version = ClientInfo.VERSION;
     public static RotationManager rotationManager;
@@ -78,7 +79,6 @@ public class Myau {
         EventManager.register(discordRichPresence);
         EventManager.register(notificationManager);
         EventManager.register(dragManager);
-        EventManager.register(new myau.component.SlotComponent());
         moduleManager.modules.put(AimAssist.class, new AimAssist());
         moduleManager.modules.put(AntiAFK.class, new AntiAFK());
         moduleManager.modules.put(AntiDebuff.class, new AntiDebuff());
@@ -238,4 +238,15 @@ public class Myau {
 
         AccountManager.init();
     }
+    public static Locale getLocale() {
+        return Locale.getDefault();
+    }
+
+    public static void setLocale(Locale locale) {
+        Locale.setDefault(locale);
+    }
+
+    public static void terminate() {
+    }
 }
+

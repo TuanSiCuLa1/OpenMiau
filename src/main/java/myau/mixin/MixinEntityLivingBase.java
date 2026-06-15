@@ -11,7 +11,10 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+import myau.module.modules.render.Animations;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Overwrite;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -74,5 +77,25 @@ public abstract class MixinEntityLivingBase extends MixinEntity {
             }
         }
         return float1;
+    }
+
+    @Shadow
+    public abstract boolean isPotionActive(net.minecraft.potion.Potion potionIn);
+
+    @Shadow
+    public abstract net.minecraft.potion.PotionEffect getActivePotionEffect(net.minecraft.potion.Potion potionIn);
+
+    /**
+     * @author Antigravity
+     * @reason Custom swing animation speed.
+     */
+    @Overwrite
+    private int getArmSwingAnimationEnd() {
+        int original = this.isPotionActive(net.minecraft.potion.Potion.digSpeed) 
+                ? 6 - (1 + this.getActivePotionEffect(net.minecraft.potion.Potion.digSpeed).getAmplifier()) 
+                : (this.isPotionActive(net.minecraft.potion.Potion.digSlowdown) 
+                        ? 6 + (1 + this.getActivePotionEffect(net.minecraft.potion.Potion.digSlowdown).getAmplifier()) * 2 
+                        : 6);
+        return Animations.getSwingAnimationEnd((EntityLivingBase) (Object) this, original);
     }
 }

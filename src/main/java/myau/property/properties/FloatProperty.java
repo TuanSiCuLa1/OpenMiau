@@ -44,11 +44,12 @@ public class FloatProperty extends Property<Float> {
         jsonObject.addProperty(this.getName(), this.getValue());
     }
 
-    public Float getMinimum() {
-        return minimum;
-    }
-
-    public Float getMaximum() {
-        return maximum;
-    }
+    public Float getMin() { return minimum; }
+    public Float getMax() { return maximum; }
+    public Float getMinimum() { return minimum; }
+    public Float getMaximum() { return maximum; }
+    public Float getSecondValue() { return getValue(); }
+    public void setSecondValue(Float val) { setValue(val); }
+    public Float getDefaultValue() { return getValue(); }
+    public Float getDecimalPlaces() { return 1.0f; }
 }

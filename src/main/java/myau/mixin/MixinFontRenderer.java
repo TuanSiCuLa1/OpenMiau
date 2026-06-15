@@ -29,7 +29,8 @@ public abstract class MixinFontRenderer {
                 string = antiObfuscate.stripObfuscated(string);
             }
             NickHider nickHider = (NickHider) Myau.moduleManager.modules.get(NickHider.class);
-            return nickHider.isEnabled() ? nickHider.replaceNick(string) : string;
+            string = nickHider.isEnabled() ? nickHider.replaceNick(string) : string;
+            return applyThemeName(string);
         }
     }
 
@@ -48,8 +49,32 @@ public abstract class MixinFontRenderer {
                 string = antiObfuscate.stripObfuscated(string);
             }
             NickHider nickHider = (NickHider) Myau.moduleManager.modules.get(NickHider.class);
-            return nickHider.isEnabled() ? nickHider.replaceNick(string) : string;
+            string = nickHider.isEnabled() ? nickHider.replaceNick(string) : string;
+            return applyThemeName(string);
         }
+    }
+
+    private String applyThemeName(String string) {
+        if (string == null || Myau.moduleManager == null) {
+            return string;
+        }
+        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getMinecraft();
+        if (mc.thePlayer == null) {
+            return string;
+        }
+        myau.module.modules.render.HUD hud = (myau.module.modules.render.HUD) Myau.moduleManager.modules.get(myau.module.modules.render.HUD.class);
+        if (hud == null || !hud.isEnabled()) {
+            return string;
+        }
+        String targetName = mc.thePlayer.getName();
+        NickHider nickHider = (NickHider) Myau.moduleManager.modules.get(NickHider.class);
+        if (nickHider != null && nickHider.isEnabled()) {
+            targetName = net.minecraft.util.EnumChatFormatting.getTextWithoutFormattingCodes(myau.enums.ChatColors.formatColor(nickHider.protectName.getValue()));
+        }
+        if (!targetName.isEmpty() && string.contains(targetName)) {
+            string = string.replace(targetName, myau.util.ColorUtil.getThemedName(targetName) + "§r");
+        }
+        return string;
     }
 
     @Redirect(

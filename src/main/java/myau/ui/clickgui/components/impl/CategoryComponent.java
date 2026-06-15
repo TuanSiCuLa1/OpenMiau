@@ -110,7 +110,27 @@ public class CategoryComponent {
     }
 
     public void reloadModules() {
-        if (this.category.equalsIgnoreCase("OnlineConfig")) {
+        if (this.category.equalsIgnoreCase("Config")) {
+            // Config category: load online configs AND local config management
+            Map<String, Boolean> openStates = captureModuleOpenStates();
+            this.modules.clear();
+            this.titleHeight = 13;
+            float moduleRenderY = this.titleHeight + 3;
+
+            // Add local config management components first
+            moduleRenderY = addLocalConfigComponents(moduleRenderY, openStates);
+
+            // Then load modules from ModuleManager (if any)
+            List<Module> mods = myau.Myau.moduleManager.getModulesByCategory().get(this.category);
+            if (mods != null) {
+                for (Module mod : mods) {
+                    ModuleComponent component = new ModuleComponent(mod, this, moduleRenderY);
+                    component.restoreOpenState(Boolean.TRUE.equals(openStates.get(mod.getName())));
+                    this.modules.add(component);
+                    moduleRenderY += 16;
+                }
+            }
+
             syncAfterModuleReload();
             return;
         }
@@ -130,6 +150,12 @@ public class CategoryComponent {
         }
 
         syncAfterModuleReload();
+    }
+
+    private float addLocalConfigComponents(float moduleRenderY, Map<String, Boolean> openStates) {
+        moduleRenderY += 16;
+
+        return moduleRenderY;
     }
 
     private Map<String, Boolean> captureModuleOpenStates() {
@@ -517,7 +543,7 @@ public class CategoryComponent {
 
     private static Map<String, CategoryIconStacks> buildCategoryIconStacks() {
         Map<String, CategoryIconStacks> iconStacks = new HashMap<>();
-        String[] categories = new String[]{"Combat", "Movement", "Render", "Player", "Misc", "Latency", "Minigames", "Target", "OnlineConfig"};
+        String[] categories = new String[]{"Combat", "Movement", "Render", "Player", "Misc", "Latency", "Minigames", "Target", "Config"};
         for (String cat : categories) {
             ItemStack normalStack = createCategoryIconStack(cat, false);
             ItemStack activeStack = createCategoryIconStack(cat, true);
@@ -544,7 +570,7 @@ public class CategoryComponent {
             itemStack = new ItemStack(Items.compass);
         } else if (category.equalsIgnoreCase("Minigames")) {
             itemStack = new ItemStack(Items.gold_ingot);
-        } else if (category.equalsIgnoreCase("OnlineConfig")) {
+        } else if (category.equalsIgnoreCase("Config")) {
             itemStack = new ItemStack(Items.writable_book);
         } else if (category.equalsIgnoreCase("Target")) {
             itemStack = new ItemStack(Items.arrow);

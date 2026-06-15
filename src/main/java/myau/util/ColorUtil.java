@@ -148,4 +148,78 @@ public final class ColorUtil {
         long time = System.currentTimeMillis() + (delay.length > 0 ? delay[0] : 0L);
         return Color.getHSBColor((float) (time % (15000L / speed)) / (15000.0F / (float) speed), 1.0F, 1.0F).getRGB();
     }
+    public static float drawThemeString(String text, float x, float y, boolean shadow) {
+        myau.module.modules.render.HUD hud = null;
+        if (myau.Myau.moduleManager != null) {
+            hud = (myau.module.modules.render.HUD) myau.Myau.moduleManager.modules.get(myau.module.modules.render.HUD.class);
+        }
+        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getMinecraft();
+        float currentX = x;
+
+        for (int i = 0; i < text.length(); i++) {
+            String character = String.valueOf(text.charAt(i));
+            int color;
+            if (hud != null && hud.isEnabled()) {
+                color = hud.getColor(System.currentTimeMillis(), i).getRGB();
+            } else {
+                Themes theme = Themes.getCurrentTheme();
+                color = theme.getAccentColor(new Vector2d(0, i * 15)).getRGB();
+            }
+
+            if (shadow) {
+                mc.fontRendererObj.drawStringWithShadow(character, currentX, y, color);
+            } else {
+                mc.fontRendererObj.drawString(character, currentX, y, color, false);
+            }
+            currentX += mc.fontRendererObj.getStringWidth(character);
+        }
+        return currentX;
+    }
+    public static String getClosestVanillaColor(java.awt.Color color) {
+        int[] colors = {
+                0x000000, 0x0000AA, 0x00AA00, 0x00AAAA,
+                0xAA0000, 0xAA00AA, 0xFFAA00, 0xAAAAAA,
+                0x555555, 0x5555FF, 0x55FF55, 0x55FFFF,
+                0xFF5555, 0xFF55FF, 0xFFFF55, 0xFFFFFF
+        };
+        String[] codes = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"};
+
+        int closest = 0;
+        double minDistance = Double.MAX_VALUE;
+
+        for (int i = 0; i < colors.length; i++) {
+            int r = (colors[i] >> 16) & 0xFF;
+            int g = (colors[i] >> 8) & 0xFF;
+            int b = colors[i] & 0xFF;
+
+            double distance = Math.pow(color.getRed() - r, 2) + Math.pow(color.getGreen() - g, 2) + Math.pow(color.getBlue() - b, 2);
+            if (distance < minDistance) {
+                minDistance = distance;
+                closest = i;
+            }
+        }
+        return "§" + codes[closest];
+    }
+
+    public static String getThemedName(String name) {
+        StringBuilder sb = new StringBuilder();
+        myau.module.modules.render.HUD hud = null;
+        if (myau.Myau.moduleManager != null) {
+            hud = (myau.module.modules.render.HUD) myau.Myau.moduleManager.modules.get(myau.module.modules.render.HUD.class);
+        }
+
+        for (int i = 0; i < name.length(); i++) {
+            java.awt.Color c;
+            if (hud != null && hud.isEnabled()) {
+                c = hud.getColor(System.currentTimeMillis(), i);
+            } else {
+                myau.util.Themes theme = myau.util.Themes.getCurrentTheme();
+                c = theme.getAccentColor(new myau.util.vector.Vector2d(0, i * 15));
+            }
+            sb.append(getClosestVanillaColor(c)).append(name.charAt(i));
+        }
+        return sb.toString();
+    }
 }
+
+

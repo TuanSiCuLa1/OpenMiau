@@ -1,72 +1,5 @@
 package myau.module.modules.render;
 
-import myau.module.modules.combat.AimAssist;
-import myau.module.modules.movement.AntiAFK;
-import myau.module.modules.misc.AntiBot;
-import myau.module.modules.misc.AntiCheatDetector;
-import myau.module.modules.player.AntiDebuff;
-import myau.module.modules.combat.AntiFireball;
-import myau.module.modules.misc.AntiObbyTrap;
-import myau.module.modules.misc.AntiObfuscate;
-import myau.module.modules.movement.AntiVoid;
-import myau.module.modules.misc.AutoAnduril;
-import myau.module.modules.misc.AutoAuth;
-import myau.module.modules.player.AutoBedDef;
-import myau.module.modules.player.AutoBlockIn;
-import myau.module.modules.combat.AutoClicker;
-import myau.module.modules.player.AutoHeal;
-import myau.module.modules.player.AutoPot;
-import myau.module.modules.player.AutoRod;
-import myau.module.modules.player.AutoTool;
-import myau.module.modules.latency.BackTrack;
-import myau.module.modules.misc.BedNuker;
-import myau.module.modules.minigames.BedwarUtils;
-import myau.module.modules.movement.Blink;
-import myau.module.modules.player.ChestStealer;
-import myau.module.modules.misc.ClientSpoofer;
-import myau.module.modules.movement.Eagle;
-import myau.module.modules.latency.FakeLag;
-import myau.module.modules.player.FastPlace;
-import myau.module.modules.movement.Fly;
-import myau.module.modules.combat.Freeze;
-import myau.module.modules.player.GhostHand;
-import myau.module.modules.misc.HackerDetector;
-import myau.module.modules.combat.HitBox;
-import myau.module.modules.combat.HitSelect;
-import myau.module.modules.combat.Hitflick;
-import myau.module.modules.player.InvManager;
-import myau.module.modules.player.InvWalk;
-import myau.module.modules.misc.InventoryClicker;
-import myau.module.modules.movement.Jesus;
-import myau.module.modules.movement.KeepSprint;
-import myau.module.modules.combat.KillAura;
-import myau.module.modules.latency.LagRange;
-import myau.module.modules.misc.LightningTracker;
-import myau.module.modules.movement.LongJump;
-import myau.module.modules.player.MCF;
-import myau.module.modules.combat.MoreKB;
-import myau.module.modules.misc.MurderDetector;
-import myau.module.modules.misc.NickHider;
-import myau.module.modules.movement.NoFall;
-import myau.module.modules.combat.NoHitDelay;
-import myau.module.modules.movement.NoJumpDelay;
-import myau.module.modules.misc.NoRotate;
-import myau.module.modules.movement.NoSlow;
-import myau.module.modules.misc.Panic;
-import myau.module.modules.combat.ProjectileAimBot;
-import myau.module.modules.misc.RPC;
-import myau.module.modules.combat.Reach;
-import myau.module.modules.combat.Refill;
-import myau.module.modules.movement.SafeWalk;
-import myau.module.modules.player.Scaffold;
-import myau.module.modules.misc.Spammer;
-import myau.module.modules.movement.Speed;
-import myau.module.modules.player.SpeedMine;
-import myau.module.modules.movement.Sprint;
-import myau.module.modules.combat.TargetStrafe;
-import myau.module.modules.latency.TickBase;
-import myau.module.modules.combat.Velocity;
-import myau.module.modules.combat.Wtap;
 import myau.Myau;
 import myau.enums.BlinkModules;
 import myau.enums.ChatColors;
@@ -94,7 +27,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
-public class HUD extends Module {
+public class  HUD extends Module {
     private static final Minecraft mc = Minecraft.getMinecraft();
     private final java.util.Map<Module, Double> animationMap = new java.util.HashMap<>();
     private final java.util.Map<Module, Float> yMap = new java.util.HashMap<>();
@@ -274,22 +207,26 @@ public class HUD extends Module {
     }
 
     private boolean isCategoryHidden(Module module) {
-        if (this.hideCombat.getValue() && (module instanceof AimAssist || module instanceof AutoClicker || module instanceof KillAura || module instanceof Wtap || module instanceof Velocity || module instanceof Freeze || module instanceof Reach || module instanceof TargetStrafe || module instanceof NoHitDelay || module instanceof AntiFireball || module instanceof HitBox || module instanceof MoreKB || module instanceof Refill || module instanceof HitSelect || module instanceof Hitflick || module instanceof ProjectileAimBot || module instanceof TickBase)) {
-            return true;
+        String category = module.getCategory();
+        if (category == null) {
+            return false;
         }
-        if (this.hideMovement.getValue() && (module instanceof AntiAFK || module instanceof Fly || module instanceof Speed || module instanceof LongJump || module instanceof Sprint || module instanceof SafeWalk || module instanceof Jesus || module instanceof Blink || module instanceof NoFall || module instanceof NoSlow || module instanceof KeepSprint || module instanceof Eagle || module instanceof NoJumpDelay || module instanceof AntiVoid)) {
-            return true;
+        switch (category) {
+            case "combat":
+                return this.hideCombat.getValue();
+            case "movement":
+                return this.hideMovement.getValue();
+            case "render":
+                return this.hideRender.getValue();
+            case "player":
+                return this.hidePlayer.getValue();
+            case "misc":
+                return this.hideMisc.getValue();
+            case "latency":
+                return this.hideLatency.getValue();
+            default:
+                return false;
         }
-        if (this.hideRender.getValue() && (module instanceof ESP || module instanceof Chams || module instanceof FullBright || module instanceof Tracers || module instanceof NameTags || module instanceof Xray || module instanceof TargetHUD || module instanceof TargetESP || module instanceof Keystrokes || module instanceof BlockOverlay || module instanceof Indicators || module instanceof BedESP || module instanceof ItemESP || module instanceof ViewClip || module instanceof NoHurtCam || module instanceof HUD || module instanceof GuiModule || module instanceof ChestESP || module instanceof Trajectories || module instanceof Radar)) {
-            return true;
-        }
-        if (this.hidePlayer.getValue() && (module instanceof AutoHeal || module instanceof AutoPot || module instanceof AutoRod || module instanceof AutoTool || module instanceof ChestStealer || module instanceof InvManager || module instanceof InvWalk || module instanceof Scaffold || module instanceof AutoBlockIn || module instanceof AutoBedDef || module instanceof SpeedMine || module instanceof FastPlace || module instanceof GhostHand || module instanceof MCF || module instanceof BreakProgress || module instanceof AntiDebuff)) {
-            return true;
-        }
-        if (this.hideMisc.getValue() && (module instanceof AutoAuth || module instanceof Spammer || module instanceof BedNuker || module instanceof BedwarUtils || module instanceof MurderDetector || module instanceof LightningTracker || module instanceof NoRotate || module instanceof NickHider || module instanceof AntiObbyTrap || module instanceof AntiObfuscate || module instanceof AntiBot || module instanceof AntiCheatDetector || module instanceof HackerDetector || module instanceof RPC || module instanceof AutoAnduril || module instanceof InventoryClicker || module instanceof ClientSpoofer || module instanceof Panic)) {
-            return true;
-        }
-        return this.hideLatency.getValue() && (module instanceof BackTrack || module instanceof LagRange || module instanceof FakeLag);
     }
 
     private String getExhibitionWatermark() {
@@ -302,7 +239,7 @@ public class HUD extends Module {
             net.minecraft.client.network.NetworkPlayerInfo playerInfo = mc.getNetHandler().getPlayerInfo(mc.thePlayer.getUniqueID());
             if (playerInfo != null) ping = playerInfo.getResponseTime();
         }
-        
+
         java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("h:mm a");
         String formattedTime = sdf.format(new java.util.Date());
 
@@ -324,7 +261,7 @@ public class HUD extends Module {
         for (Module module : Myau.moduleManager.modules.values()) {
             double currentAnim = animationMap.getOrDefault(module, 0.0);
             boolean shouldBeVisible = module.isEnabled() && !module.isHidden() && !this.isCategoryHidden(module);
-            
+
             if (shouldBeVisible) {
                 currentAnim = Math.min(1.0, currentAnim + (delta * 0.006));
             } else {
@@ -351,7 +288,7 @@ public class HUD extends Module {
         for (Module module : animatingModules) {
             float targetY = (this.hudMode.getValue() == 1) ? currentYExhibition : currentYNormal;
             float currentY = yMap.getOrDefault(module, targetY);
-            
+
             currentY += (targetY - currentY) * Math.min(1.0f, 0.012f * delta);
             yMap.put(module, currentY);
 
@@ -415,31 +352,31 @@ public class HUD extends Module {
                 GlStateManager.pushMatrix();
                 GlStateManager.scale(this.scale.getValue(), this.scale.getValue(), 0.0F);
                 long offset = 0L;
-                
+
                 for (Module module : animatingModules) {
                     String moduleName = this.getModuleName(module);
                     String[] moduleSuffix = this.getModuleSuffix(module);
                     float totalWidth = (float) (this.calculateStringWidth(moduleName, moduleSuffix) - (this.shadow.getValue() ? 0 : 1));
-                    
+
                     double animProgress = animationMap.getOrDefault(module, 0.0);
                     float drawY = yMap.getOrDefault(module, 0.0f) / this.scale.getValue();
-                    
+
                     // Tính độ lệch X để tạo hiệu ứng phóng/trượt từ viền màn hình vào
                     float xOffset = (float) ((1.0 - animProgress) * (totalWidth + 10));
                     float drawX = x / this.scale.getValue();
                     if (this.posX.getValue() == 1) drawX += xOffset - totalWidth; // Trượt từ bên phải
                     else drawX -= xOffset; // Trượt từ bên trái
-                    
+
                     // Làm mờ dần màu sắc (Fade Alpha) theo tiến trình animation
                     int alpha = (int) (255 * animProgress);
                     int color = (alpha << 24) | (this.getColor(l, offset).getRGB() & 0x00FFFFFF);
                     int bgColor = new Color(0.0F, 0.0F, 0.0F, (this.background.getValue().floatValue() / 100.0F) * (float)animProgress).getRGB();
-                    
+
                     RenderUtil.enableRenderState();
                     if (this.background.getValue() > 0) {
                         RenderUtil.drawRect(drawX - 2.0F, drawY - 2.0F, drawX + totalWidth + 2.0F, drawY + height - 2.0F, bgColor);
                     }
-                    
+
                     if (this.showBar.getValue()) {
                         int barColor = color;
                         if (this.posX.getValue() == 0) {
@@ -449,9 +386,9 @@ public class HUD extends Module {
                         }
                     }
                     RenderUtil.disableRenderState();
-                    
+
                     mc.fontRendererObj.drawStringWithShadow(moduleName, drawX, drawY, color);
-                    
+
                     if (this.suffixes.getValue() && moduleSuffix.length > 0) {
                         float suffixX = drawX + mc.fontRendererObj.getStringWidth(moduleName) + 2.0F;
                         int suffixColor = ((int)(170 * animProgress) << 24) | 0x00AAAAAA; // Suffix xám mờ dần
@@ -477,27 +414,27 @@ public class HUD extends Module {
                 GlStateManager.pushMatrix();
                 GlStateManager.scale(this.scale.getValue(), this.scale.getValue(), 0.0F);
                 long offset = 0L;
-                
+
                 // [THAY THẾ VÒNG LẶP]
                 for (Module module : animatingModules) {
                     String moduleName = this.getModuleName(module);
                     String[] moduleSuffix = this.getModuleSuffix(module);
                     float totalWidth = (float) (this.calculateStringWidth(moduleName, moduleSuffix) - (this.shadow.getValue() ? 0 : 1));
-                    
+
                     // Áp dụng animation toán học bộ lọc
                     double animProgress = animationMap.getOrDefault(module, 0.0);
                     float drawY = yMap.getOrDefault(module, 0.0f) / this.scale.getValue();
-                    
+
                     float xOffset = (float) ((1.0 - animProgress) * (totalWidth + 10));
                     float baseX = x / this.scale.getValue();
                     float drawX = baseX - (this.posX.getValue() == 1 ? totalWidth : 0.0F);
                     if (this.posX.getValue() == 1) drawX += xOffset;
                     else drawX -= xOffset;
-                    
+
                     int alpha = (int) (255 * animProgress);
                     int color = (alpha << 24) | (this.getColor(l, offset).getRGB() & 0x00FFFFFF);
                     int bgColor = new Color(0.0F, 0.0F, 0.0F, (this.background.getValue().floatValue() / 100.0F) * (float)animProgress).getRGB();
-                    
+
                     RenderUtil.enableRenderState();
                     if (this.background.getValue() > 0) {
                         RenderUtil.drawRect(
@@ -517,13 +454,13 @@ public class HUD extends Module {
                     }
                     RenderUtil.disableRenderState();
                     GlStateManager.disableDepth();
-                    
+
                     if (this.shadow.getValue()) {
                         mc.fontRendererObj.drawStringWithShadow(moduleName, drawX, drawY, color);
                     } else {
                         mc.fontRendererObj.drawString(moduleName, drawX, drawY + (this.posY.getValue() == 1 ? 1.0F : 0.0F), color, false);
                     }
-                    
+
                     if (this.suffixes.getValue() && moduleSuffix.length > 0) {
                         float width = (float) mc.fontRendererObj.getStringWidth(moduleName) + 3.0F;
                         int suffixColor = ((int)(160 * animProgress) << 24) | 0x00AAAAAA;
