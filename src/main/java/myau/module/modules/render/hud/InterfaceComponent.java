@@ -1,9 +1,9 @@
 package myau.module.modules.render.hud;
 
-import lombok.Getter;
 import lombok.Setter;
 import myau.module.Module;
 import myau.module.modules.render.HUD;
+import myau.util.Themes;
 import myau.util.vector.Vector2d;
 import org.lwjgl.input.Keyboard;
 
@@ -16,9 +16,10 @@ public final class InterfaceComponent {
     public float animationTime;
     public String tag = "";
     public float nameWidth = 0, tagWidth;
+
     @Setter
-    @Getter
-    public Color color = Color.WHITE;
+    public Color color = Color.WHITE; // Đã bỏ @Getter ở đây
+
     public String translatedName = "";
     public boolean hidden = false;
 
@@ -32,6 +33,24 @@ public final class InterfaceComponent {
 
     public InterfaceComponent(final Module module) {
         this.module = module;
+    }
+
+    // 👉 100% RISE 6 LOGIC: Tự động lấy màu Gradient dựa theo toạ độ Y của Component
+    public Color getColor() {
+        // Lấy theme hiện tại
+        Themes theme = Themes.getCurrentTheme();
+        HUD hud = (HUD) myau.Myau.moduleManager.modules.get(HUD.class);
+
+        // Kiểm tra xem HUD đang chọn mode màu gì (Static hay Fade)
+        if (hud != null && hud.colorAnimation.getValue() == 1) { // 1 = FADE
+            // Ép cứng X = 0, chỉ cho Y chạy để tạo đường sóng (Wave) trượt dọc hoàn hảo
+            return theme.getAccentColor(new Vector2d(0, this.position.getY()));
+        } else if (hud != null && hud.colorAnimation.getValue() == 2) { // 2 = RAINBOW
+            return myau.util.ColorUtil.rainbow((int) (this.position.getY() * 2 + System.currentTimeMillis() / 10));
+        }
+
+        // STATIC (Mặc định)
+        return theme.getFirstColor();
     }
 
     public boolean shouldDisplay(HUD hudInstance) {
@@ -55,5 +74,4 @@ public final class InterfaceComponent {
                 return true;
         }
     }
-
 }

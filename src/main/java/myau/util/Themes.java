@@ -130,25 +130,9 @@ public enum Themes {
         return getAccentColor(new Vector2d(0.0, 0.0));
     }
 
-    @Deprecated
-    public int getRound() {
-        return 4;
-    }
-
-    public float getPadding() {
-        return 4.5f;
-    }
-
-    public Color getDropShadow() {
-        return new Color(0, 0, 0, 190);
-    }
-
-    public double getBlendFactor(Vector2d screenCoordinates) {
-        return Math.sin(System.currentTimeMillis() / 600.0D
-                + screenCoordinates.getX() * 0.005D
-                + screenCoordinates.getY() * 0.06D
-        ) * 0.5D + 0.5D;
-    }
+        public double getBlendFactor(Vector2d screenCoordinates) {
+            return Math.sin(System.currentTimeMillis() / 600.0D + screenCoordinates.getX() * 0.005D + screenCoordinates.getY() * 0.06D) * 0.5D + 0.5D;
+        }
 
     static Color backgroundShade = new Color(0, 0, 0, 110);
 
@@ -183,4 +167,3 @@ public enum Themes {
         }
     }
 }
-

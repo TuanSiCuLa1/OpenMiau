@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
 public class HUD extends Module {
     private static final Minecraft mc = Minecraft.getMinecraft();
 
-    // 👉 ĐÃ FIX: Dùng duy nhất 1 Map quản lý Component thay vì 3 Map rời rạc
     private final java.util.Map<Module, InterfaceComponent> components = new java.util.HashMap<>();
 
     private long lastMS = System.currentTimeMillis();
@@ -64,7 +63,6 @@ public class HUD extends Module {
     public final BooleanProperty toggleSound = new BooleanProperty("toggle-sounds", true);
     public final BooleanProperty toggleAlerts = new BooleanProperty("toggle-alerts", false);
 
-    // Hàm lấy Component tự động
     private InterfaceComponent getComponent(Module module) {
         return components.computeIfAbsent(module, InterfaceComponent::new);
     }
@@ -105,23 +103,23 @@ public class HUD extends Module {
         super("HUD", true, true);
     }
 
-    public Color getColor(long time) {
-        return this.getColor(time, 0L);
-    }
-
-    public Color getColor(long time, long yPos) {
-        Themes theme = Themes.getCurrentTheme(); // Tự động lấy chuẩn Theme đang chọn từ bảng màu ClickGUI
-
+    // Hàm bổ trợ lấy màu nhanh cho các thành phần UI đơn lẻ bên ngoài trục dọc ArrayList
+    public Color getColor(double x, double y) {
+        Themes theme = Themes.getCurrentTheme();
         switch (this.colorAnimation.getValue()) {
             case 0: // STATIC
                 return theme.getFirstColor();
             case 1: // FADE
-                return theme.getAccentColor(new Vector2d(0, yPos));
+                return theme.getAccentColor(new Vector2d(x, y));
             case 2: // RAINBOW
-                return ColorUtil.rainbow((int) (yPos * 2 + System.currentTimeMillis() / 10));
+                return ColorUtil.rainbow(1000);
             default:
                 return Color.white;
         }
+    }
+
+    public Color getColor(long time) {
+        return this.getColor(0.0, 0.0);
     }
 
     @EventTarget
@@ -192,11 +190,9 @@ public class HUD extends Module {
             currentYNormal = (float) new ScaledResolution(mc).getScaledHeight() - currentYNormal - heightNormal * this.scale.getValue();
         }
 
-        // 3. Tính toán Lerp Y
         for (InterfaceComponent component : animatingComponents) {
             float targetY = (this.hudMode.getValue() == 1) ? currentYExhibition : currentYNormal;
 
-            // Fix lỗi module trượt từ vị trí 0 (trên cùng màn hình) xuống
             if (component.position.y == 0) component.position.y = targetY;
 
             component.position.y = myau.util.math.MathUtil.lerp((float) component.position.y, targetY, 0.015f * delta);
@@ -213,17 +209,20 @@ public class HUD extends Module {
             String text = ((IAccessorGuiChat) mc.currentScreen).getInputField().getText().trim();
             if (Myau.commandManager != null && Myau.commandManager.isTypingCommand(text)) {
                 RenderUtil.enableRenderState();
-                RenderUtil.drawOutlineRect(2.0F, (float) (mc.currentScreen.height - 14), (float) (mc.currentScreen.width - 2), (float) (mc.currentScreen.height - 2), 1.5F, 0, this.getColor(System.currentTimeMillis()).getRGB());
+                RenderUtil.drawOutlineRect(2.0F, (float) (mc.currentScreen.height - 14), (float) (mc.currentScreen.width - 2), (float) (mc.currentScreen.height - 2), 1.5F, 0, this.getColor(2.0, mc.currentScreen.height - 14).getRGB());
                 RenderUtil.disableRenderState();
             }
         }
 
         if (this.isEnabled() && !mc.gameSettings.showDebugInfo) {
-            long l = System.currentTimeMillis();
+            // 👉 100% RISE LOGIC: Định nghĩa màu sắc cố định hoặc Rainbow cho Watermark và Toạ độ độc lập với sóng ArrayList
+            int uiColor = (this.colorAnimation.getValue() == 2)
+                    ? ColorUtil.rainbow(1000).getRGB()
+                    : Themes.getCurrentTheme().getFirstColor().getRGB();
 
             if (this.showWatermark.getValue()) {
                 String watermark = getExhibitionWatermark();
-                if (watermark != null) mc.fontRendererObj.drawStringWithShadow(watermark, 3.0F, 3.0F, this.getColor(l).getRGB());
+                if (watermark != null) mc.fontRendererObj.drawStringWithShadow(watermark, 3.0F, 3.0F, uiColor);
             }
 
             if (this.hudMode.getValue() == 1) { // Exhibition mode
@@ -233,10 +232,10 @@ public class HUD extends Module {
                     String posZ2 = String.valueOf(Math.round(mc.thePlayer.posZ));
                     float yCoord = new ScaledResolution(mc).getScaledHeight() - 10;
                     float fontHeight = mc.fontRendererObj.FONT_HEIGHT;
-                    int colour = this.getColor(l).getRGB();
-                    mc.fontRendererObj.drawStringWithShadow("X: §7" + posX2, 3.0F, yCoord - fontHeight * 2, colour);
-                    mc.fontRendererObj.drawStringWithShadow("Y: §7" + posY2, 3.0F, yCoord - fontHeight, colour);
-                    mc.fontRendererObj.drawStringWithShadow("Z: §7" + posZ2, 3.0F, yCoord, colour);
+
+                    mc.fontRendererObj.drawStringWithShadow("X: §7" + posX2, 3.0F, yCoord - fontHeight * 2, uiColor);
+                    mc.fontRendererObj.drawStringWithShadow("Y: §7" + posY2, 3.0F, yCoord - fontHeight, uiColor);
+                    mc.fontRendererObj.drawStringWithShadow("Z: §7" + posZ2, 3.0F, yCoord, uiColor);
                 }
 
                 float height = (float) mc.fontRendererObj.FONT_HEIGHT + 2.0F;
@@ -246,7 +245,7 @@ public class HUD extends Module {
                 GlStateManager.pushMatrix();
                 GlStateManager.scale(this.scale.getValue(), this.scale.getValue(), 0.0F);
 
-                // 4. Render Exhibition Mode
+                int moduleCount = 0; // Biến đếm thứ tự để chia màu Rainbow giãn cách mượt mà như Rise
                 for (InterfaceComponent component : animatingComponents) {
                     Module module = component.module;
                     String moduleName = this.getModuleName(module);
@@ -272,9 +271,23 @@ public class HUD extends Module {
                     component.position.x = myau.util.math.MathUtil.lerp((float) component.position.x, targetX, 0.015f * delta);
                     float drawX = (float) component.position.x;
 
+                    // 👉 100% RISE 6 LOGIC FADE: Cố định X=0, và sử dụng Y đã qua scale (drawY) để sóng mượt tuyệt đối
+                    double waveX = 0;
+                    double waveY = drawY;
+
+                    int baseRGB;
+                    Themes theme = Themes.getCurrentTheme();
+
+                    if (this.colorAnimation.getValue() == 1) { // FADE
+                        baseRGB = theme.getAccentColor(new Vector2d(waveX, waveY)).getRGB();
+                    } else if (this.colorAnimation.getValue() == 2) { // RAINBOW
+                        baseRGB = ColorUtil.rainbow(500 * moduleCount / 6).getRGB(); // Tách mảng màu chuyển động tiến đều
+                    } else { // STATIC
+                        baseRGB = theme.getFirstColor().getRGB();
+                    }
+
                     int alpha = (int) (255 * animProgress);
-                    long finalY = (long) component.position.y;
-                    int color = (alpha << 24) | (this.getColor(l, finalY).getRGB() & 0x00FFFFFF);
+                    int color = (alpha << 24) | (baseRGB & 0x00FFFFFF);
                     int bgColor = new Color(0.0F, 0.0F, 0.0F, (this.background.getValue().floatValue() / 100.0F) * (float)animProgress).getRGB();
 
                     RenderUtil.enableRenderState();
@@ -288,14 +301,16 @@ public class HUD extends Module {
 
                     mc.fontRendererObj.drawStringWithShadow(moduleName, drawX, drawY, color);
 
+                    // 👉 RISE VISUAL: Hiển thị hậu tố Suffix với mã màu xám nhạt 0xFFCCCCCC của Alan
                     if (this.suffixes.getValue() && moduleSuffix.length > 0) {
                         float suffixX = drawX + mc.fontRendererObj.getStringWidth(moduleName) + 2.0F;
-                        int suffixColor = ((int)(170 * animProgress) << 24) | 0x00AAAAAA;
+                        int suffixColor = (alpha << 24) | 0x00CCCCCC;
                         for (String str : moduleSuffix) {
                             mc.fontRendererObj.drawStringWithShadow(str, suffixX, drawY, suffixColor);
                             suffixX += mc.fontRendererObj.getStringWidth(str) + 2.0F;
                         }
                     }
+                    moduleCount++;
                 }
                 GlStateManager.popMatrix();
             } else { // Normal mode
@@ -306,7 +321,7 @@ public class HUD extends Module {
                 GlStateManager.pushMatrix();
                 GlStateManager.scale(this.scale.getValue(), this.scale.getValue(), 0.0F);
 
-                // 5. Render Normal Mode
+                int moduleCount = 0;
                 for (InterfaceComponent component : animatingComponents) {
                     Module module = component.module;
                     String moduleName = this.getModuleName(module);
@@ -332,11 +347,24 @@ public class HUD extends Module {
                     component.position.x = myau.util.math.MathUtil.lerp((float) component.position.x, targetX, 0.015f * delta);
                     float drawX = (float) component.position.x;
 
-                    int alpha = (int) (255 * animProgress);
+                    double waveX = 0;
+                    double waveY = component.position.y;
 
-                    // 👉 FIX NORMAL MODE: Đồng bộ biến finalY y hệt Exhibition Mode
+                    int baseRGB;
+                    Themes theme = Themes.getCurrentTheme();
+
+                    if (this.colorAnimation.getValue() == 1) {
+                        baseRGB = theme.getAccentColor(new Vector2d(waveX, waveY)).getRGB();
+                    } else if (this.colorAnimation.getValue() == 2) {
+                        baseRGB = ColorUtil.rainbow(500 * moduleCount / 6).getRGB();
+                    } else {
+                        baseRGB = theme.getFirstColor().getRGB();
+                    }
+
+                    int alpha = (int) (255 * animProgress);
+                    int color = (alpha << 24) | (baseRGB & 0x00FFFFFF);
+
                     long finalY = (long) component.position.y;
-                    int color = (alpha << 24) | (this.getColor(l, finalY).getRGB() & 0x00FFFFFF);
                     int bgColor = new Color(0.0F, 0.0F, 0.0F, (this.background.getValue().floatValue() / 100.0F) * (float)animProgress).getRGB();
 
                     RenderUtil.enableRenderState();
@@ -364,13 +392,14 @@ public class HUD extends Module {
 
                     if (this.suffixes.getValue() && moduleSuffix.length > 0) {
                         float width = (float) mc.fontRendererObj.getStringWidth(moduleName) + 3.0F;
-                        int suffixColor = ((int)(160 * animProgress) << 24) | 0x00AAAAAA;
+                        int suffixColor = (alpha << 24) | 0x00CCCCCC;
                         for (String string : moduleSuffix) {
                             if (this.shadow.getValue()) mc.fontRendererObj.drawStringWithShadow(string, drawX + width, drawY, suffixColor);
                             else mc.fontRendererObj.drawString(string, drawX + width, drawY + (this.posY.getValue() == 1 ? 1.0F : 0.0F), suffixColor, false);
                             width += (float) mc.fontRendererObj.getStringWidth(string) + (this.shadow.getValue() ? 3.0F : 2.0F);
                         }
                     }
+                    moduleCount++;
                 }
 
                 if (this.blinkTimer.getValue()) {
@@ -380,7 +409,11 @@ public class HUD extends Module {
                         if (movementPacketSize > 0L) {
                             GlStateManager.enableBlend();
                             GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-                            mc.fontRendererObj.drawString(String.valueOf(movementPacketSize), (float) new ScaledResolution(mc).getScaledWidth() / 2.0F / this.scale.getValue() - (float) mc.fontRendererObj.getStringWidth(String.valueOf(movementPacketSize)) / 2.0F, (float) new ScaledResolution(mc).getScaledHeight() / 5.0F * 3.0F / this.scale.getValue(), this.getColor(l, 0L).getRGB() & 16777215 | -1090519040, this.shadow.getValue());
+
+                            double blinkX = new ScaledResolution(mc).getScaledWidth() / 2.0;
+                            double blinkY = new ScaledResolution(mc).getScaledHeight() / 5.0 * 3.0;
+
+                            mc.fontRendererObj.drawString(String.valueOf(movementPacketSize), (float) blinkX / this.scale.getValue() - (float) mc.fontRendererObj.getStringWidth(String.valueOf(movementPacketSize)) / 2.0F, (float) blinkY / this.scale.getValue(), this.getColor(blinkX, blinkY).getRGB() & 16777215 | -1090519040, this.shadow.getValue());
                             GlStateManager.disableBlend();
                         }
                     }
@@ -389,7 +422,6 @@ public class HUD extends Module {
                 GlStateManager.popMatrix();
             }
 
-            // Render Potion Effects
             if (mc.thePlayer != null) {
                 java.util.Collection<net.minecraft.potion.PotionEffect> effects = mc.thePlayer.getActivePotionEffects();
                 if (!effects.isEmpty()) {

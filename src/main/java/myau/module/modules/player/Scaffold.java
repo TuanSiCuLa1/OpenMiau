@@ -79,7 +79,6 @@ public class Scaffold extends Module {
     private boolean shouldKeepY = false;
     private boolean towering = false;
     private EnumFacing targetFacing = null;
-    private final Queue<PlaceInfo> placeQueue = new LinkedList<>();
     public final ModeProperty rotationMode = new ModeProperty("rotations", 2,
             new String[] { "NONE", "DEFAULT", "BACKWARDS", "SIDEWAYS" });
     public final ModeProperty moveFix = new ModeProperty("move-fix", 1, new String[] { "NONE", "SILENT" });
@@ -450,7 +449,7 @@ public class Scaffold extends Module {
                     }
                 }
                 if (blockData != null && hitVec != null && this.rotationTick <= 0) {
-                    this.placeQueue.add(new PlaceInfo(blockData.blockPos(), blockData.facing(), hitVec));
+                    this.place(blockData.blockPos(), blockData.facing(), hitVec);
                     if (this.multiplace.getValue()) {
                         for (int i = 0; i < 3; i++) {
                             blockData = this.getBlockData();
@@ -463,7 +462,7 @@ public class Scaffold extends Module {
                                     && mop.typeOfHit == MovingObjectType.BLOCK
                                     && mop.getBlockPos().equals(blockData.blockPos())
                                     && mop.sideHit == blockData.facing()) {
-                                this.placeQueue.add(new PlaceInfo(blockData.blockPos(), blockData.facing(), mop.hitVec));
+                                this.place(blockData.blockPos(), blockData.facing(), mop.hitVec);
                             } else {
                                 hitVec = BlockUtil.getClickVec(blockData.blockPos(), blockData.facing());
                                 double dx = hitVec.xCoord - mc.thePlayer.posX;
@@ -483,7 +482,7 @@ public class Scaffold extends Module {
                                         || mop.sideHit != blockData.facing()) {
                                     break;
                                 }
-                                this.placeQueue.add(new PlaceInfo(blockData.blockPos(), blockData.facing(), mop.hitVec));
+                                this.place(blockData.blockPos(), blockData.facing(), mop.hitVec);
                             }
                         }
                     }
@@ -495,7 +494,7 @@ public class Scaffold extends Module {
                         int playerBlockZ = MathHelper.floor_double(mc.thePlayer.posZ);
                         BlockPos belowPlayer = new BlockPos(playerBlockX, playerBlockY - 1, playerBlockZ);
                         hitVec = BlockUtil.getHitVec(belowPlayer, this.targetFacing, this.yaw, this.pitch);
-                        this.placeQueue.add(new PlaceInfo(belowPlayer, this.targetFacing, hitVec));
+                        this.place(belowPlayer, this.targetFacing, hitVec);
                     }
                     this.targetFacing = null;
                 } else if (this.keepY.getValue() == 2 && this.stage > 0 && !mc.thePlayer.onGround) {
@@ -506,15 +505,10 @@ public class Scaffold extends Module {
                         if (blockData != null && this.rotationTick <= 0) {
                             hitVec = BlockUtil.getHitVec(blockData.blockPos(), blockData.facing(), this.yaw,
                                     this.pitch);
-                            this.placeQueue.add(new PlaceInfo(blockData.blockPos(), blockData.facing(), hitVec));
+                            this.place(blockData.blockPos(), blockData.facing(), hitVec);
                         }
                     }
                 }
-            }
-        } else if (this.isEnabled() && event.getType() == EventType.POST) {
-            while (!this.placeQueue.isEmpty()) {
-                PlaceInfo info = this.placeQueue.poll();
-                this.place(info.getBlockPos(), info.getEnumFacing(), info.getVec3());
             }
         }
     }
@@ -859,21 +853,5 @@ public class Scaffold extends Module {
         public EnumFacing facing() {
             return this.facing;
         }
-    }
-
-    private static class PlaceInfo {
-        private final BlockPos blockPos;
-        private final EnumFacing enumFacing;
-        private final Vec3 vec3;
-        
-        public PlaceInfo(BlockPos blockPos, EnumFacing enumFacing, Vec3 vec3) {
-            this.blockPos = blockPos;
-            this.enumFacing = enumFacing;
-            this.vec3 = vec3;
-        }
-        
-        public BlockPos getBlockPos() { return blockPos; }
-        public EnumFacing getEnumFacing() { return enumFacing; }
-        public Vec3 getVec3() { return vec3; }
     }
 }
