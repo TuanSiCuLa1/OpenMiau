@@ -1,21 +1,55 @@
 package myau.util; 
 
+import myau.Myau;
 import myau.enums.ChatColors;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.play.client.C01PacketChatMessage;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.IChatComponent;
 
+import java.util.IllegalFormatException;
+import java.util.MissingFormatArgumentException;
+
 public class ChatUtil {
     private static final Minecraft mc = Minecraft.getMinecraft();
 
     public static void display(String message, Object... objects) {
         if (mc.thePlayer != null) {
-            String text = String.format(message, objects);
-            String prefix = ChatColors.getDynamicPrefix();
-            String finalMessage = ChatColors.formatColor(prefix + text);
+            String text = formatMessage(message, objects);
+            if (!hasClientPrefix(text)) {
+                text = Myau.clientName + text;
+            }
+            String finalMessage = ChatColors.formatColor(text);
             mc.thePlayer.addChatMessage(new ChatComponentText(finalMessage));
         }
+    }
+
+    private static String formatMessage(String message, Object[] objects) {
+        try {
+            return String.format(message, objects);
+        } catch (MissingFormatArgumentException e) {
+            if (message.startsWith("%s")) {
+                try {
+                    return String.format(message, prependClientName(objects));
+                } catch (IllegalFormatException ignored) {
+                }
+            }
+            return message;
+        } catch (IllegalFormatException e) {
+            return message;
+        }
+    }
+
+    private static boolean hasClientPrefix(String message) {
+        String formattedPrefix = ChatColors.formatColor(Myau.clientName);
+        return message.startsWith(Myau.clientName) || message.startsWith(formattedPrefix);
+    }
+
+    private static Object[] prependClientName(Object[] objects) {
+        Object[] result = new Object[objects.length + 1];
+        result[0] = Myau.clientName;
+        System.arraycopy(objects, 0, result, 1, objects.length);
+        return result;
     }
 
     public static void displayNoPrefix(String message, Object... objects) {

@@ -81,6 +81,12 @@ public abstract class MixinNetworkManager {
             CallbackInfo callbackInfo
     ) {
         if (!packet.getClass().getName().startsWith("net.minecraft.network.play.server")) {
+            PacketEvent event = new PacketEvent(EventType.SEND, packet);
+            EventManager.call(event);
+            if (event.isCancelled()) {
+                callbackInfo.cancel();
+                return;
+            }
             if (Myau.playerStateManager != null && Myau.blinkManager != null && Myau.lagManager != null) {
                 if (!Myau.lagManager.isFlushing()) {
                     Myau.playerStateManager.handlePacket(packet);

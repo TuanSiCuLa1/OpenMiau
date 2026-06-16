@@ -77,17 +77,6 @@ public enum ChatColors {
     public static String formatColor(String string) {
         if (string == null) return null;
 
-        String defaultPrefixRaw = "&7[&cM&6i&ea&au&7]&r ";
-        String defaultPrefixFormatted = "\u00a77[\u00a7cM\u00a76i\u00a7ea\u00a7au\u00a77]\u00a7r ";
-        String dynamicPrefix = getDynamicPrefix();
-
-        if (string.contains(defaultPrefixRaw)) {
-            string = string.replace(defaultPrefixRaw, dynamicPrefix);
-        }
-        if (string.contains(defaultPrefixFormatted)) {
-            string = string.replace(defaultPrefixFormatted, dynamicPrefix);
-        }
-
         char[] cArray = string.toCharArray();
         for (int i = 0; i < cArray.length - 1; ++i) {
             if (cArray[i] != '&' || "0123456789AaBbCcDdEeFfKkLlMmNnOoRr".indexOf(cArray[i + 1]) <= -1) continue;

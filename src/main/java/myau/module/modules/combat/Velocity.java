@@ -41,18 +41,18 @@ public class Velocity extends Module {
     private int intaveTick = 0;
     private int intaveDamageTick = 0;
 
-    public final ModeProperty mode = new ModeProperty("mode", 0, new String[]{"VANILLA", "JUMP", "DELAY", "REVERSE", "LEGIT_TEST", "LEGIT_SMART", "INTAVE_REDUCE", "GRIM_REDUCE"});
-    public final IntProperty delayTicks = new IntProperty("delay-ticks", 3, 1, 20, () -> this.mode.getValue() == 2);
-    public final PercentProperty delayChance = new PercentProperty("delay-chance", 100, () -> this.mode.getValue() == 2);
-    public final IntProperty legitSmartJumpLimit = new IntProperty("legit-smart-jump-limit", 2, 1, 5, () -> this.mode.getValue() == 5);
-    public final FloatProperty intaveReduceFactor = new FloatProperty("intave-reduce-factor", 0.6F, 0.6F, 1.0F, () -> this.mode.getValue() == 6);
-    public final IntProperty intaveReduceHurtTime = new IntProperty("intave-reduce-hurt-time", 9, 1, 10, () -> this.mode.getValue() == 6);
+    public final ModeProperty mode = new ModeProperty("mode", 0, new String[]{"VANILLA", "DELAY", "REVERSE", "LEGIT_TEST", "LEGIT_SMART", "INTAVE_REDUCE", "GRIM_REDUCE", "JUMP_RESET"});
+    public final IntProperty delayTicks = new IntProperty("delay-ticks", 3, 1, 20, () -> this.mode.getValue() == 1);
+    public final PercentProperty delayChance = new PercentProperty("delay-chance", 100, () -> this.mode.getValue() == 1);
+    public final IntProperty legitSmartJumpLimit = new IntProperty("legit-smart-jump-limit", 2, 1, 5, () -> this.mode.getValue() == 4);
+    public final FloatProperty intaveReduceFactor = new FloatProperty("intave-reduce-factor", 0.6F, 0.6F, 1.0F, () -> this.mode.getValue() == 5);
+    public final IntProperty intaveReduceHurtTime = new IntProperty("intave-reduce-hurt-time", 9, 1, 10, () -> this.mode.getValue() == 5);
     public final PercentProperty chance = new PercentProperty("chance", 100);
     public final PercentProperty horizontal = new PercentProperty("horizontal", 0);
     public final PercentProperty vertical = new PercentProperty("vertical", 100);
     public final PercentProperty explosionHorizontal = new PercentProperty("explosions-horizontal", 100);
     public final PercentProperty explosionVertical = new PercentProperty("explosions-vertical", 100);
-    public final IntProperty grimReduceJumpLimit = new IntProperty("grim-reduce-jump-limit", 2, 1, 5, () -> this.mode.getValue() == 7);
+    public final IntProperty grimReduceJumpLimit = new IntProperty("grim-reduce-jump-limit", 2, 1, 5, () -> this.mode.getValue() == 6);
     public final BooleanProperty fakeCheck = new BooleanProperty("fake-check", true);
     public final BooleanProperty debugLog = new BooleanProperty("debug-log", false);
 
@@ -93,9 +93,9 @@ public class Velocity extends Module {
             } else {
                 this.chanceCounter = this.chanceCounter % 100 + this.chance.getValue();
                 if (this.chanceCounter >= 100) {
-                    this.jumpFlag = (this.mode.getValue() == 1 || this.mode.getValue() == 2) && event.getY() > 0.0;
-                    this.delayActive = this.mode.getValue() == 2;
-                    if (this.mode.getValue() == 7) {
+                    this.jumpFlag = this.mode.getValue() == 1 && event.getY() > 0.0;
+                    this.delayActive = this.mode.getValue() == 1;
+                    if (this.mode.getValue() == 6) {
                         this.hasReceivedVelocity = true;
                         return;
                     }
@@ -133,7 +133,7 @@ public class Velocity extends Module {
                 this.delayActive = false;
             }
 
-            if (this.mode.getValue() == 4) {
+            if (this.mode.getValue() == 3) {
                 int hurtTime = mc.thePlayer.hurtTime;
 
                 if (hurtTime >= 8) {
@@ -155,7 +155,7 @@ public class Velocity extends Module {
                     jumpCooldown--;
                 }
             }
-            if (this.mode.getValue() == 5 && this.hasReceivedVelocity) {
+            if (this.mode.getValue() == 4 && this.hasReceivedVelocity) {
                 if (mc.thePlayer.onGround && mc.thePlayer.hurtTime == 9 && mc.thePlayer.isSprinting() && mc.currentScreen == null) {
                     if (this.legitSmartJumpCount > this.legitSmartJumpLimit.getValue()) {
                         this.legitSmartJumpCount = 0;
@@ -170,7 +170,7 @@ public class Velocity extends Module {
                     this.legitSmartJumpCount = 0;
                 }
             }
-            if (this.mode.getValue() == 6 && this.hasReceivedVelocity) {
+            if (this.mode.getValue() == 5 && this.hasReceivedVelocity) {
                 this.intaveTick++;
                 if (mc.thePlayer.hurtTime == 2) {
                     this.intaveDamageTick++;
@@ -181,7 +181,7 @@ public class Velocity extends Module {
                     this.hasReceivedVelocity = false;
                 }
             }
-            if (this.mode.getValue() == 7 && this.hasReceivedVelocity) {
+            if (this.mode.getValue() == 6 && this.hasReceivedVelocity) {
                 if (mc.thePlayer.onGround
                         && mc.thePlayer.hurtTime >= 8
                         && mc.thePlayer.isSprinting()
@@ -198,6 +198,14 @@ public class Velocity extends Module {
                 } else if (mc.thePlayer.hurtTime <= 1) {
                     this.hasReceivedVelocity = false;
                     this.legitSmartJumpCount = 0;
+                }
+            }
+            if (this.mode.getValue() == 7) {
+                if (mc.thePlayer.onGround
+                        && mc.thePlayer.hurtTime >= 9
+                        && !this.isInLiquidOrWeb()
+                        && myau.util.RandomUtil.nextInt(1, 100) <= this.chance.getValue()) {
+                    mc.thePlayer.jump();
                 }
             }
         }
@@ -220,7 +228,7 @@ public class Velocity extends Module {
                 S12PacketEntityVelocity packet = (S12PacketEntityVelocity) event.getPacket();
                 if (packet.getEntityID() == mc.thePlayer.getEntityId()) {
                     LongJump longJump = (LongJump) Myau.moduleManager.modules.get(LongJump.class);
-                    if (this.mode.getValue() == 2
+                    if (this.mode.getValue() == 1
                             && !this.reverseFlag
                             && !this.canDelay()
                             && !this.isInLiquidOrWeb()
@@ -236,7 +244,7 @@ public class Velocity extends Module {
                             return;
                         }
                     }
-                    if (this.mode.getValue() == 5 || this.mode.getValue() == 6 || this.mode.getValue() == 7) {
+                    if (this.mode.getValue() == 4 || this.mode.getValue() == 5 || this.mode.getValue() == 6) {
                         this.hasReceivedVelocity = true;
                     }
                     if (this.debugLog.getValue()) {

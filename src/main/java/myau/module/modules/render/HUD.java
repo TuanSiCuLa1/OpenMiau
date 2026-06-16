@@ -260,11 +260,6 @@ public class HUD extends Module {
     public void onTick(TickEvent event) {
         if (this.isEnabled() && event.getType() == EventType.POST) {
             this.activeModules = Myau.moduleManager.modules.values().stream().filter(module -> module.isEnabled() && !module.isHidden() && !this.isCategoryHidden(module)).sorted(Comparator.comparingInt(this::getModuleWidth).reversed()).collect(Collectors.<Module>toList());
-            try {
-                Myau.clientName = ChatColors.getDynamicPrefix();
-            } catch (Exception e) {
-                // ignore
-            }
         }
     }
 

@@ -34,7 +34,7 @@ import java.util.Locale;
 import java.util.Objects;
 public class Myau {
     public static final boolean DEVELOPMENT_SWITCH = false;
-    public static String clientName = "&7[&cM&6i&ea&au&7]&r ";
+    public static final String clientName = "&7[&cM&6i&ea&au&7]&r ";
     public static String version = ClientInfo.VERSION;
     public static RotationManager rotationManager;
     public static FloatManager floatManager;
