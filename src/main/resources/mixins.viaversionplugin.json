@@ -1,0 +1,22 @@
+{
+  "required": true,
+  "minVersion": "0.7.11",
+  "compatibilityLevel": "JAVA_8",
+  "package": "net.minusmc.viaversionplugin.injection.forge.mixins",
+  "refmap": "mixins.myau.refmap.json",
+  "client": [
+    "block.MixinBlock",
+    "block.MixinBlockLadder",
+    "block.MixinBlockLilyPad",
+    "client.MixinMinecraft",
+    "entity.MixinEntity",
+    "entity.MixinEntityLivingBase",
+    "gui.MixinGuiMultiplayer",
+    "item.MixinItemBlock",
+    "network.MixinNetHandlerPlayClient",
+    "network.MixinNetworkManager",
+    "network.MixinNetworkManager_5",
+    "packets.MixinC0FPacketConfirmTransaction",
+    "packets.MixinS32PacketConfirmTransaction"
+  ]
+}

@@ -3,6 +3,7 @@ package myau;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import me.ksyz.accountmanager.AccountManager;
+import de.florianmichael.viamcp.ViaMCP;
 import myau.command.CommandManager;
 import myau.command.commands.*;
 import myau.config.Config;
@@ -238,6 +239,7 @@ public class Myau {
         Display.setTitle(ClientInfo.getDisplayVersion());
 
         AccountManager.init();
+        ViaMCP.create();
     }
     public static Locale getLocale() {
         return Locale.getDefault();

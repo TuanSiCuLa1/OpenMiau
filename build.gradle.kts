@@ -52,6 +52,7 @@ loom {
         pack200Provider.set(dev.architectury.pack200.java.Pack200Adapter())
         // If you don't want mixins, remove this lines
         mixinConfig("mixins.$modid.json")
+        mixinConfig("mixins.viaversionplugin.json")
         if (transformerFile.exists()) {
             println("Installing access transformer")
             accessTransformer(transformerFile)
@@ -70,6 +71,8 @@ sourceSets.main {
 repositories {
     mavenCentral()
     maven("https://repo.spongepowered.org/maven/")
+    maven("https://repo.viaversion.com/")
+    maven("https://jitpack.io/")
     // If you don't want to log in with your real minecraft account, remove this line
     maven("https://pkgs.dev.azure.com/djtheredstoner/DevAuth/_packaging/public/maven/v1")
 }
@@ -87,6 +90,11 @@ dependencies {
         isTransitive = false
     }
     annotationProcessor("org.spongepowered:mixin:0.8.5-SNAPSHOT")
+    // ViaVersion / ViaMCP (multi-version protocol support)
+    shadowImpl("com.viaversion:viaversion:4.9.3-SNAPSHOT") { isTransitive = false }
+    shadowImpl("com.viaversion:viabackwards:4.9.2-SNAPSHOT") { isTransitive = false }
+    shadowImpl("com.viaversion:viarewind-common:3.0.6-SNAPSHOT") { isTransitive = false }
+    shadowImpl("org.yaml:snakeyaml:2.2")
     // If you don't want to log in with your real minecraft account, remove this line
     runtimeOnly("me.djtheredstoner:DevAuth-forge-legacy:1.2.1")
 }
@@ -118,7 +126,7 @@ tasks.withType(org.gradle.jvm.tasks.Jar::class) {
         this["ForceLoadAsMod"] = "true"
         // If you don't want mixins, remove these lines
         this["TweakClass"] = "org.spongepowered.asm.launch.MixinTweaker"
-        this["MixinConfigs"] = "mixins.$modid.json"
+        this["MixinConfigs"] = "mixins.$modid.json,mixins.viaversionplugin.json"
         if (transformerFile.exists())
             this["FMLAT"] = "${modid}_at.cfg"
     }
