@@ -6,6 +6,7 @@ import myau.events.TickEvent;
 import myau.module.Module;
 import myau.property.properties.BooleanProperty;
 import myau.property.properties.IntProperty;
+import myau.util.KeyBindUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemBlock;
@@ -70,22 +71,22 @@ public class Eagle extends Module {
                     mc.thePlayer.posY - 1.0D,
                     mc.thePlayer.posZ + mc.thePlayer.motionZ * getShift()
             );
-            mc.gameSettings.keyBindSneak.pressed = mc.theWorld.getBlockState(checkPos).getBlock() == Blocks.air;
+            KeyBindUtil.setKeyBindState(mc.gameSettings.keyBindSneak.getKeyCode(), mc.theWorld.getBlockState(checkPos).getBlock() == Blocks.air);
             return;
         }
 
         if (mc.thePlayer != null && mc.thePlayer.moveForward > 0.0F && mc.thePlayer.isSneaking() && !Keyboard.isKeyDown(mc.gameSettings.keyBindSneak.getKeyCode())) {
-            mc.gameSettings.keyBindSneak.pressed = false;
+            KeyBindUtil.setKeyBindState(mc.gameSettings.keyBindSneak.getKeyCode(), false);
         }
         if (this.blocksOnly.getValue() && mc.thePlayer != null && (mc.thePlayer.getHeldItem() == null || !(mc.thePlayer.getHeldItem().getItem() instanceof ItemBlock))) {
-            mc.gameSettings.keyBindSneak.pressed = Keyboard.isKeyDown(mc.gameSettings.keyBindSneak.getKeyCode());
+            KeyBindUtil.updateKeyState(mc.gameSettings.keyBindSneak.getKeyCode());
         }
     }
 
     @Override
     public void onDisabled() {
         if (mc.thePlayer != null && !Keyboard.isKeyDown(mc.gameSettings.keyBindSneak.getKeyCode())) {
-            mc.gameSettings.keyBindSneak.pressed = false;
+            KeyBindUtil.setKeyBindState(mc.gameSettings.keyBindSneak.getKeyCode(), false);
         }
     }
 
