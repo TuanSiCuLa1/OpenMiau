@@ -533,7 +533,7 @@ public class TargetHUD extends Module {
         float posX = this.offX.getValue().floatValue();
         float posY = this.offY.getValue().floatValue();
 
-        if (this.style.getValue() == 1) { // CLEAN
+        if (this.style.getValue() == 1) { 
             String targetName = TeamUtil.stripName(entity);
             String targetPrefix = "Target: ";
             String healthPrefix = "Health: ";
@@ -544,7 +544,7 @@ public class TargetHUD extends Module {
             int hudWidth = Math.max(98, Math.max(targetWidth, healthWidth) + 14);
             int hudHeight = 30;
             return new TargetHUDBounds(posX, posY, hudWidth * sc, hudHeight * sc);
-        } else if (this.style.getValue() == 2) { // RAVEN
+        } else if (this.style.getValue() == 2) { 
             String name = entity.getDisplayName().getFormattedText();
             String healthText = " " + healthFormat.format(entity.getHealth());
             int padding = 8;
@@ -554,7 +554,7 @@ public class TargetHUD extends Module {
             int maxX = (int) posX + textWidth;
             int maxY = (int) posY + (mc.fontRendererObj.FONT_HEIGHT + 5) - 6 + padding;
             return new TargetHUDBounds(minX, minY, (maxX - minX) * sc, (maxY + 13 - minY) * sc);
-        } else if (this.style.getValue() == 3) { // RAVEN_NEW
+        } else if (this.style.getValue() == 3) { 
             String name = entity.getDisplayName().getFormattedText();
             String healthText = " " + (int) entity.getHealth();
             String renderText = name + " " + healthText;
@@ -563,7 +563,7 @@ public class TargetHUD extends Module {
             int maxX = minX + mc.fontRendererObj.getStringWidth(renderText) + 12;
             int maxY = minY + 16 + 12;
             return new TargetHUDBounds(minX, minY, (maxX - minX) * sc, (maxY - minY) * sc);
-        } else { // MYAU
+        } else { 
             float abs = entity.getAbsorptionAmount() / 2.0F;
             float heal = entity.getHealth() / 2.0F + abs;
             String targetNameText = ChatColors.formatColor(String.format("&r%s&r", TeamUtil.stripName(entity)));

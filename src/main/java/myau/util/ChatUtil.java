@@ -1,4 +1,4 @@
-package myau.util; // Nhớ đổi lại theo package của bạn nếu cần
+package myau.util; 
 
 import myau.enums.ChatColors;
 import net.minecraft.client.Minecraft;

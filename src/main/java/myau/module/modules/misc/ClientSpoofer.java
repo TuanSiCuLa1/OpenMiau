@@ -16,16 +16,16 @@ public class ClientSpoofer extends Module {
     private static final String[] MODES = new String[]{
             "VANILLA", "OPTIFINE", "FABRIC", "FEATHER", "LUNARCLIENT",
             "LABYMOD", "CHEATBREAKER", "PVPLOUNGE", "MINEBUILDERS", "FML",
-            "GEYSER", "LOG4J", "FDP", "OPENMIAU", CUSTOM_MODE
+            "GEYSER", "LOG4J", "FDP", "MIAU", CUSTOM_MODE
     };
     private static final String[] BRAND_VALUES = new String[]{
             "vanilla", "optifine", "fabric", "Feather Forge", "lunarclient",
             "LMC", "CB", "PLC18", "minebuilders", "fml,forge",
-            "Geyser", "${jndi:ldap://127.0.0.1/a}", "FDPClient", "OpenMiau", ""
+            "Geyser", "${jndi:ldap://127.0.0.1/a}", "FDPClient", "Miau", ""
     };
 
     public final ModeProperty mode = new ModeProperty("mode", 0, MODES);
-    public final TextProperty customBrand = new TextProperty("custom-brand", "OpenMiau", this::isCustomMode);
+    public final TextProperty customBrand = new TextProperty("custom-brand", "Miau", this::isCustomMode);
 
     public ClientSpoofer() {
         super("ClientSpoofer", false);

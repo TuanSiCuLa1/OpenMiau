@@ -43,17 +43,14 @@ public class TimerRange extends Module {
     public final ModeProperty timerBoostMode = new ModeProperty("mode", 2, new String[]{"NORMAL", "SMART", "MODERN"});
     public final IntProperty ticksValue = new IntProperty("ticks", 10, 1, 20);
 
-    // Boost Settings
     public final FloatProperty timerBoostValue = new FloatProperty("timer-boost", 1.5F, 0.01F, 35.0F);
     public final FloatProperty boostDelayMin = new FloatProperty("boost-delay-min", 0.5F, 0.1F, 1.0F);
     public final FloatProperty boostDelayMax = new FloatProperty("boost-delay-max", 0.55F, 0.1F, 1.0F);
 
-    // Charged Delay Settings
     public final FloatProperty timerChargedValue = new FloatProperty("timer-charged", 0.45F, 0.05F, 5.0F);
     public final FloatProperty chargedDelayMin = new FloatProperty("charged-delay-min", 0.75F, 0.1F, 1.0F);
     public final FloatProperty chargedDelayMax = new FloatProperty("charged-delay-max", 0.9F, 0.1F, 1.0F);
 
-    // Ranges
     public final FloatProperty rangeValue = new FloatProperty("range", 3.5F, 1.0F, 5.0F, () -> timerBoostMode.getValue() == 0);
     public final IntProperty cooldownTickValue = new IntProperty("cooldown-tick", 10, 1, 50, () -> timerBoostMode.getValue() == 0);
 
@@ -61,7 +58,6 @@ public class TimerRange extends Module {
     public final FloatProperty maxRange = new FloatProperty("max-range", 3.0F, 2.0F, 8.0F, () -> timerBoostMode.getValue() != 0);
     public final FloatProperty scanRange = new FloatProperty("scan-range", 8.0F, 2.0F, 12.0F, () -> timerBoostMode.getValue() != 0);
 
-    // Tick Delays
     public final IntProperty minTickDelay = new IntProperty("min-tick-delay", 30, 1, 200, () -> timerBoostMode.getValue() != 0);
     public final IntProperty maxTickDelay = new IntProperty("max-tick-delay", 60, 1, 200, () -> timerBoostMode.getValue() != 0);
 
@@ -70,11 +66,9 @@ public class TimerRange extends Module {
     public final FloatProperty predictEnemyPosition = new FloatProperty("predict-enemy-position", 1.5F, -1.0F, 2.0F);
     public final FloatProperty maxAngleDifference = new FloatProperty("max-angle-difference", 5.0F, 5.0F, 90.0F, () -> timerBoostMode.getValue() == 2);
 
-    // Mark
     public final ModeProperty markMode = new ModeProperty("mark", 0, new String[]{"OFF", "BOX", "PLATFORM"}, () -> timerBoostMode.getValue() == 2);
     public final BooleanProperty outline = new BooleanProperty("outline", false, () -> timerBoostMode.getValue() == 2 && markMode.getValue() == 1);
 
-    // Optional
     public final BooleanProperty onWeb = new BooleanProperty("on-web", false);
     public final BooleanProperty onLiquid = new BooleanProperty("on-liquid", false);
     public final BooleanProperty onForwardOnly = new BooleanProperty("on-forward-only", true);
@@ -82,7 +76,6 @@ public class TimerRange extends Module {
     public final BooleanProperty resetOnKnockback = new BooleanProperty("reset-on-knockback", false);
     public final BooleanProperty chatDebug = new BooleanProperty("chat-debug", true, () -> resetOnLagBack.getValue() || resetOnKnockback.getValue());
 
-    // Internal Variables
     private int playerTicks = 0;
     private int smartTick = 0;
     private int cooldownTick = 0;
@@ -145,9 +138,9 @@ public class TimerRange extends Module {
         cooldownTick++;
 
         boolean shouldSlowed = false;
-        if (timerBoostMode.getValue() == 0) { // NORMAL
+        if (timerBoostMode.getValue() == 0) { 
             shouldSlowed = cooldownTick >= cooldownTickValue.getValue() && entityDistance <= rangeValue.getValue();
-        } else if (timerBoostMode.getValue() == 1) { // SMART
+        } else if (timerBoostMode.getValue() == 1) { 
             shouldSlowed = smartTick >= randomTickDelay && entityDistance <= randomRange;
         }
 
@@ -166,7 +159,6 @@ public class TimerRange extends Module {
     @EventTarget
     public void onTick(TickEvent event) {
         if (event.getType() == EventType.PRE) {
-            // ----- Update (Timer modulation) -----
             float timerBoost = RandomUtil.nextFloat(boostDelayMin.getValue(), boostDelayMax.getValue());
             float charged = RandomUtil.nextFloat(chargedDelayMin.getValue(), chargedDelayMax.getValue());
 
@@ -191,13 +183,11 @@ public class TimerRange extends Module {
 
                 float speedAdjustment = playerSpeed >= 0 ? playerSpeed : 1f + ticksValue.getValue() - playerTicks;
 
-                // FIXED: Use custom setTimerSpeed to bypass private access
                 setTimerSpeed(Math.max(speedAdjustment, 0f));
                 playerTicks--;
             }
 
-            // ----- Move (Modern logic) -----
-            if (timerBoostMode.getValue() != 2) return; // Only Modern
+            if (timerBoostMode.getValue() != 2) return; 
             EntityLivingBase nearbyEntity = getNearestEntityInRange();
             if (nearbyEntity == null) return;
 
@@ -233,7 +223,6 @@ public class TimerRange extends Module {
                 shouldResetTimer();
             }
         } else if (event.getType() == EventType.POST && blink.getValue()) {
-            // ----- Motion Post (Flush received packets) -----
             if (!packetsReceived.isEmpty()) {
                 for (Packet<?> p : packetsReceived) {
                     try {
@@ -250,7 +239,6 @@ public class TimerRange extends Module {
         if (mc.thePlayer == null || mc.thePlayer.isDead) return;
         Packet<?> packet = event.getPacket();
 
-        // C->S & S->C Blink Logic
         if (blink.getValue()) {
             if (playerTicks > 0 && !blinked) {
                 blinked = true;
@@ -317,7 +305,6 @@ public class TimerRange extends Module {
                     ? new Color(37, 126, 255, 70)
                     : new Color(210, 60, 60, 70);
 
-            // FIXED: Use OpenMiau's RenderUtil bounding box
             float partialTicks = event.getPartialTicks();
             double x = nearbyEntity.lastTickPosX + (nearbyEntity.posX - nearbyEntity.lastTickPosX) * partialTicks - mc.getRenderManager().viewerPosX;
             double y = nearbyEntity.lastTickPosY + (nearbyEntity.posY - nearbyEntity.lastTickPosY) * partialTicks - mc.getRenderManager().viewerPosY;
@@ -326,10 +313,10 @@ public class TimerRange extends Module {
             float width = nearbyEntity.width / 2.0F;
             float height = nearbyEntity.height;
 
-            if (markMode.getValue() == 1) { // BOX
+            if (markMode.getValue() == 1) { 
                 AxisAlignedBB aabb = new AxisAlignedBB(x - width, y, z - width, x + width, y + height, z + width);
                 RenderUtil.drawBoundingBox(aabb, color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha(), 1.8F);
-            } else if (markMode.getValue() == 2) { // PLATFORM
+            } else if (markMode.getValue() == 2) { 
                 AxisAlignedBB aabb = new AxisAlignedBB(x - width, y, z - width, x + width, y + 0.1D, z + width);
                 RenderUtil.drawBoundingBox(aabb, color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha(), 1.8F);
             }
@@ -378,12 +365,12 @@ public class TimerRange extends Module {
         EntityLivingBase nearest = getNearestEntityInRange();
         if (nearest == null || nearest.isDead) {
             if (!shouldReset) {
-                setTimerSpeed(1f); // FIXED
+                setTimerSpeed(1f); 
                 shouldReset = true;
             }
         } else {
-            if (!shouldReset && getTimerSpeed() != 1f) { // FIXED
-                setTimerSpeed(1f); // FIXED
+            if (!shouldReset && getTimerSpeed() != 1f) { 
+                setTimerSpeed(1f); 
                 shouldReset = true;
             } else {
                 shouldReset = false;
@@ -423,9 +410,6 @@ public class TimerRange extends Module {
         return yawDiff <= maxAngleDiff;
     }
 
-    // =========================================================
-    // REFLECTION HELPERS ĐỂ FIX PRIVATE TIMER XUYÊN OBFS MCP
-    // =========================================================
 
     private void setTimerSpeed(float speed) {
         try {

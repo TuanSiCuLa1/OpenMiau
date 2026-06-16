@@ -1,7 +1,7 @@
 package myau;
 
 public final class ClientInfo {
-    public static final String NAME = "OpenMiau";
+    public static final String NAME = "Miau";
     public static final String VERSION = "${version}";
     public static final String MC_VERSION = "${mcversion}";
     public static final String GIT_COMMIT = "${gitCommit}";

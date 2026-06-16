@@ -49,10 +49,9 @@ public class BindComponent extends Component {
         float textHeight = renderer.getFontHeight() * 0.5f;
         float iconY = getRenderTextY() + (textHeight - iconSize) / 2f;
 
-        // Cập nhật lấy màu dựa trên Themes.java và Vector2d thay vì Theme.java
         int themeColor = !moduleComponent.mod.isHidden()
                 ? Themes.getCurrentTheme().getAccentColor(new Vector2d(this.x, this.y)).getRGB()
-                : Color.GRAY.getRGB(); // Thay thế hiddenBind bằng màu xám tĩnh
+                : Color.GRAY.getRGB(); 
 
         String iconPath = moduleComponent.mod.isHidden() ? EYE_OFF_ICON_PATH : EYE_ICON_PATH;
         RenderUtils.drawIcon(RenderUtils.getIcon(iconPath), iconX, iconY, iconSize, themeColor);
@@ -170,7 +169,6 @@ public class BindComponent extends Component {
     @Override public int getHeight() { return Math.round(getHeightF()); }
 
     private void drawString(Font renderer, String s) {
-        // Cập nhật text color bằng Themes thay vì Theme
         int color = Themes.getCurrentTheme().getAccentColor(new Vector2d(this.x, this.y)).getRGB();
         renderer.draw(s, (float) ((this.moduleComponent.categoryComponent.getX() + 4) * 2) + xOffset, (float) ((this.moduleComponent.categoryComponent.getY() + this.o + 3) * 2), color, true);
     }

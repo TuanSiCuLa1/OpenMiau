@@ -41,7 +41,7 @@ public class OnlineConfigClient {
             connection.setRequestMethod("GET");
             connection.setConnectTimeout(TIMEOUT_MS);
             connection.setReadTimeout(TIMEOUT_MS);
-            connection.setRequestProperty("User-Agent", "OpenMyau/OnlineConfig");
+            connection.setRequestProperty("User-Agent", "Miau/OnlineConfig");
 
             int code = connection.getResponseCode();
             String body = read(code >= 200 && code < 300 ? connection.getInputStream() : connection.getErrorStream());

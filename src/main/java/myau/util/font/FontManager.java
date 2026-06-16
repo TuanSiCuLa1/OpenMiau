@@ -1,7 +1,6 @@
 package myau.util.font;
 
 public class FontManager {
-    // Đây là danh sách các Font sẽ hiện trong ClickGUI để người chơi chọn
     private static final String[] HUD_FONT_OPTIONS = new String[]{
             "Minecraft", "Rise", "Raven", "Arial", "Tahoma", "Impact" 
     };
@@ -10,20 +9,14 @@ public class FontManager {
         return HUD_FONT_OPTIONS;
     }
 
-    // ========================================================
-    // KHU VỰC HUD (Cho phép chọn Font cũ, mới, hoặc Custom)
-    // ========================================================
     public static Font getHudRenderer(String fontName, float scale) {
         return getFontForName(fontName, Math.round(18 * scale));
     }
 
     public static Font getNametagRenderer(String text) {
-        return getFontForName("Rise", 18); // Cố định Nametag là font Rise cho đẹp
+        return getFontForName("Rise", 18); 
     }
 
-    // ========================================================
-    // KHU VỰC CLICKGUI (Vẫn ép dùng Minecraft Pixel để không bị lệch khung)
-    // ========================================================
     public static Font getClickGuiHeaderRenderer(String fontName) {
         return Fonts.MINECRAFT.get(24);
     }
@@ -32,9 +25,6 @@ public class FontManager {
         return Fonts.MINECRAFT.get(18);
     }
 
-    // ========================================================
-    // LÕI ĐIỀU PHỐI (CORE ROUTING)
-    // ========================================================
     private static Font getFontForName(String fontName, int size) {
         if (fontName == null || fontName.equalsIgnoreCase("Minecraft")) {
             return Fonts.MINECRAFT.get(Math.max(1, size));
@@ -46,14 +36,11 @@ public class FontManager {
             return Fonts.RAVEN.get(Math.max(1, size));
             
         } else {
-            // TÍNH NĂNG CUSTOM FONT: Nếu tên không phải 3 cái trên (VD: "Arial", "Tahoma")
-            // Hệ thống sẽ lấy trực tiếp Font đó từ Windows của người chơi.
             Fonts.CUSTOM.setName(fontName);
             return Fonts.CUSTOM.get(Math.max(1, size));
         }
     }
 
-    // Các hàm tương thích ngược với code cũ
     public static Font getFont(int size) {
         return Fonts.MINECRAFT.get(size);
     }

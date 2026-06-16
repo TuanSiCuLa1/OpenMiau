@@ -52,7 +52,6 @@ loom {
         pack200Provider.set(dev.architectury.pack200.java.Pack200Adapter())
         // If you don't want mixins, remove this lines
         mixinConfig("mixins.$modid.json")
-        mixinConfig("mixins.viaversionplugin.json")
         if (transformerFile.exists()) {
             println("Installing access transformer")
             accessTransformer(transformerFile)
@@ -126,7 +125,7 @@ tasks.withType(org.gradle.jvm.tasks.Jar::class) {
         this["ForceLoadAsMod"] = "true"
         // If you don't want mixins, remove these lines
         this["TweakClass"] = "org.spongepowered.asm.launch.MixinTweaker"
-        this["MixinConfigs"] = "mixins.$modid.json,mixins.viaversionplugin.json"
+        this["MixinConfigs"] = "mixins.$modid.json"
         if (transformerFile.exists())
             this["FMLAT"] = "${modid}_at.cfg"
     }

@@ -18,7 +18,7 @@ public class Notification {
         this.timer = maxTime;
         this.type = type;
         
-        this.alpha = 0; // Start invisible, fade in
+        this.alpha = 0; 
         this.lastTime = System.currentTimeMillis();
     }
 }

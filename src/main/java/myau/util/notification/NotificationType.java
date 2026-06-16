@@ -1,10 +1,10 @@
 package myau.util.notification;
 
 public enum NotificationType {
-    SUCCESS(0xFF55FF55), // Xanh lá
-    ERROR(0xFFFF5555),   // Đỏ
-    INFO(0xFFFFFFFF),    // Trắng
-    WARNING(0xFFFFFF55); // Vàng
+    SUCCESS(0xFF55FF55), 
+    ERROR(0xFFFF5555),   
+    INFO(0xFFFFFFFF),    
+    WARNING(0xFFFFFF55); 
 
     private final int color;
 

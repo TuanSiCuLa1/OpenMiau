@@ -69,12 +69,10 @@ public class NameTags extends Module {
             return player.getValue() && mc.gameSettings.thirdPersonView != 0 && !showTargets.getValue();
         }
 
-        // Distance check
         if (mc.getRenderViewEntity().getDistanceToEntity(entity) > 512.0F) {
             return false;
         }
 
-        // Invisible check
         if (entity.isInvisible() && !showTargets.getValue() && !invisibles.getValue()) {
             return false;
         }
@@ -103,7 +101,6 @@ public class NameTags extends Module {
             return animals.getValue();
         }
 
-        // Mobs
         return mobs.getValue();
     }
 

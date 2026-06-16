@@ -36,7 +36,7 @@ public class MainMenu extends GuiScreen {
         this.buttonList.add(new MenuButton(0, buttonX, buttonY, BUTTON_WIDTH, BUTTON_HEIGHT, "Singleplayer", "Play your worlds"));
         this.buttonList.add(new MenuButton(1, buttonX, buttonY + 43, BUTTON_WIDTH, BUTTON_HEIGHT, "Multiplayer", "Join servers"));
         this.buttonList.add(new MenuButton(2, buttonX, buttonY + 86, BUTTON_WIDTH, BUTTON_HEIGHT, "Settings", "Configure Minecraft"));
-        this.buttonList.add(new MenuButton(3, buttonX, buttonY + 129, BUTTON_WIDTH, BUTTON_HEIGHT, "Exit", "Close OpenMiau"));
+        this.buttonList.add(new MenuButton(3, buttonX, buttonY + 129, BUTTON_WIDTH, BUTTON_HEIGHT, "Exit", "Close Miau"));
     }
 
     @Override
@@ -175,7 +175,7 @@ public class MainMenu extends GuiScreen {
         int leftX = panelX + 34;
         int topY = panelY + 38;
 
-        String title = "OpenMiau";
+        String title = "Miau";
         GlStateManager.pushMatrix();
         GlStateManager.translate(leftX, topY + 20, 0.0F);
         GlStateManager.scale(2.85F, 2.85F, 1.0F);
@@ -187,7 +187,7 @@ public class MainMenu extends GuiScreen {
     }
 
     private void drawFooter() {
-        String made = "Made with     by ksyz, OpenMyau Project, idle.";
+        String made = "Made with     by ksyz, Miau Project, idle.";
         this.fontRendererObj.drawStringWithShadow(made, 5, this.height - 13, 0xEFFFFFFF);
         this.fontRendererObj.drawStringWithShadow(HEART, 5 + this.fontRendererObj.getStringWidth("Made with "), this.height - 13, 0xFFFF4D6D);
     }

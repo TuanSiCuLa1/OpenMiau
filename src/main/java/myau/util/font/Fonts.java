@@ -10,7 +10,7 @@ import java.util.function.Supplier;
 
 public enum Fonts {
     MAIN("Rise %s", "ttf"),
-    RAVEN("Sf-Regular", "ttf"), // Đã thêm font cũ của Raven
+    RAVEN("Sf-Regular", "ttf"), 
     MINECRAFT("Minecraft", () -> new MinecraftFontRenderer()),
     CUSTOM("", "ttf");
 
@@ -54,17 +54,14 @@ public enum Fonts {
             String location = "unknown";
 
             try {
-                // XỬ LÝ FONT HỆ THỐNG (CUSTOM) NHƯ ARIAL, TAHOMA
                 if (this == CUSTOM) {
                     location = this.name;
                     awtFont = new java.awt.Font(this.name, java.awt.Font.PLAIN, size);
                 } 
-                // XỬ LÝ FONT Ổ ĐĨA
                 else if (name.contains(":")) {
                     location = name;
                     awtFont = FontUtil.getDiskResource(location, size);
                 } 
-                // XỬ LÝ FONT TRONG ASSETS CỦA MINECRAFT
                 else {
                     for (String alias : weight.getAliases()) {
                         String fontName = String.format(name, alias).trim();

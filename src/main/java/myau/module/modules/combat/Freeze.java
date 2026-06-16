@@ -56,36 +56,30 @@ public class Freeze extends Module {
 
         Packet<?> packet = event.getPacket();
 
-        // Check for S08 flag (teleport packet)
         if (!this.delaying && packet instanceof S08PacketPlayerPosLook) {
             this.s08 = true;
         }
 
-        // Check for velocity packet targeting player
         if (packet instanceof S12PacketEntityVelocity) {
             S12PacketEntityVelocity s12 = (S12PacketEntityVelocity) packet;
             if (s12.getEntityID() == mc.thePlayer.getEntityId()) {
-                // Ignore velocity right after teleport
                 if (this.s08) {
                     this.s08 = false;
                     return;
                 }
-                // Start delaying
                 this.delaying = true;
             }
         }
 
-        // Check for damage (entity status packet with hurt animation)
         if (packet instanceof S19PacketEntityStatus) {
             S19PacketEntityStatus s19 = (S19PacketEntityStatus) packet;
             if (s19.getEntity(mc.theWorld) != null &&
                     s19.getEntity(mc.theWorld).equals(mc.thePlayer) &&
-                    s19.getOpCode() == 2) { // OpCode 2 = hurt animation
+                    s19.getOpCode() == 2) { 
                 this.delaying = true;
             }
         }
 
-        // Buffer relevant packets when delaying
         if (this.delaying && (packet instanceof S12PacketEntityVelocity
                 || packet instanceof S32PacketConfirmTransaction
                 || packet instanceof S08PacketPlayerPosLook)) {
@@ -107,13 +101,11 @@ public class Freeze extends Module {
         }
 
         if (event.getType() == EventType.POST) {
-            // Check timeout
             if (this.delaying && ++this.timeout >= this.maxTimeout.getValue()) {
                 this.flush();
                 ChatUtil.display(Myau.clientName + "&cFreeze timed out.");
             }
 
-            // Reset S08 flag
             this.s08 = false;
         }
     }

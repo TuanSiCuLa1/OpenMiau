@@ -23,7 +23,6 @@ import org.lwjgl.input.Keyboard;
 public class MoreKB extends Module {
     private static final Minecraft mc = Minecraft.getMinecraft();
 
-    // Thêm các mode của LiquidBounce (CCBlueX) vào cuối mảng
     public final ModeProperty mode = new ModeProperty("mode", 0, new String[]{
             "LEGIT", "LEGIT_FAST", "LESS_PACKET", "PACKET", "DOUBLE_PACKET",
             "WTap", "SprintTap", "Silent", "SneakPacket", "SpamS"
@@ -32,13 +31,11 @@ public class MoreKB extends Module {
     public final BooleanProperty intelligent = new BooleanProperty("intelligent", false);
     public final BooleanProperty onlyGround = new BooleanProperty("only-ground", true);
 
-    // Properties mượn từ CCBlueX cho mode SpamS
     public final FloatProperty spamSDistance = new FloatProperty("spams-distance", 3.0F, 0.0F, 6.0F, () -> this.mode.getValue() == 9);
     public final IntProperty spamSTick = new IntProperty("spams-tick", 2, 0, 10, () -> this.mode.getValue() == 9);
 
     private EntityLivingBase target;
 
-    // Trạng thái cho CCBlueX modes
     private int ticks = 0;
     private int spamSActiveTicks = 0;
     private int wTapTicks = 0;
@@ -73,7 +70,7 @@ public class MoreKB extends Module {
                 double distance = mc.thePlayer.getDistanceToEntity(this.target);
 
                 switch (currentMode) {
-                    case 5: // WTap
+                    case 5: 
                         if (mc.thePlayer.isSprinting()) {
                             this.wTapTicks = 2;
                         }
@@ -84,13 +81,13 @@ public class MoreKB extends Module {
                             this.ticks = 2;
                         }
                         break;
-                    case 8: // SneakPacket
+                    case 8: 
                         mc.getNetHandler().addToSendQueue(new C0BPacketEntityAction(mc.thePlayer, C0BPacketEntityAction.Action.STOP_SPRINTING));
                         mc.getNetHandler().addToSendQueue(new C0BPacketEntityAction(mc.thePlayer, C0BPacketEntityAction.Action.START_SNEAKING));
                         mc.getNetHandler().addToSendQueue(new C0BPacketEntityAction(mc.thePlayer, C0BPacketEntityAction.Action.START_SPRINTING));
                         mc.getNetHandler().addToSendQueue(new C0BPacketEntityAction(mc.thePlayer, C0BPacketEntityAction.Action.STOP_SNEAKING));
                         break;
-                    case 9: // SpamS
+                    case 9: 
                         if (distance <= (Float) this.spamSDistance.getValue()) {
                             this.spamSActiveTicks = (Integer) this.spamSTick.getValue();
                         }
@@ -104,9 +101,8 @@ public class MoreKB extends Module {
     public void onPacket(PacketEvent event) {
         if (!this.isEnabled() || mc.thePlayer == null) return;
 
-        // Logic gửi Packet ngầm cho mode Silent
         if (event.getType() == EventType.SEND && event.getPacket() instanceof C03PacketPlayer) {
-            if (this.mode.getValue() == 7) { // Silent
+            if (this.mode.getValue() == 7) { 
                 if (this.ticks == 2) {
                     mc.getNetHandler().addToSendQueue(new C0BPacketEntityAction(mc.thePlayer, C0BPacketEntityAction.Action.STOP_SPRINTING));
                     this.ticks--;
@@ -124,18 +120,14 @@ public class MoreKB extends Module {
 
         int currentMode = this.mode.getValue();
 
-        // ---------------- CCBlueX UPDATE LOGIC ----------------
         if (currentMode >= 5) {
-            // Mode WTap
             if (currentMode == 5) {
                 if (this.wTapTicks > 0) {
                     mc.thePlayer.setSprinting(false);
-                    // Ép chặn di chuyển tới trước như cách CCBlueX chặn input
                     mc.thePlayer.movementInput.moveForward = 0.0F;
                     this.wTapTicks--;
                 }
             }
-            // Mode SprintTap
             else if (currentMode == 6) {
                 if (this.ticks == 2) {
                     mc.thePlayer.setSprinting(false);
@@ -147,7 +139,6 @@ public class MoreKB extends Module {
                     this.ticks--;
                 }
             }
-            // Mode SpamS
             else if (currentMode == 9) {
                 boolean realBackState = Keyboard.isKeyDown(mc.gameSettings.keyBindBack.getKeyCode());
                 if (this.spamSActiveTicks > 0) {
@@ -158,7 +149,7 @@ public class MoreKB extends Module {
             return;
         }
 
-        if (currentMode == 1) { // LEGIT_FAST
+        if (currentMode == 1) { 
             if (this.target != null && this.isMoving()) {
                 if ((this.onlyGround.getValue() && mc.thePlayer.onGround) || !this.onlyGround.getValue()) {
                     mc.thePlayer.sprintingTicksLeft = 0;
@@ -184,28 +175,27 @@ public class MoreKB extends Module {
             return;
         }
 
-        // Chạy packet đẩy KB ở hurtTime = 10 (Chuẩn OpenMiau cũ)
         if (entity.hurtTime == 10) {
             switch (currentMode) {
-                case 0: // LEGIT
+                case 0: 
                     if (mc.thePlayer.isSprinting()) {
                         mc.thePlayer.setSprinting(false);
                         mc.thePlayer.setSprinting(true);
                     }
                     break;
-                case 2: // LESS_PACKET
+                case 2: 
                     if (mc.thePlayer.isSprinting()) {
                         mc.thePlayer.setSprinting(false);
                     }
                     mc.getNetHandler().addToSendQueue(new C0BPacketEntityAction(mc.thePlayer, C0BPacketEntityAction.Action.START_SPRINTING));
                     mc.thePlayer.setSprinting(true);
                     break;
-                case 3: // PACKET
+                case 3: 
                     mc.thePlayer.sendQueue.addToSendQueue(new C0BPacketEntityAction(mc.thePlayer, C0BPacketEntityAction.Action.STOP_SPRINTING));
                     mc.thePlayer.sendQueue.addToSendQueue(new C0BPacketEntityAction(mc.thePlayer, C0BPacketEntityAction.Action.START_SPRINTING));
                     mc.thePlayer.setSprinting(true);
                     break;
-                case 4: // DOUBLE_PACKET
+                case 4: 
                     mc.thePlayer.sendQueue.addToSendQueue(new C0BPacketEntityAction(mc.thePlayer, C0BPacketEntityAction.Action.STOP_SPRINTING));
                     mc.thePlayer.sendQueue.addToSendQueue(new C0BPacketEntityAction(mc.thePlayer, C0BPacketEntityAction.Action.START_SPRINTING));
                     mc.thePlayer.sendQueue.addToSendQueue(new C0BPacketEntityAction(mc.thePlayer, C0BPacketEntityAction.Action.STOP_SPRINTING));

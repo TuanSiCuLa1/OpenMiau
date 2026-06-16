@@ -43,7 +43,7 @@ public class BlockHit extends Module {
 
     public BlockHit() {
         super("BlockHit", false, false);
-    } //67:D
+    } 
 
     @Override
     public void onDisabled() {

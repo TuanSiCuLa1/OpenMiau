@@ -49,7 +49,7 @@ public class TargetESP extends Module {
         double z = lerp(target.lastTickPosZ, target.posZ, event.getPartialTicks())
                 - ((IAccessorRenderManager) mc.getRenderManager()).getRenderPosZ();
 
-        renderOpenMiauHalo(target, x, y, z, color);
+        renderMiauHalo(target, x, y, z, color);
         renderGroundCircle(target, x, y, z, color);
         renderDoubleSpiral(target, x, y, z, color);
     }
@@ -62,7 +62,7 @@ public class TargetESP extends Module {
         return new Color(this.red.getValue(), this.green.getValue(), this.blue.getValue());
     }
 
-    private void renderOpenMiauHalo(EntityLivingBase target, double x, double y, double z, Color color) {
+    private void renderMiauHalo(EntityLivingBase target, double x, double y, double z, Color color) {
         float hurtPulse = target.hurtTime > 0 ? target.hurtTime / 10.0F : 0.0F;
         float baseAlpha = Math.min(1.0F, this.alpha.getValue() + hurtPulse * 0.22F);
         float pulseValue = this.pulse.getValue()

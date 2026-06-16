@@ -21,7 +21,7 @@ import java.util.concurrent.Executors;
 
 public class OnlineConfigCommand extends Command {
     private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor(runnable -> {
-        Thread thread = new Thread(runnable, "OpenMyau OnlineConfig");
+        Thread thread = new Thread(runnable, "Miau OnlineConfig");
         thread.setDaemon(true);
         return thread;
     });

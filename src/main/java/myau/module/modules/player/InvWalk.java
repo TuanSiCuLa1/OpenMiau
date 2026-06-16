@@ -99,14 +99,14 @@ public class InvWalk extends Module {
         if (mc.currentScreen instanceof GuiContainerCreative) return false;
 
         switch (this.mode.getValue()) {
-            case 0: // Vanilla
+            case 0: 
                 return true;
-            case 1: // Legit
+            case 1: 
                 if (!(mc.currentScreen instanceof GuiInventory)) return false;
                 return this.pendingStatus != null && this.clickQueue.isEmpty();
-            case 2: // Hypixel
+            case 2: 
                 return this.delayTicks == 0 && this.clickQueue.isEmpty();
-            case 3: // Legit+
+            case 3: 
                 if (!(mc.currentScreen instanceof GuiInventory)) return false;
                 return this.closeDelayTicks == -1 && this.clickQueue.isEmpty();
             default:
@@ -249,7 +249,7 @@ public class InvWalk extends Module {
         } else {
             C0EPacketClickWindow packet = (C0EPacketClickWindow) event.getPacket();
             switch (this.mode.getValue()) {
-                case 1: // Legit
+                case 1: 
                     if (packet.getWindowId() == 0) {
                         if ((packet.getMode() == 3 || packet.getMode() == 4) && packet.getSlotId() == -999) {
                             event.setCancelled(true);
@@ -262,7 +262,7 @@ public class InvWalk extends Module {
                         }
                     }
                     break;
-                case 2: // Hypixel
+                case 2: 
                     if ((packet.getMode() == 3 || packet.getMode() == 4) && packet.getSlotId() == -999) {
                         event.setCancelled(true);
                     } else {
@@ -272,8 +272,8 @@ public class InvWalk extends Module {
                         this.delayTicks = 8;
                     }
                     break;
-                case 3: // Legit+
-                    if (packet.getWindowId() == 0) { // inventory
+                case 3: 
+                    if (packet.getWindowId() == 0) { 
                         if ((packet.getMode() == 3 || packet.getMode() == 4) && packet.getSlotId() == -999) {
                             event.setCancelled(true);
                             return;

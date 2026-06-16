@@ -62,7 +62,6 @@ public class Scoreboard extends Module {
                 maxWidth = Math.max(maxWidth, mc.fontRendererObj.getStringWidth(name));
             }
         } else {
-            // Dummy scoreboard for editing/previewing
             size = 5;
             maxWidth = 80;
         }
@@ -70,11 +69,9 @@ public class Scoreboard extends Module {
         int width = maxWidth + 8;
         int height = size * mc.fontRendererObj.FONT_HEIGHT + 9;
         
-        // Base vanilla position
         float baseX = scaledRes.getScaledWidth() - width - 2;
         float baseY = scaledRes.getScaledHeight() / 2 - height / 3;
 
-        // Apply our offset properties
         baseX += this.offX.getValue();
         baseY += this.offY.getValue();
 

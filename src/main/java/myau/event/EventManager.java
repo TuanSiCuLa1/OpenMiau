@@ -105,9 +105,7 @@ public final class EventManager {
     @SuppressWarnings("unchecked")
     private static void register(Method method, Object object) {
         Class<? extends Event> indexClass = (Class<? extends Event>) method.getParameterTypes()[0];
-        //New MethodData from the Method we are registering.
         final MethodData data = new MethodData(object, method, method.getAnnotation(EventTarget.class).value());
-        //Set's the method to accessible so that we can also invoke it if it's protected or private.
         if (!data.getTarget().isAccessible()) {
             data.getTarget().setAccessible(true);
         }
@@ -118,7 +116,6 @@ public final class EventManager {
             }
         } else {
             REGISTRY_MAP.put(indexClass, new CopyOnWriteArrayList<MethodData>() {
-                //Eclipse was bitching about a serialVersionUID.
                 private static final long serialVersionUID = 666L;
 
                 {
@@ -172,7 +169,6 @@ public final class EventManager {
                 }
             }
         }
-        //Overwriting the existing entry.
         REGISTRY_MAP.put(indexClass, sortedList);
     }
 

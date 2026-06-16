@@ -40,10 +40,8 @@ public class MathUtil {
     }
 
     public static float getClosestMultipleOfDivisor(final float valueToRound, final float divisor) {
-        // Calculate the quotient by dividing valueToRound by divisor and rounding to the nearest integer
         final float quotient = Math.round(valueToRound / divisor);
 
-        // Return the closest multiple of divisor by multiplying quotient by divisor
         return divisor * quotient;
     }
 

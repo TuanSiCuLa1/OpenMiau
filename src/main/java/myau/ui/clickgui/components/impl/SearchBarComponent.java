@@ -25,7 +25,6 @@ public class SearchBarComponent extends Component {
         Font font = Fonts.MINECRAFT.get(18);
         String display = currentText.length() == 0 && !focused ? "Search module..." : currentText.toString() + (focused && System.currentTimeMillis() % 1000 < 500 ? "_" : "");
 
-        // Vẽ khung TextBox (Nền đen mờ)
         Gui.drawRect(
                 (int) (this.categoryComponent.getX() + 4),
                 (int) (this.categoryComponent.getY() + this.o + 2),
@@ -34,7 +33,6 @@ public class SearchBarComponent extends Component {
                 new Color(0, 0, 0, 100).getRGB()
         );
 
-        // Vẽ chữ bên trong
         font.draw(display, this.categoryComponent.getX() + 8, this.categoryComponent.getY() + this.o + 5, focused ? Color.WHITE.getRGB() : new Color(150, 150, 150).getRGB(), false);
     }
 
@@ -45,7 +43,7 @@ public class SearchBarComponent extends Component {
 
     @Override
     public float getHeightF() {
-        return 20f; // Chiều cao của thanh Search
+        return 20f; 
     }
 
     @Override
@@ -74,12 +72,12 @@ public class SearchBarComponent extends Component {
         if (focused) {
             if (k == Keyboard.KEY_ESCAPE) {
                 focused = false;
-            } else if (k == Keyboard.KEY_BACK) { // Xóa chữ
+            } else if (k == Keyboard.KEY_BACK) { 
                 if (currentText.length() > 0) {
                     currentText.setLength(currentText.length() - 1);
                     this.categoryComponent.updateSearchResults(currentText.toString());
                 }
-            } else if (t >= 32 && t <= 126 && currentText.length() < 18) { // Nhập chữ
+            } else if (t >= 32 && t <= 126 && currentText.length() < 18) { 
                 currentText.append(t);
                 this.categoryComponent.updateSearchResults(currentText.toString());
             }

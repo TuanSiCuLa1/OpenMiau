@@ -70,7 +70,6 @@ public enum ChatColors {
                 return closest.toString() + "Miau " + closest.toString() + "\u00bb\u00a7r ";
             }
         } catch (Exception e) {
-            // ignore
         }
         return "\u00a7bMiau \u00a7b\u00bb\u00a7r ";
     }

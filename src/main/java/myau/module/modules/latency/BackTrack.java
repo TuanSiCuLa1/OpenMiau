@@ -67,7 +67,6 @@ public class BackTrack extends Module {
 
     public final ModeProperty mode = new ModeProperty("mode", 1, new String[]{"LEGACY", "MODERN", "FAKE_PLAYER"});
 
-    // CCBlueX Properties
     public final IntProperty nextBacktrackDelay = new IntProperty("next-backtrack-delay", 0, 0, 2000, () -> mode.getValue() == 1);
     public final IntProperty minMS = new IntProperty("min-delay", 80, 0, 2000, () -> mode.getValue() == 1);
     public final IntProperty maxMS = new IntProperty("max-delay", 80, 0, 2000, () -> mode.getValue() == 1);
@@ -77,16 +76,13 @@ public class BackTrack extends Module {
     public final FloatProperty maxDistance = new FloatProperty("max-distance", 3.0F, 0.0F, 10.0F, () -> mode.getValue() == 1);
     public final BooleanProperty smart = new BooleanProperty("smart", true, () -> mode.getValue() == 1);
 
-    // Legacy CCBlueX
     public final ModeProperty legacyPos = new ModeProperty("caching-mode", 0, new String[]{"CLIENT_POS", "SERVER_POS"}, () -> mode.getValue() == 0);
     public final IntProperty maximumCachedPositions = new IntProperty("max-cached-positions", 10, 1, 20, () -> mode.getValue() == 0);
 
-    // ESP CCBlueX
     public final ModeProperty espMode = new ModeProperty("esp", 1, new String[]{"NONE", "BOX", "MODEL", "WIREFRAME"}, () -> mode.getValue() == 1);
     public final FloatProperty wireframeWidth = new FloatProperty("wireframe-width", 1.0F, 0.5F, 5.0F, () -> mode.getValue() == 1 && espMode.getValue() == 3);
     public final ColorProperty espColor = new ColorProperty("color", 0xFF00FF00);
 
-    // OpenMiau Extras
     public final IntProperty fakePlayerPulseDelay = new IntProperty("fake-player-pulse-delay", 200, 50, 500, () -> mode.getValue() == 2);
     public final IntProperty fakePlayerIntavePackets = new IntProperty("fake-player-intave-packets", 5, 1, 30, () -> mode.getValue() == 2);
 
@@ -105,7 +101,6 @@ public class BackTrack extends Module {
     private int modernDelayValue = 80;
     private boolean modernDelayBoolean = false;
 
-    // Fake Player variables
     private EntityOtherPlayerMP fakePlayer;
     private EntityLivingBase currentTarget;
     private boolean fakeShown;
@@ -166,7 +161,6 @@ public class BackTrack extends Module {
                     double trueDist = mc.thePlayer.getDistance(targetMixin.getTrueX(), targetMixin.getTrueY(), targetMixin.getTrueZ());
                     double dist = mc.thePlayer.getDistance(target.posX, target.posY, target.posZ);
 
-                    // CCBlueX Smart Distance & Style Logic
                     if (trueDist <= 6f && (!smart.getValue() || trueDist >= dist) && (style.getValue() == 0 || !globalTimer.hasTimeElapsed(getSupposedDelay()))) {
                         shouldRender = true;
 
@@ -186,7 +180,6 @@ public class BackTrack extends Module {
         }
         ignoreWholeTick = false;
 
-        // CCBlueX QueuePacketClear Logic (Priority check)
         updateDelayCooldown();
     }
 
@@ -223,7 +216,6 @@ public class BackTrack extends Module {
 
             if (packetQueue.isEmpty() && !shouldBacktrack()) return;
 
-            // CCBlueX Ignore Packets
             if (packet instanceof C00Handshake || packet instanceof C00PacketServerQuery || packet instanceof S02PacketChat || packet instanceof S01PacketPong) return;
 
             if (packet instanceof S29PacketSoundEffect) {
@@ -233,7 +225,6 @@ public class BackTrack extends Module {
                 }
             }
 
-            // CCBlueX Flush Packets
             if (packet instanceof S06PacketUpdateHealth && ((S06PacketUpdateHealth) packet).getHealth() <= 0) {
                 clearPackets(true, true);
                 return;
@@ -265,7 +256,6 @@ public class BackTrack extends Module {
                 }
             }
 
-            // CCBlueX Catch ALL Receive Packets
             if (event.getType() == EventType.RECEIVE) {
                 if (packet instanceof S14PacketEntity && target != null) {
                     Entity entity = ((S14PacketEntity) packet).getEntity(mc.theWorld);
@@ -293,7 +283,6 @@ public class BackTrack extends Module {
 
         if (!(event.getTarget() instanceof EntityLivingBase)) return;
 
-        // CCBlueX clear packets on new target
         if (target != event.getTarget()) {
             clearPackets(true, true);
             reset();
@@ -322,7 +311,7 @@ public class BackTrack extends Module {
                 Color color = new Color(espColor.getValue());
 
                 switch (espMode.getValue()) {
-                    case 1: // BOX
+                    case 1: 
                         AxisAlignedBB box = target.getEntityBoundingBox().offset(
                                 targetMixin.getTrueX() - target.posX,
                                 targetMixin.getTrueY() - target.posY,
@@ -330,7 +319,7 @@ public class BackTrack extends Module {
                         );
                         drawBacktrackBox(box, color);
                         break;
-                    case 2: // MODEL
+                    case 2: 
                         GlStateManager.pushMatrix();
                         GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
                         GlStateManager.color(0.6F, 0.6F, 0.6F, 1.0F);
@@ -340,7 +329,7 @@ public class BackTrack extends Module {
                         GL11.glPopAttrib();
                         GlStateManager.popMatrix();
                         break;
-                    case 3: // WIREFRAME
+                    case 3: 
                         GlStateManager.pushMatrix();
                         GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
                         GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
@@ -365,7 +354,6 @@ public class BackTrack extends Module {
         }
     }
 
-    // CCBlueX Handle Packets
     private void handlePackets() {
         long delay = getSupposedDelay();
         packetQueue.removeIf(queuedPacket -> {
@@ -379,7 +367,6 @@ public class BackTrack extends Module {
         positions.removeIf(pos -> pos.time < System.currentTimeMillis() - delay);
     }
 
-    // CCBlueX Handle Packets Range
     private void handlePacketsRange() {
         long time = getRangeTime();
         if (time == -1L) {
@@ -398,7 +385,6 @@ public class BackTrack extends Module {
         positions.removeIf(pos -> pos.time < time);
     }
 
-    // CCBlueX Range Time
     private long getRangeTime() {
         if (target == null) return -1L;
         long time = 0L;
@@ -421,7 +407,6 @@ public class BackTrack extends Module {
         return found ? time : -1L;
     }
 
-    // CCBlueX Clear Packets
     private void clearPackets(boolean handlePackets, boolean stopRendering) {
         packetQueue.removeIf(queuedPacket -> {
             if (handlePackets) {
@@ -438,7 +423,6 @@ public class BackTrack extends Module {
         }
     }
 
-    // CCBlueX Delay Logic
     private void updateDelayCooldown() {
         boolean shouldChangeDelay = packetQueue.isEmpty();
         if (!shouldChangeDelay) {
@@ -557,7 +541,6 @@ public class BackTrack extends Module {
         return RandomUtil.nextInt(Math.min(min, max), Math.max(min, max));
     }
 
-    // --- FAKE_PLAYER LOGIC (KEEPING FROM ORIGINAL) ---
     private void createFakePlayer(EntityLivingBase target) {
         if (mc.theWorld == null || mc.getNetHandler() == null || !(target instanceof EntityPlayer)) return;
         NetworkPlayerInfo playerInfo = mc.getNetHandler().getPlayerInfo(target.getUniqueID());

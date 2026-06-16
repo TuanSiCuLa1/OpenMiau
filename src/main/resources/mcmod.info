@@ -1,6 +1,7 @@
 [
   {
-    "name": "Myau",
+    "modid": "${modid}",
+    "name": "Miau",
     "version": "${version}",
     "mcversion": "1.8.9",
     "authorList": [

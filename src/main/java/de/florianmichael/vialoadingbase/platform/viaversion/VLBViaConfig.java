@@ -28,7 +28,6 @@ import java.util.Map;
 
 public class VLBViaConfig extends AbstractViaConfig {
 
-    // Stolen from Sponge
     private final static List<String> UNSUPPORTED = Arrays.asList("anti-xray-patch", "bungee-ping-interval",
             "bungee-ping-save", "bungee-servers", "quick-move-action-fix", "nms-player-ticking",
             "velocity-ping-interval", "velocity-ping-save", "velocity-servers",
@@ -49,7 +48,6 @@ public class VLBViaConfig extends AbstractViaConfig {
 
     @Override
     protected void handleConfig(Map<String, Object> config) {
-        // Nothing Currently
     }
 
     @Override

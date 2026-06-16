@@ -60,10 +60,10 @@ public class HitSelect extends Module {
                     this.currentShouldAttack = true;
                 } else {
                     switch (this.preference.getValue()) {
-                        case 1: // KB reduction
+                        case 1: 
                             this.currentShouldAttack = !mc.thePlayer.onGround && mc.thePlayer.motionY < 0.0D;
                             break;
-                        case 2: // Critical hits
+                        case 2: 
                             this.currentShouldAttack = mc.thePlayer.hurtTime > 0 && !mc.thePlayer.onGround && this.isMoving(mc.thePlayer);
                             break;
                     }
@@ -120,19 +120,19 @@ public class HitSelect extends Module {
             boolean allow = true;
 
             switch (this.mode.getValue()) {
-                case 0: // SECOND
+                case 0: 
                     allow = this.prioritizeSecondHit(mc.thePlayer, living);
                     break;
-                case 1: // CRITICALS
+                case 1: 
                     allow = this.prioritizeCriticalHits(mc.thePlayer);
                     break;
-                case 2: // WTAP
+                case 2: 
                     allow = this.prioritizeWTapHits(mc.thePlayer, this.sprintState);
                     break;
-                case 3: // PAUSE
+                case 3: 
                     allow = this.prioritizePauseHits();
                     break;
-                case 4: // ACTIVE
+                case 4: 
                     allow = true;
                     break;
             }
@@ -146,23 +146,19 @@ public class HitSelect extends Module {
     }
 
     private boolean prioritizeSecondHit(EntityLivingBase player, EntityLivingBase target) {
-        // If target is already hurt, allow the hit
         if (target.hurtTime != 0) {
             return true;
         }
 
-        // If player hasn't recovered from hurt time, allow the hit
         if (player.hurtTime <= player.maxHurtTime - 1) {
             return true;
         }
 
-        // If too close, allow the hit
         double dist = player.getDistanceToEntity(target);
         if (dist < 2.5) {
             return true;
         }
 
-        // If not moving towards each other, allow the hit
         if (!this.isMovingTowards(target, player, 60.0)) {
             return true;
         }
@@ -171,49 +167,40 @@ public class HitSelect extends Module {
             return true;
         }
 
-        // Block the hit and fix motion
         this.fixMotion();
         return false;
     }
 
     private boolean prioritizeCriticalHits(EntityLivingBase player) {
-        // If on ground, allow the hit
         if (player.onGround) {
             return true;
         }
 
-        // If hurt, allow the hit
         if (player.hurtTime != 0) {
             return true;
         }
 
-        // If falling, allow the hit (for crits)
         if (player.fallDistance > 0.0f) {
             return true;
         }
 
-        // Block the hit and fix motion
         this.fixMotion();
         return false;
     }
 
     private boolean prioritizeWTapHits(EntityLivingBase player, boolean sprinting) {
-        // If against wall, allow the hit
         if (player.isCollidedHorizontally) {
             return true;
         }
 
-        // If not moving forward, allow the hit
         if (!mc.gameSettings.keyBindForward.isKeyDown()) {
             return true;
         }
 
-        // If already sprinting, allow the hit
         if (sprinting) {
             return true;
         }
 
-        // Block the hit and fix motion
         this.fixMotion();
         return false;
     }
@@ -269,11 +256,9 @@ public class HitSelect extends Module {
         }
 
         try {
-            // Save the current slowdown value
             this.savedSlowdown = keepSprint.slowdown.getValue();
             this.keepSprintWasEnabled = keepSprint.isEnabled();
 
-            // Temporarily enable KeepSprint silently so this internal motion fix does not spam toggles.
             if (!this.keepSprintWasEnabled) {
                 keepSprint.setEnabled(true);
             }
@@ -293,10 +278,8 @@ public class HitSelect extends Module {
         KeepSprint keepSprint = (KeepSprint) Myau.moduleManager.modules.get(KeepSprint.class);
         if (keepSprint != null) {
             try {
-                // Restore the original slowdown value
                 keepSprint.slowdown.setValue(this.savedSlowdown);
 
-                // Only restore the enabled state if HitSelect changed it.
                 if (!this.keepSprintWasEnabled && keepSprint.isEnabled()) {
                     keepSprint.setEnabled(false);
                 }
@@ -315,38 +298,30 @@ public class HitSelect extends Module {
         Vec3 lastPos = new Vec3(source.lastTickPosX, source.lastTickPosY, source.lastTickPosZ);
         Vec3 targetPos = target.getPositionVector();
 
-        // Calculate movement vector
         double mx = currentPos.xCoord - lastPos.xCoord;
         double mz = currentPos.zCoord - lastPos.zCoord;
         double movementLength = Math.sqrt(mx * mx + mz * mz);
 
-        // If not moving, return false
         if (movementLength == 0.0) {
             return false;
         }
 
-        // Normalize movement vector
         mx /= movementLength;
         mz /= movementLength;
 
-        // Calculate vector to target
         double tx = targetPos.xCoord - currentPos.xCoord;
         double tz = targetPos.zCoord - currentPos.zCoord;
         double targetLength = Math.sqrt(tx * tx + tz * tz);
 
-        // If target is at same position, return false
         if (targetLength == 0.0) {
             return false;
         }
 
-        // Normalize target vector
         tx /= targetLength;
         tz /= targetLength;
 
-        // Calculate dot product (cosine of angle between vectors)
         double dotProduct = mx * tx + mz * tz;
 
-        // Check if angle is within threshold
         return dotProduct >= Math.cos(Math.toRadians(maxAngle));
     }
 

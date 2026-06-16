@@ -17,7 +17,6 @@ public class NoSlowCheck {
     private final Map<String, CheckBuffer> speedBuffers = new HashMap<>();
 
     public void check(EntityPlayer player, long currentTick, ClientAntiCheatContext context) {
-        // Kept for compatibility with existing call sites.
         check(player, null, currentTick, context);
     }
 

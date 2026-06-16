@@ -122,16 +122,6 @@ public class CategoryComponent {
             return;
         }
 
-        if (this.category.equalsIgnoreCase("Themes")) {
-            for (myau.util.Themes theme : myau.util.Themes.values()) {
-                ThemeSelectComponent tsc = new ThemeSelectComponent(this, moduleRenderY, theme);
-                this.modules.add(tsc);
-                moduleRenderY += tsc.getHeightF();
-            }
-            syncAfterModuleReload();
-            return;
-        }
-
         List<Module> mods = myau.Myau.moduleManager.getModulesByCategory().get(this.category);
         if (mods != null) {
             for (Module mod : mods) {
@@ -149,42 +139,35 @@ public class CategoryComponent {
 
         Map<String, Boolean> openStates = captureModuleOpenStates();
 
-        // Lấy lại cái SearchBar (luôn ở vị trí 0)
         Component searchBar = null;
         if (!this.modules.isEmpty() && this.modules.get(0) instanceof SearchBarComponent) {
             searchBar = this.modules.get(0);
         }
 
-        // Xóa sạch danh sách hiện tại
         this.modules.clear();
 
         float moduleRenderY = this.titleHeight + 3;
 
-        // Add lại SearchBar lên đầu
         if (searchBar != null) {
             this.modules.add(searchBar);
             moduleRenderY += searchBar.getHeightF();
         }
 
-        // Quét toàn bộ module trong Client
         if (query != null && !query.trim().isEmpty()) {
             String lowerQuery = query.toLowerCase().replace(" ", "");
 
             for (Module mod : myau.Myau.moduleManager.modules.values()) {
-                // Bỏ qua các module dạng GUI
                 if (mod.getName().equalsIgnoreCase("ClickGUI") || mod.getName().equalsIgnoreCase("GUI")) continue;
 
-                // Nếu tên module chứa từ khóa tìm kiếm
                 if (mod.getName().toLowerCase().replace(" ", "").contains(lowerQuery)) {
                     ModuleComponent component = new ModuleComponent(mod, this, moduleRenderY);
                     component.restoreOpenState(Boolean.TRUE.equals(openStates.get(mod.getName())));
                     this.modules.add(component);
-                    moduleRenderY += component.getHeightF(); // Cộng dồn chiều cao
+                    moduleRenderY += component.getHeightF(); 
                 }
             }
         }
 
-        // Cập nhật lại thanh Scroll cho mượt
         syncAfterModuleReload();
     }
 
@@ -573,8 +556,7 @@ public class CategoryComponent {
 
     private static Map<String, CategoryIconStacks> buildCategoryIconStacks() {
         Map<String, CategoryIconStacks> iconStacks = new HashMap<>();
-        // 👉 FIX: Thêm chữ "Search" vào mảng này
-        String[] categories = new String[]{"Combat", "Movement", "Render", "Player", "Misc", "Latency", "Minigames", "Target", "Search", "Themes"};
+        String[] categories = new String[]{"Combat", "Movement", "Render", "Player", "Misc", "Latency", "Minigames", "Target", "Search"};
         for (String cat : categories) {
             ItemStack normalStack = createCategoryIconStack(cat, false);
             ItemStack activeStack = createCategoryIconStack(cat, true);
@@ -603,11 +585,8 @@ public class CategoryComponent {
             itemStack = new ItemStack(Items.gold_ingot);
         } else if (category.equalsIgnoreCase("Target")) {
             itemStack = new ItemStack(Items.arrow);
-            // ... (các else if cũ)
         } else if (category.equalsIgnoreCase("Search")) {
             itemStack = new ItemStack(Items.name_tag);
-        } else if (category.equalsIgnoreCase("Themes")) {
-            itemStack = new ItemStack(Items.dye, 1, 9);
         } else {
             return null;
         }

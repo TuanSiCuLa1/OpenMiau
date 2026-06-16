@@ -29,20 +29,16 @@ public class ConfigWindow {
     private boolean dragging;
     private float dragX, dragY;
 
-    // Các biến cuộn (Scroll)
     private float localScrollY, targetLocalScrollY;
     private float onlineScrollY, targetOnlineScrollY;
 
-    // Dữ liệu Config
     private List<String> localConfigs = new ArrayList<>();
     private List<OnlineConfigEntry> onlineConfigs = new ArrayList<>();
     private String onlineStatus = "Loading...";
 
-    // Box tạo Config
     private boolean isTyping = false;
     private final StringBuilder typeText = new StringBuilder();
 
-    // Hệ thống tải Online Config
     private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "ConfigWindowThread");
         t.setDaemon(true);
@@ -92,17 +88,14 @@ public class ConfigWindow {
     }
 
     public void drawWindow(int mouseX, int mouseY, float delta) {
-        // Kéo thả Window
         if (dragging) {
             x = mouseX - dragX;
             y = mouseY - dragY;
         }
 
-        // Tính toán độ mượt cuộn (Lerp)
         localScrollY = MathUtil.lerp(localScrollY, targetLocalScrollY, 0.015f * delta);
         onlineScrollY = MathUtil.lerp(onlineScrollY, targetOnlineScrollY, 0.015f * delta);
 
-        // Vẽ Khung nền Window
         RenderUtils.drawRoundedGradientOutlinedRectangle(x, y, x + width, y + height, 8,
                 new Color(0, 0, 0, 150).getRGB(), new Color(81, 99, 149).getRGB(), new Color(97, 67, 133).getRGB());
 
@@ -110,22 +103,18 @@ public class ConfigWindow {
         Font regularFont = Fonts.MINECRAFT.get(18);
         Font smallFont = Fonts.MINECRAFT.get(16);
 
-        // Vẽ Header
         RenderUtils.drawRect(x, y + 20, x + width, y + 21, new Color(255, 255, 255, 50).getRGB());
         titleFont.draw("Config Manager", x + width / 2 - titleFont.width("Config Manager") / 2, y + 5, Color.WHITE.getRGB(), true);
 
-        // Chia 2 cột
         float halfWidth = width / 2;
         RenderUtils.drawRect(x + halfWidth, y + 21, x + halfWidth + 1, y + height, new Color(255, 255, 255, 50).getRGB());
 
         titleFont.draw("Local Configs", x + halfWidth / 2 - titleFont.width("Local Configs") / 2, y + 25, new Color(200, 200, 200).getRGB(), true);
         titleFont.draw("Online Configs", x + halfWidth + halfWidth / 2 - titleFont.width("Online Configs") / 2, y + 25, new Color(200, 200, 200).getRGB(), true);
 
-        // =============== CỘT TRÁI (LOCAL) ===============
         float localStartX = x + 5;
         float localStartY = y + 45;
 
-        // Vẽ Textbox tạo Config
         RenderUtils.drawRect(localStartX, localStartY, localStartX + halfWidth - 10, localStartY + 15, new Color(0, 0, 0, 100).getRGB());
         String displayTxt = (typeText.length() == 0 && !isTyping) ? "Create new..." : typeText.toString() + (isTyping && System.currentTimeMillis() % 1000 < 500 ? "_" : "");
         regularFont.draw(displayTxt, localStartX + 4, localStartY + 3, isTyping ? Color.WHITE.getRGB() : new Color(150, 150, 150).getRGB(), false);
@@ -147,7 +136,6 @@ public class ConfigWindow {
         }
         GL11.glDisable(GL11.GL_SCISSOR_TEST);
 
-        // =============== CỘT PHẢI (ONLINE) ===============
         float onlineStartX = x + halfWidth + 5;
         float onlineStartY = y + 45;
 
@@ -174,7 +162,6 @@ public class ConfigWindow {
     public boolean mouseClicked(int mouseX, int mouseY, int button) {
         if (!isHovered(mouseX, mouseY, x, y, width, height)) return false;
 
-        // Kéo Header
         if (mouseY <= y + 20) {
             dragging = true;
             dragX = mouseX - x;
@@ -186,7 +173,6 @@ public class ConfigWindow {
         float localStartX = x + 5;
         float localStartY = y + 45;
 
-        // Bấm Textbox tạo Config
         if (isHovered(mouseX, mouseY, localStartX, localStartY, halfWidth - 10, 15)) {
             isTyping = true;
             return true;
@@ -194,13 +180,12 @@ public class ConfigWindow {
             isTyping = false;
         }
 
-        // Click Config Local
         float localListY = localStartY + 20;
         if (mouseX < x + halfWidth && mouseY > localListY) {
             float currentLocalY = localListY + targetLocalScrollY;
             for (String cfg : localConfigs) {
                 if (isHovered(mouseX, mouseY, localStartX, currentLocalY, halfWidth - 10, 25)) {
-                    if (button == 0) { // Chuột Trái
+                    if (button == 0) { 
                         if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)) {
                             File file = new File("./config/Myau/", cfg + ".json");
                             if (file.exists() && file.delete()) ChatUtil.display("Deleted config: &c" + cfg);
@@ -208,7 +193,7 @@ public class ConfigWindow {
                         } else {
                             new Config(cfg, false).load();
                         }
-                    } else if (button == 1) { // Chuột Phải
+                    } else if (button == 1) { 
                         new Config(cfg, false).save();
                     }
                     return true;
@@ -217,7 +202,6 @@ public class ConfigWindow {
             }
         }
 
-        // Click Config Online
         float onlineStartX = x + halfWidth + 5;
         float onlineStartY = y + 45;
         if (mouseX > x + halfWidth && mouseY > onlineStartY) {
@@ -242,12 +226,10 @@ public class ConfigWindow {
 
         float scrollSpeed = 20f;
         if (mouseX < x + width / 2) {
-            // Cuộn Local
             targetLocalScrollY += (wheel > 0 ? scrollSpeed : -scrollSpeed);
             float maxScroll = Math.max(0, (localConfigs.size() * 28) - (height - 65));
             targetLocalScrollY = Math.max(-maxScroll, Math.min(0, targetLocalScrollY));
         } else {
-            // Cuộn Online
             targetOnlineScrollY += (wheel > 0 ? scrollSpeed : -scrollSpeed);
             float maxScroll = Math.max(0, (onlineConfigs.size() * 28) - (height - 45));
             targetOnlineScrollY = Math.max(-maxScroll, Math.min(0, targetOnlineScrollY));

@@ -3,7 +3,6 @@ package myau.management;
 import myau.Myau;
 import myau.event.EventTarget;
 import myau.events.Render2DEvent;
-import myau.module.modules.render.HUD;
 import myau.module.modules.render.Scoreboard;
 import myau.module.modules.render.TargetHUD;
 import myau.util.RenderUtil;
@@ -19,7 +18,6 @@ public class DragManager {
     private boolean wasMouseDown = false;
     private boolean draggingTargetHUD = false;
     private boolean draggingScoreboard = false;
-    private boolean draggingNotification = false;
     private float dragOffsetX = 0;
     private float dragOffsetY = 0;
 
@@ -30,7 +28,6 @@ public class DragManager {
             wasMouseDown = false;
             draggingTargetHUD = false;
             draggingScoreboard = false;
-            draggingNotification = false;
             return;
         }
 
@@ -45,17 +42,13 @@ public class DragManager {
         if (!isMouseDown) {
             draggingTargetHUD = false;
             draggingScoreboard = false;
-            draggingNotification = false;
         }
 
         TargetHUD targetHUD = (TargetHUD) Myau.moduleManager.getModule(TargetHUD.class);
         Scoreboard scoreboard = (Scoreboard) Myau.moduleManager.getModule(Scoreboard.class);
-        HUD hud = (HUD) Myau.moduleManager.getModule(HUD.class);
 
-        // 1. TargetHUD Dragging
         if (targetHUD != null && targetHUD.isEnabled()) {
             TargetHUD.TargetHUDBounds bounds = targetHUD.getBounds(sr);
-            // Draw visual editor box
             RenderUtil.enableRenderState();
             RenderUtil.drawOutlineRect(
                     bounds.x, bounds.y, bounds.x + bounds.width, bounds.y + bounds.height,
@@ -76,10 +69,8 @@ public class DragManager {
             }
         }
 
-        // 2. Scoreboard Dragging
         if (scoreboard != null && scoreboard.isEnabled()) {
             Scoreboard.ScoreboardBounds bounds = scoreboard.getBounds(sr);
-            // Check if there is no active scoreboard in the world, render dummy
             boolean hasScoreboard = false;
             if (mc.theWorld != null && mc.theWorld.getScoreboard() != null && mc.theWorld.getScoreboard().getObjectiveInDisplaySlot(1) != null) {
                 hasScoreboard = true;
@@ -87,7 +78,6 @@ public class DragManager {
 
             RenderUtil.enableRenderState();
             if (!hasScoreboard) {
-                // Render dummy scoreboard container so player can see it
                 RenderUtil.drawRect(bounds.x, bounds.y, bounds.x + bounds.width, bounds.y + bounds.height, new Color(0, 0, 0, 80).getRGB());
             }
             RenderUtil.drawOutlineRect(
@@ -106,34 +96,6 @@ public class DragManager {
             if (draggingScoreboard) {
                 scoreboard.offX.setValue((int) (mouseX + dragOffsetX));
                 scoreboard.offY.setValue((int) (mouseY + dragOffsetY));
-            }
-        }
-
-        // 3. Notification Dragging
-        if (hud != null) {
-            float width = 120;
-            float height = 28;
-            float notifX = sr.getScaledWidth() - width - 10 + hud.notifX.getValue();
-            float notifY = sr.getScaledHeight() - 20 - height + hud.notifY.getValue();
-
-            RenderUtil.enableRenderState();
-            RenderUtil.drawRect(notifX, notifY, notifX + width, notifY + height, new Color(0, 0, 0, 80).getRGB());
-            RenderUtil.drawOutlineRect(
-                    notifX, notifY, notifX + width, notifY + height,
-                    1.5f, new Color(0, 0, 0, 40).getRGB(), new Color(255, 255, 255, 180).getRGB()
-            );
-            RenderUtil.disableRenderState();
-            mc.fontRendererObj.drawStringWithShadow("Notifications", notifX + 2, notifY + 2, 0xFFFFFFFF);
-
-            if (justClicked && mouseX >= notifX && mouseX <= notifX + width && mouseY >= notifY && mouseY <= notifY + height) {
-                draggingNotification = true;
-                dragOffsetX = hud.notifX.getValue() - mouseX;
-                dragOffsetY = hud.notifY.getValue() - mouseY;
-            }
-
-            if (draggingNotification) {
-                hud.notifX.setValue((int) (mouseX + dragOffsetX));
-                hud.notifY.setValue((int) (mouseY + dragOffsetY));
             }
         }
     }

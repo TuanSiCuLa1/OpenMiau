@@ -112,19 +112,19 @@ public final class Animations extends Module {
         }
 
         switch (blockAnimation.getValue()) {
-            case 0: // None
+            case 0: 
                 transformFirstPersonItem(animationProgression, 0.0F);
                 GlStateManager.scale(var7, var7, var7);
                 blockTransformation();
                 break;
 
-            case 1: // 1.7
+            case 1: 
                 transformFirstPersonItem(animationProgression, swingProgress);
                 GlStateManager.scale(var7, var7, var7);
                 blockTransformation();
                 break;
 
-            case 2: // Sunny
+            case 2: 
                 var7 = 0.99D;
                 GlStateManager.translate(0.05F, -0.05F, -0.12F);
                 transformFirstPersonItem(animationProgression + 0.15F, swingProgress);
@@ -133,13 +133,13 @@ public final class Animations extends Module {
                 GlStateManager.translate(-0.5F, 0.2F, 0.0F);
                 break;
 
-            case 3: // Lucid
+            case 3: 
                 transformFirstPersonItem(animationProgression - 0.1F, swingProgress);
                 GlStateManager.scale(var7, var7, var7);
                 blockTransformation();
                 break;
 
-            case 4: // Astro
+            case 4: 
                 GlStateManager.translate(0.0F, 0.03F, -0.05F);
                 transformFirstPersonItem(animationProgression / 2.0F, swingProgress);
                 GlStateManager.scale(var7, var7, var7);
@@ -148,7 +148,7 @@ public final class Animations extends Module {
                 blockTransformation();
                 break;
 
-            case 5: // Smooth
+            case 5: 
                 transformFirstPersonItem(animationProgression, 0.0F);
                 GlStateManager.scale(var7, var7, var7);
                 float ySmooth = -convertedProgress * 2.0F;
@@ -159,7 +159,7 @@ public final class Animations extends Module {
                 GlStateManager.rotate(-ySmooth * 20.0F, 1.0F, 0.5F, 1.0F);
                 break;
 
-            case 6: // Spin
+            case 6: 
                 transformFirstPersonItem(animationProgression, 0.0F);
                 GlStateManager.scale(var7, var7, var7);
                 GlStateManager.translate(0.0F, 0.2F, -1.0F);
@@ -168,7 +168,7 @@ public final class Animations extends Module {
                 GlStateManager.rotate(60.0F, 0.0F, 1.0F, 0.0F);
                 break;
 
-            case 7: // Leaked
+            case 7: 
                 GlStateManager.translate(0.0F, -0.03F, -0.13F);
                 transformFirstPersonItem(animationProgression / 3.0F, 0.0F);
                 GlStateManager.scale(var7, var7, var7);
@@ -178,14 +178,14 @@ public final class Animations extends Module {
                 GlStateManager.rotate(-convertedProgress * 200.0F / 4.0F, 1.0F, 0.9F, 0.0F);
                 break;
 
-            case 8: // Old
+            case 8: 
                 GlStateManager.translate(0.0F, 0.1F, 0.0F);
                 transformFirstPersonItem(animationProgression / 2.0F - 0.2F, swingProgress);
                 GlStateManager.scale(var7, var7, var7);
                 blockTransformation();
                 break;
 
-            case 9: // Exhibition
+            case 9: 
                 GlStateManager.translate(0.0F, -0.05F, 0.0F);
                 transformFirstPersonItem(animationProgression / 2.0F, 0.0F);
                 GlStateManager.scale(var7, var7, var7);
@@ -195,7 +195,7 @@ public final class Animations extends Module {
                 blockTransformation();
                 break;
 
-            case 10: // Exhibition Old
+            case 10: 
                 GlStateManager.translate(0.0F, -0.05F, 0.0F);
                 GlStateManager.translate(-0.04F, 0.13F, 0.0F);
                 transformFirstPersonItem(animationProgression / 2.5F, 0.0F);
@@ -205,7 +205,7 @@ public final class Animations extends Module {
                 blockTransformation();
                 break;
 
-            case 11: // Exhibition New
+            case 11: 
                 GlStateManager.translate(0.0F, -0.04F, -0.01F);
                 transformFirstPersonItem(animationProgression / 2.0F, 0.0F);
                 GlStateManager.scale(var7, var7, var7);
@@ -215,7 +215,7 @@ public final class Animations extends Module {
                 blockTransformation();
                 break;
 
-            case 12: // Swong
+            case 12: 
                 GlStateManager.translate(0.0F, 0.1F, -0.05F);
                 transformFirstPersonItem(animationProgression / 2.0F, swingProgress);
                 GlStateManager.scale(var7, var7, var7);
@@ -224,7 +224,7 @@ public final class Animations extends Module {
                 blockTransformation();
                 break;
 
-            case 13: // Stella
+            case 13: 
                 transformFirstPersonItem(-0.1F, swingProgress);
                 GlStateManager.scale(var7, var7, var7);
                 GlStateManager.translate(-0.5F, 0.4F, -0.2F);
@@ -233,7 +233,7 @@ public final class Animations extends Module {
                 GlStateManager.rotate(40.0F, 0.0F, 1.0F, 0.0F);
                 break;
 
-            case 14: // Flup
+            case 14: 
                 GlStateManager.translate(0.0F, 0.1F, -0.05F);
                 transformFirstPersonItem(animationProgression, 0.0F);
                 GlStateManager.scale(var7, var7, var7);
@@ -243,7 +243,7 @@ public final class Animations extends Module {
                 GlStateManager.rotate(-convertedProgress * 70.0F, 1.0F, -0.4F, -0.0F);
                 break;
 
-            case 15: // Noov
+            case 15: 
                 transformFirstPersonItem(animationProgression / 1.5F, 0.0F);
                 GlStateManager.scale(var7, var7, var7);
                 blockTransformation();
@@ -252,14 +252,14 @@ public final class Animations extends Module {
                 GlStateManager.rotate(convertedProgress * (float) Math.PI, 8.0F, 0.0F, 8.0F);
                 break;
 
-            case 16: // Komorebi
+            case 16: 
                 transformFirstPersonItem(-0.25F, 1.0F + convertedProgress / 10.0F);
                 GlStateManager.scale(var7, var7, var7);
                 GL11.glRotated(-convertedProgress * 25.0F, 1.0D, 0.0D, 0.0D);
                 blockTransformation();
                 break;
 
-            case 17: // Rhys
+            case 17: 
                 GlStateManager.translate(0.41F, -0.25F, -0.5555557F);
                 GlStateManager.translate(0.0F, 0.0F, 0.0F);
                 GlStateManager.rotate(35.0F, 0.0F, 1.5F, 0.0F);
@@ -271,14 +271,14 @@ public final class Animations extends Module {
                 blockTransformation();
                 break;
 
-            case 18: // Swing
+            case 18: 
                 transformFirstPersonItem(animationProgression, swingProgress);
                 GlStateManager.scale(var7, var7, var7);
                 blockTransformation();
                 GlStateManager.translate(-0.3F, -0.1F, -0.0F);
                 break;
 
-            case 19: // ?
+            case 19: 
                 transformFirstPersonItem(animationProgression, swingProgress);
                 GlStateManager.scale(var7, var7, var7);
                 GL11.glTranslatef(-0.35F, 0.1F, 0.0F);
@@ -286,7 +286,7 @@ public final class Animations extends Module {
                 blockTransformation();
                 break;
 
-            case 20: // Stab
+            case 20: 
                 float spin = MathHelper.sin(MathHelper.sqrt_float(swingProgress) * (float) Math.PI);
                 GlStateManager.translate(0.6F, 0.3F, -0.6F + -spin * 0.7F);
                 GlStateManager.rotate(6090.0F, 0.0F, 0.0F, 0.1F);
@@ -297,7 +297,7 @@ public final class Animations extends Module {
                 blockTransformation();
                 break;
 
-            case 21: // Beta
+            case 21: 
                 GL11.glTranslatef(0.0F, 0.3F, 0.0F);
                 float var15 = MathHelper.sin(swingProgress * swingProgress * (float) Math.PI);
                 transformFirstPersonItem(equipProgress * 0.5F, 0.0F);
@@ -309,7 +309,7 @@ public final class Animations extends Module {
                 GL11.glTranslatef(-1.0F, mc.thePlayer.isSneaking() ? -0.1F : -0.2F, 0.2F);
                 break;
 
-            case 22: // Dortware
+            case 22: 
                 float var1_dort = MathHelper.sin((float) (swingProgress * swingProgress * Math.PI - 3.0D));
                 float var_dort = MathHelper.sin((float) (MathHelper.sqrt_float(swingProgress) * Math.PI));
                 transformFirstPersonItem(animationProgression, 1.0F);
@@ -321,7 +321,7 @@ public final class Animations extends Module {
                 GlStateManager.rotate(var1_dort * 13.0F, -10.0F, -1.4F, -10.0F);
                 break;
 
-            case 23: // Avatar
+            case 23: 
                 GlStateManager.translate(0.56F, -0.52F, -0.71999997F);
                 GlStateManager.rotate(45.0F, 0.0F, 1.0F, 0.0F);
                 float f_av = MathHelper.sin(swingProgress * swingProgress * (float) Math.PI);
@@ -333,7 +333,7 @@ public final class Animations extends Module {
                 blockTransformation();
                 break;
 
-            case 24: // Tap
+            case 24: 
                 GL11.glTranslatef(0.0F, 0.3F, 0.0F);
                 float smooth = (swingProgress * 0.8F - (swingProgress * swingProgress) * 0.8F);
                 GlStateManager.scale(var7, var7, var7);
@@ -344,7 +344,7 @@ public final class Animations extends Module {
                 blockTransformation();
                 break;
 
-            case 25: // Slide
+            case 25: 
                 GL11.glTranslatef(0.0F, 0.3F, 0.0F);
                 float smooth2 = (swingProgress * 0.8F - (swingProgress * swingProgress) * 0.8F);
                 GlStateManager.scale(var7, var7, var7);
@@ -367,7 +367,7 @@ public final class Animations extends Module {
         float animationProgression = alwaysShow.getValue() ? 0.0F : equipProgress;
 
         switch (swingAnimation.getValue()) {
-            case 0: // None
+            case 0: 
                 doItemUsedTransformations(swingProgress);
                 transformFirstPersonItem(animationProgression, swingProgress);
                 if (!onlyWhenBlocking.getValue()) {
@@ -375,7 +375,7 @@ public final class Animations extends Module {
                 }
                 break;
 
-            case 1: // Punch
+            case 1: 
                 transformFirstPersonItem(animationProgression, swingProgress);
                 doItemUsedTransformations(swingProgress);
                 if (!onlyWhenBlocking.getValue()) {
@@ -383,7 +383,7 @@ public final class Animations extends Module {
                 }
                 break;
 
-            case 2: // Shove
+            case 2: 
                 transformFirstPersonItem(animationProgression, animationProgression);
                 doItemUsedTransformations(swingProgress);
                 if (!onlyWhenBlocking.getValue()) {
@@ -391,7 +391,7 @@ public final class Animations extends Module {
                 }
                 break;
 
-            case 3: // Smooth
+            case 3: 
                 transformFirstPersonItem(animationProgression, swingProgress);
                 doItemUsedTransformations(animationProgression);
                 if (!onlyWhenBlocking.getValue()) {
@@ -399,7 +399,7 @@ public final class Animations extends Module {
                 }
                 break;
 
-            case 4: // 1.9+
+            case 4: 
                 doItemUsedTransformations(swingProgress);
                 transformFirstPersonItem(animationProgression, swingProgress);
                 if (!onlyWhenBlocking.getValue()) {

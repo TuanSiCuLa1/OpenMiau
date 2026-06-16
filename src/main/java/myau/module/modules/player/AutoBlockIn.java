@@ -412,14 +412,11 @@ public class AutoBlockIn extends Module {
     }
 
     private boolean tryPlaceOnBlock(BlockPos supportBlock, Vec3 eye, double reach, BlockPos targetPos) {
-        // Try all 6 faces of support block
         for (EnumFacing facing : EnumFacing.values()) {
             BlockPos placementPos = supportBlock.offset(facing);
             
-            // Check if placement would be at target
             if (!placementPos.equals(targetPos)) continue;
             
-            // Generate candidate hit points on this face
             int n = (int) Math.round(1 / STEP);
             
             for (int r = 0; r <= n; r++) {
@@ -483,7 +480,6 @@ public class AutoBlockIn extends Module {
                 Vec3 center = new Vec3(support.getX() + 0.5, support.getY() + 0.5, support.getZ() + 0.5);
                 if (eye.distanceTo(center) > reach) continue;
                 
-                // Try placement
                 int n = (int) Math.round(1 / STEP);
                 for (int r = 0; r <= n; r++) {
                     double v = r * STEP + (Math.random() * JIT * 2 - JIT);

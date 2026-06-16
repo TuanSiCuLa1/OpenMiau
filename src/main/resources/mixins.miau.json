@@ -6,8 +6,8 @@
   "compatibilityLevel": "JAVA_8",
   "client": [
     "MixinItemRenderer",
-    "MixinInventoryPlayer",
     "MixinPlayerControllerMP",
+    "MixinGuiMultiplayer",
     "IAccessorPlayerControllerMP"
   ]
 }

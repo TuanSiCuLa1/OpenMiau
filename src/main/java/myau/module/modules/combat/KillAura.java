@@ -422,12 +422,12 @@ public class KillAura extends Module {
 
     public boolean shouldAutoBlock() {
         if (this.isPlayerBlocking() && this.isBlocking) {
-            return !mc.thePlayer.isInWater() && !mc.thePlayer.isInLava() && (this.autoBlock.getValue() == 3  // HYPIXEL
-                    || this.autoBlock.getValue() == 4 // BLINK
-                    || this.autoBlock.getValue() == 5 // INTERACT
-                    || this.autoBlock.getValue() == 6 // SWAP
-                    || this.autoBlock.getValue() == 7 // LEGIT
-                    || this.autoBlock.getValue() == 9 // SMART
+            return !mc.thePlayer.isInWater() && !mc.thePlayer.isInLava() && (this.autoBlock.getValue() == 3  
+                    || this.autoBlock.getValue() == 4 
+                    || this.autoBlock.getValue() == 5 
+                    || this.autoBlock.getValue() == 6 
+                    || this.autoBlock.getValue() == 7 
+                    || this.autoBlock.getValue() == 9 
                     || this.autoBlock.getValue() == 10);
         } else {
             return false;
@@ -466,7 +466,7 @@ public class KillAura extends Module {
                 boolean blocked = false;
                 if (block) {
                     switch (this.autoBlock.getValue()) {
-                        case 0: // NONE
+                        case 0: 
                             if (PlayerUtil.isUsingItem()) {
                                 this.isBlocking = true;
                                 if (!this.isPlayerBlocking() && !Myau.playerStateManager.digging && !Myau.playerStateManager.placing) {
@@ -481,7 +481,7 @@ public class KillAura extends Module {
                             Myau.blinkManager.setBlinkState(false, BlinkModules.AUTO_BLOCK);
                             this.fakeBlockState = false;
                             break;
-                        case 1: // VANILLA
+                        case 1: 
                             if (this.hasValidTarget()) {
                                 if (!this.isPlayerBlocking() && !Myau.playerStateManager.digging && !Myau.playerStateManager.placing) {
                                     swap = true;
@@ -495,7 +495,7 @@ public class KillAura extends Module {
                                 this.fakeBlockState = false;
                             }
                             break;
-                        case 2: // SPOOF
+                        case 2: 
                             if (this.hasValidTarget()) {
                                 int item = ((IAccessorPlayerControllerMP) mc.playerController).getCurrentPlayerItem();
                                 if (Myau.playerStateManager.digging
@@ -520,7 +520,7 @@ public class KillAura extends Module {
                                 this.fakeBlockState = false;
                             }
                             break;
-                        case 3: // HYPIXEL
+                        case 3: 
                             if (this.hasValidTarget()) {
                                 if (!Myau.playerStateManager.digging && !Myau.playerStateManager.placing) {
                                     switch (this.blockTick) {
@@ -560,7 +560,7 @@ public class KillAura extends Module {
                                 this.fakeBlockState = false;
                             }
                             break;
-                        case 4: // BLINK
+                        case 4: 
                             if (this.hasValidTarget()) {
                                 if (!Myau.playerStateManager.digging && !Myau.playerStateManager.placing) {
                                     switch (this.blockTick) {
@@ -592,7 +592,7 @@ public class KillAura extends Module {
                                 this.fakeBlockState = false;
                             }
                             break;
-                        case 5: // INTERACT
+                        case 5: 
                             if (this.hasValidTarget()) {
                                 int item = ((IAccessorPlayerControllerMP) mc.playerController).getCurrentPlayerItem();
                                 if (mc.thePlayer.inventory.currentItem == item && !Myau.playerStateManager.digging && !Myau.playerStateManager.placing) {
@@ -627,7 +627,7 @@ public class KillAura extends Module {
                                 this.fakeBlockState = false;
                             }
                             break;
-                        case 6: // SWAP
+                        case 6: 
                             if (this.hasValidTarget()) {
                                 int item = ((IAccessorPlayerControllerMP) mc.playerController).getCurrentPlayerItem();
                                 if (mc.thePlayer.inventory.currentItem == item && !Myau.playerStateManager.digging && !Myau.playerStateManager.placing) {
@@ -668,7 +668,7 @@ public class KillAura extends Module {
                             this.isBlocking = false;
                             this.fakeBlockState = false;
                             break;
-                        case 7: // LEGIT
+                        case 7: 
                             if (this.hasValidTarget()) {
                                 if (!Myau.playerStateManager.digging && !Myau.playerStateManager.placing) {
                                     switch (this.blockTick) {
@@ -700,7 +700,7 @@ public class KillAura extends Module {
                                 this.fakeBlockState = false;
                             }
                             break;
-                        case 8: // FAKE
+                        case 8: 
                             Myau.blinkManager.setBlinkState(false, BlinkModules.AUTO_BLOCK);
                             this.isBlocking = false;
                             this.fakeBlockState = this.hasValidTarget();
@@ -711,7 +711,7 @@ public class KillAura extends Module {
                                 swap = true;
                             }
                             break;
-                        case 9: // SMART
+                        case 9: 
                             if (this.hasValidTarget() && this.shouldCustomSmartBlock()) {
                                 int item = ((IAccessorPlayerControllerMP) mc.playerController).getCurrentPlayerItem();
                                 if (mc.thePlayer.inventory.currentItem == item && !Myau.playerStateManager.digging && !Myau.playerStateManager.placing) {
@@ -972,7 +972,7 @@ public class KillAura extends Module {
                 final double y = player.prevPosY + (player.posY - player.prevPosY) * partialTicks - ((IAccessorRenderManager) mc.getRenderManager()).getRenderPosY();
                 final double z = player.prevPosZ + (player.posZ - player.prevPosZ) * partialTicks - ((IAccessorRenderManager) mc.getRenderManager()).getRenderPosZ();
 
-                if (this.showTarget.getValue() == 1) { // SIGMA_RING
+                if (this.showTarget.getValue() == 1) { 
                     final Color color = ((HUD) Myau.moduleManager.modules.get(HUD.class)).getColor(System.currentTimeMillis());
                     final double ringY = y + Math.sin(System.currentTimeMillis() / 2E+2) + 1;
                     GL11.glPushMatrix();
@@ -1021,7 +1021,7 @@ public class KillAura extends Module {
                     GL11.glEnable(3553);
                     GL11.glPopMatrix();
                     GlStateManager.resetColor();
-                } else if (this.showTarget.getValue() == 2) { // ABOVE_BOX
+                } else if (this.showTarget.getValue() == 2) { 
                     final Color color = player.hurtTime > 0 ? Color.red : ((HUD) Myau.moduleManager.modules.get(HUD.class)).getColor(System.currentTimeMillis());
                     GL11.glPushMatrix();
                     GL11.glEnable(3042);
@@ -1056,7 +1056,7 @@ public class KillAura extends Module {
                     GL11.glDisable(2848);
                     GL11.glPopMatrix();
                     GlStateManager.resetColor();
-                } else if (this.showTarget.getValue() == 3) { // FULL_BOX
+                } else if (this.showTarget.getValue() == 3) { 
                     boolean wasHurtRecently = false;
                     if (player.hurtTime > 0) {
                         wasHurtRecently = true;
