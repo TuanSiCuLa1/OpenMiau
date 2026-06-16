@@ -21,10 +21,10 @@ public final class Vector2d {
     }
 
     public double getX() {
-        return 0;
+        return this.x;
     }
 
     public double getY() {
-        return 0;
+        return this.y;
     }
 }
