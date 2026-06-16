@@ -6,6 +6,7 @@ import myau.event.types.EventType;
 import myau.event.types.Priority;
 import myau.events.PacketEvent;
 import myau.util.ChatUtil;
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.play.client.C01PacketChatMessage;
 
 import java.util.ArrayList;
@@ -51,7 +52,12 @@ public class CommandManager {
             String msg = ((C01PacketChatMessage) event.getPacket()).getMessage();
             if (this.isTypingCommand(msg)) {
                 event.setCancelled(true);
-                this.handleCommand(msg);
+                Minecraft mc = Minecraft.getMinecraft();
+                if (mc.isCallingFromMinecraftThread()) {
+                    this.handleCommand(msg);
+                } else {
+                    mc.addScheduledTask(() -> this.handleCommand(msg));
+                }
             }
         }
     }
