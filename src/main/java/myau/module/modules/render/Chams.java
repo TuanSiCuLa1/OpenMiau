@@ -2,6 +2,7 @@ package myau.module.modules.render;
 
 import myau.event.EventTarget;
 import myau.events.RenderLivingEvent;
+import myau.events.TickEvent;
 import myau.module.Module;
 import myau.util.TeamUtil;
 import myau.property.properties.BooleanProperty;
@@ -66,6 +67,18 @@ public class Chams extends Module {
 
     public Chams() {
         super("Chams", false);
+    }
+
+    @EventTarget
+    public void onTick(TickEvent event) {
+        if (!this.isEnabled() || mc.theWorld == null) {
+            return;
+        }
+        for (EntityPlayer player : mc.theWorld.playerEntities) {
+            if (shouldRenderChams(player)) {
+                player.ignoreFrustumCheck = true;
+            }
+        }
     }
 
     @EventTarget

@@ -47,12 +47,16 @@ public class ModuleComponent extends Component {
     private final boolean categoryManager;
 
     public ModuleComponent(Module mod, CategoryComponent p, float yPos) {
+        this(mod, p, yPos, false);
+    }
+
+    public ModuleComponent(Module mod, CategoryComponent p, float yPos, boolean categoryManager) {
         this.mod = mod;
         this.categoryComponent = p;
         this.yPos = yPos;
         this.settings = new ArrayList<>();
-        this.categoryManager = false;
-        this.isOpened = false;
+        this.categoryManager = categoryManager;
+        this.isOpened = categoryManager;
         float collapsedHeight = getCollapsedHeight();
         this.smoothingY = collapsedHeight;
         this.animationStartY = collapsedHeight;
@@ -184,7 +188,7 @@ public class ModuleComponent extends Component {
             }
             RenderUtils.drawRoundedRectangle(this.categoryComponent.getX(), this.categoryComponent.getY() + yPos, this.categoryComponent.getX() + this.categoryComponent.getWidth(), this.categoryComponent.getY() + 16 + this.yPos, 8, RenderUtils.setAlpha(HOVER_COLOR, hoverAlpha / 255.0));
         }
-        int button_rgb = this.mod.isEnabled() ? ENABLED_COLOR : DISABLED_COLOR;
+        int button_rgb = this.mod != null && this.mod.isEnabled() ? ENABLED_COLOR : DISABLED_COLOR;
 
         Font titleRenderer = Fonts.MINECRAFT.get(24);
 

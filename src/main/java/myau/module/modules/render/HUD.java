@@ -19,7 +19,7 @@ import myau.module.modules.player.AutoPot;
 import myau.module.modules.player.AutoRod;
 import myau.module.modules.player.AutoTool;
 import myau.module.modules.latency.BackTrack;
-import myau.module.modules.misc.BedNuker;
+import myau.module.modules.player.BedNuker;
 import myau.module.modules.minigames.BedwarUtils;
 import myau.module.modules.movement.Blink;
 import myau.module.modules.player.ChestStealer;

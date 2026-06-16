@@ -4,6 +4,7 @@ import myau.ui.clickgui.animation.ScrollOffsetAnimation;
 import myau.ui.clickgui.ClickGui;
 import myau.ui.clickgui.components.Component;
 import myau.module.Module;
+import myau.module.modules.target.Targets;
 import myau.util.render.RenderUtils;
 import myau.util.ColorUtil;
 import myau.util.Timer;
@@ -95,9 +96,14 @@ public class CategoryComponent {
         this.lastHeight = this.y + this.titleHeight + 4;
         this.animationStartHeight = this.lastHeight;
 
+        moduleRenderY = addTargetSettingsComponent(moduleRenderY);
+
         List<Module> mods = myau.Myau.moduleManager.getModulesByCategory().get(category);
         if (mods != null) {
             for (Module mod : mods) {
+                if (mod instanceof Targets) {
+                    continue;
+                }
                 ModuleComponent b = new ModuleComponent(mod, this, moduleRenderY);
                 this.modules.add(b);
                 moduleRenderY += 16;
@@ -122,9 +128,14 @@ public class CategoryComponent {
             return;
         }
 
+        moduleRenderY = addTargetSettingsComponent(moduleRenderY);
+
         List<Module> mods = myau.Myau.moduleManager.getModulesByCategory().get(this.category);
         if (mods != null) {
             for (Module mod : mods) {
+                if (mod instanceof Targets) {
+                    continue;
+                }
                 ModuleComponent component = new ModuleComponent(mod, this, moduleRenderY);
                 component.restoreOpenState(Boolean.TRUE.equals(openStates.get(mod.getName())));
                 this.modules.add(component);
@@ -132,6 +143,19 @@ public class CategoryComponent {
             }
         }
         syncAfterModuleReload();
+    }
+
+    private float addTargetSettingsComponent(float moduleRenderY) {
+        if (!this.category.equalsIgnoreCase("Target")) {
+            return moduleRenderY;
+        }
+        Module targets = myau.Myau.moduleManager.modules.get(Targets.class);
+        if (!(targets instanceof Targets)) {
+            return moduleRenderY;
+        }
+        ModuleComponent targetSettings = new ModuleComponent(targets, this, moduleRenderY, true);
+        this.modules.add(targetSettings);
+        return moduleRenderY + targetSettings.getHeightF();
     }
 
     public void updateSearchResults(String query) {
@@ -157,7 +181,7 @@ public class CategoryComponent {
             String lowerQuery = query.toLowerCase().replace(" ", "");
 
             for (Module mod : myau.Myau.moduleManager.modules.values()) {
-                if (mod.getName().equalsIgnoreCase("ClickGUI") || mod.getName().equalsIgnoreCase("GUI")) continue;
+                if (mod.getName().equalsIgnoreCase("ClickGUI") || mod.getName().equalsIgnoreCase("GUI") || mod instanceof Targets) continue;
 
                 if (mod.getName().toLowerCase().replace(" ", "").contains(lowerQuery)) {
                     ModuleComponent component = new ModuleComponent(mod, this, moduleRenderY);

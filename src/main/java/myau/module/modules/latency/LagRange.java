@@ -1,6 +1,6 @@
 package myau.module.modules.latency;
 
-import myau.module.modules.misc.BedNuker;
+import myau.module.modules.player.BedNuker;
 import myau.module.modules.render.HUD;
 import myau.Myau;
 import myau.event.EventTarget;

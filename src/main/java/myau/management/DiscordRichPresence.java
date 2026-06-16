@@ -7,6 +7,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ServerData;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
@@ -158,9 +159,9 @@ public class DiscordRichPresence {
         String os = System.getProperty("os.name").toLowerCase();
         if (os.contains("win")) {
             for (int i = 0; i < 10; i++) {
-                File pipeFile = new File("\\\\?\\pipe\\discord-ipc-" + i);
-                if (pipeFile.exists()) {
-                    return new RandomAccessFile(pipeFile, "rw");
+                try {
+                    return new RandomAccessFile(new File("\\\\.\\pipe\\discord-ipc-" + i), "rw");
+                } catch (FileNotFoundException ignored) {
                 }
             }
             throw new IOException("Discord IPC pipe not found");
@@ -207,9 +208,6 @@ public class DiscordRichPresence {
     }
 
     private String getSmallImage() {
-        if (mc.thePlayer != null && mc.thePlayer.getName() != null && !mc.thePlayer.getName().trim().isEmpty()) {
-            return "https://minotar.net/avatar/" + escapeUrl(mc.thePlayer.getName()) + "/128.png";
-        }
         return SMALL_IMAGE;
     }
 
@@ -218,9 +216,5 @@ public class DiscordRichPresence {
             return mc.thePlayer.getName();
         }
         return SMALL_IMAGE_TEXT;
-    }
-
-    private static String escapeUrl(String value) {
-        return value.replace(" ", "%20");
     }
 }

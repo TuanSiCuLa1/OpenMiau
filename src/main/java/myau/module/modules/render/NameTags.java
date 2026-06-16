@@ -4,6 +4,7 @@ import myau.Myau;
 import myau.event.EventTarget;
 import myau.events.LoadWorldEvent;
 import myau.events.Render2DEvent;
+import myau.events.TickEvent;
 import myau.mixin.IAccessorEntityRenderer;
 import myau.module.Module;
 import myau.property.properties.BooleanProperty;
@@ -102,6 +103,18 @@ public class NameTags extends Module {
         }
 
         return mobs.getValue();
+    }
+
+    @EventTarget
+    public void onTick(TickEvent event) {
+        if (!this.isEnabled() || mc.theWorld == null) {
+            return;
+        }
+        for (Entity entity : mc.theWorld.loadedEntityList) {
+            if (entity instanceof EntityLivingBase && shouldRenderTags((EntityLivingBase) entity)) {
+                entity.ignoreFrustumCheck = true;
+            }
+        }
     }
 
     @EventTarget

@@ -2,7 +2,7 @@ package myau.module.modules.combat;
 
 import myau.module.modules.player.AutoBlockIn;
 import myau.module.modules.player.AutoHeal;
-import myau.module.modules.misc.BedNuker;
+import myau.module.modules.player.BedNuker;
 import myau.module.modules.render.HUD;
 import myau.module.modules.movement.NoSlow;
 import myau.module.modules.player.Scaffold;
@@ -61,6 +61,7 @@ public class KillAura extends Module {
     private boolean isBlocking = false;
     private boolean fakeBlockState = false;
     private boolean blinkReset = false;
+    private boolean rightHoldActive = false;
     private long attackDelayMS = 0L;
     private int blockTick = 0;
     private int lastTickProcessed;
@@ -115,7 +116,7 @@ public class KillAura extends Module {
 
     private boolean performAttack(float yaw, float pitch) {
         if (!Myau.playerStateManager.digging && !Myau.playerStateManager.placing) {
-            if (this.isPlayerBlocking() && this.autoBlock.getValue() != 1) {
+            if (this.isPlayerBlocking() && this.autoBlock.getValue() != 1 && this.autoBlock.getValue() != 10) {
                 return false;
             } else if (this.attackDelayMS > 0L) {
                 return false;
@@ -157,6 +158,17 @@ public class KillAura extends Module {
         PacketUtil.sendPacket(new C07PacketPlayerDigging(C07PacketPlayerDigging.Action.RELEASE_USE_ITEM, BlockPos.ORIGIN, EnumFacing.DOWN));
         mc.thePlayer.stopUsingItem();
         this.blockingState = false;
+    }
+
+    private void setRightHold(boolean pressed) {
+        int useKey = mc.gameSettings.keyBindUseItem.getKeyCode();
+        if (pressed) {
+            KeyBindUtil.setKeyBindState(useKey, true);
+            this.rightHoldActive = true;
+        } else if (this.rightHoldActive) {
+            KeyBindUtil.updateKeyState(useKey);
+            this.rightHoldActive = false;
+        }
     }
 
     private void interactAttack(float yaw, float pitch) {
@@ -456,6 +468,9 @@ public class KillAura extends Module {
             boolean attack = this.target != null && this.canAttack();
             boolean block = attack && this.canAutoBlock();
             if (!block) {
+                if (this.autoBlock.getValue() == 10) {
+                    this.setRightHold(false);
+                }
                 Myau.blinkManager.setBlinkState(false, BlinkModules.AUTO_BLOCK);
                 this.isBlocking = false;
                 this.fakeBlockState = false;
@@ -752,18 +767,14 @@ public class KillAura extends Module {
                             }
                             break;
                         case 10:
-                            if (this.hasValidTarget() && PlayerUtil.isUsingItem()) {
-                                if (!this.isPlayerBlocking() && !Myau.playerStateManager.digging && !Myau.playerStateManager.placing) {
-                                    swap = true;
-                                }
+                            if (this.hasValidTarget()) {
+                                this.setRightHold(true);
                                 Myau.blinkManager.setBlinkState(false, BlinkModules.AUTO_BLOCK);
                                 this.isBlocking = true;
                                 this.fakeBlockState = false;
                             } else {
+                                this.setRightHold(false);
                                 Myau.blinkManager.setBlinkState(false, BlinkModules.AUTO_BLOCK);
-                                if (this.isPlayerBlocking() && !Myau.playerStateManager.digging && !Myau.playerStateManager.placing) {
-                                    this.stopBlock();
-                                }
                                 this.isBlocking = false;
                                 this.fakeBlockState = false;
                             }
@@ -1154,10 +1165,12 @@ public class KillAura extends Module {
         this.attackDelayMS = 0L;
         this.blockTick = 0;
         this.ticks = 255;
+        this.rightHoldActive = false;
     }
 
     @Override
     public void onDisabled() {
+        this.setRightHold(false);
         Myau.blinkManager.setBlinkState(false, BlinkModules.AUTO_BLOCK);
         this.blockingState = false;
         this.isBlocking = false;

@@ -4,10 +4,15 @@ import myau.Myau;
 import myau.event.EventManager;
 import myau.events.KnockbackEvent;
 import myau.events.SafeWalkEvent;
+import myau.module.modules.render.Chams;
+import myau.module.modules.render.ESP;
 import myau.module.modules.render.FreeLook;
+import myau.module.modules.render.NameTags;
 import myau.util.ITruePosition;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -18,6 +23,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @SideOnly(Side.CLIENT)
 @Mixin(value = {Entity.class}, priority = 9999)
@@ -183,6 +189,39 @@ public abstract class MixinEntity implements ITruePosition {
         this.truePos = truePos;
     }
 
+
+    @Inject(
+            method = {"isInRangeToRenderDist"},
+            at = {@At("HEAD")},
+            cancellable = true
+    )
+    private void isInRangeToRenderDist(double distance, CallbackInfoReturnable<Boolean> callbackInfoReturnable) {
+        Entity entity = (Entity) ((Object) this);
+        if (Myau.moduleManager == null || !(entity instanceof EntityLivingBase)) {
+            return;
+        }
+
+        ESP esp = (ESP) Myau.moduleManager.modules.get(ESP.class);
+        NameTags nameTags = (NameTags) Myau.moduleManager.modules.get(NameTags.class);
+        Chams chams = (Chams) Myau.moduleManager.modules.get(Chams.class);
+        EntityLivingBase living = (EntityLivingBase) entity;
+
+        boolean forceRender = false;
+        if (esp != null && esp.isEnabled() && entity instanceof EntityPlayer) {
+            forceRender = true;
+        }
+        if (nameTags != null && nameTags.isEnabled() && nameTags.shouldRenderTags(living)) {
+            forceRender = true;
+        }
+        if (chams != null && chams.isEnabled()) {
+            forceRender = true;
+        }
+
+        if (forceRender) {
+            entity.ignoreFrustumCheck = true;
+            callbackInfoReturnable.setReturnValue(true);
+        }
+    }
     @ModifyVariable(
             method = {"moveEntity"},
             ordinal = 0,

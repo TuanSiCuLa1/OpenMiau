@@ -1,6 +1,5 @@
-package myau.module.modules.misc;
+package myau.module.modules.player;
 
-import myau.module.modules.player.AutoBlockIn;
 import myau.module.modules.render.BedESP;
 import myau.module.modules.render.HUD;
 import com.google.common.base.CaseFormat;
