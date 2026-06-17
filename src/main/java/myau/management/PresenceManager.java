@@ -53,6 +53,7 @@ public class PresenceManager {
     public int getOnlineCount() { return this.onlineCount; }
 
     public boolean isMiauPlayer(String uuid, String username) {
+        if (myau.Myau.peerDetector != null && myau.Myau.peerDetector.isMiauPeer(username)) return true;
         Set<String> players = this.miauPlayers;
         String uuidKey = normalizeKey(uuid);
         if (uuidKey != null && players.contains(uuidKey)) return true;

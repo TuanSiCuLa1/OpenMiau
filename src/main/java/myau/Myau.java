@@ -51,6 +51,7 @@ public class Myau {
     public static NotificationManager notificationManager;
     public static DragManager dragManager;
     public static PresenceManager presenceManager;
+    public static MiauPeerDetector peerDetector;
 
     public Myau() {
         this.init();
@@ -72,6 +73,7 @@ public class Myau {
         notificationManager = new NotificationManager();
         dragManager = new DragManager();
         presenceManager = new PresenceManager();
+        peerDetector = new MiauPeerDetector();
         EventManager.register(rotationManager);
         EventManager.register(floatManager);
         EventManager.register(blinkManager);
@@ -83,6 +85,7 @@ public class Myau {
         EventManager.register(notificationManager);
         EventManager.register(dragManager);
         EventManager.register(presenceManager);
+        EventManager.register(peerDetector);
         moduleManager.modules.put(AimAssist.class, new AimAssist());
         moduleManager.modules.put(AntiAFK.class, new AntiAFK());
         moduleManager.modules.put(AntiDebuff.class, new AntiDebuff());
