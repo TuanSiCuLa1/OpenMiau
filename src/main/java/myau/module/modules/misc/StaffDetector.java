@@ -2,31 +2,38 @@ package myau.module.modules.misc;
 
 import myau.event.EventTarget;
 import myau.event.types.EventType;
+import myau.events.LoadWorldEvent;
 import myau.events.PacketEvent;
 import myau.module.Module;
 import myau.property.properties.BooleanProperty;
+import myau.mixin.IAccessorS14PacketEntity;
 import myau.util.ChatUtil;
 import myau.util.notification.NotificationManager;
 import myau.util.notification.NotificationType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.Packet;
 import net.minecraft.network.play.server.*;
-import myau.mixin.IAccessorS14PacketEntity;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class StaffDetector extends Module {
     private static final Minecraft mc = Minecraft.getMinecraft();
-    
-    public final BooleanProperty autoLeave = new BooleanProperty("auto-leave", true);
 
-    private final List<String> staff = Arrays.asList("sennenkoi", "ongtrum2k10", "cheesetheslave");
+    public final BooleanProperty ghostDetect = new BooleanProperty("ghost-detect", true);
+    public final BooleanProperty autoLeave   = new BooleanProperty("auto-leave",   false);
+
+    private static final Set<String> STAFF_LIST = new HashSet<>(Arrays.asList(
+        "vinghgaming",
+        "cheesethesylveon",
+        "thanhhau",
+        "sennekoi",
+        "lasgana",
+        "novapev4",
+        "khoaho01623"
+    ));
 
     private final Set<Integer> validEntities = new HashSet<>();
-    private final Set<Integer> flaggedStaff = new HashSet<>();
+    private final Set<Integer> flaggedGhost  = new HashSet<>();
 
     public StaffDetector() {
         super("StaffDetector", false, false);
@@ -35,79 +42,100 @@ public class StaffDetector extends Module {
     @Override
     public void onEnabled() {
         validEntities.clear();
-        flaggedStaff.clear();
+        flaggedGhost.clear();
     }
 
     @Override
     public void onDisabled() {
         validEntities.clear();
-        flaggedStaff.clear();
+        flaggedGhost.clear();
+    }
+
+    @EventTarget
+    public void onLoadWorld(LoadWorldEvent event) {
+        validEntities.clear();
+        flaggedGhost.clear();
     }
 
     @EventTarget
     public void onPacket(PacketEvent event) {
-        if (!this.isEnabled() || event.getType() != EventType.RECEIVE) return;
-
+        if (event.getType() != EventType.RECEIVE) return;
         Packet<?> packet = event.getPacket();
 
         if (packet instanceof S38PacketPlayerListItem) {
-            S38PacketPlayerListItem item = (S38PacketPlayerListItem) packet;
-            if (item.getAction() == S38PacketPlayerListItem.Action.ADD_PLAYER) {
-                for (S38PacketPlayerListItem.AddPlayerData player : item.getEntries()) {
-                    if (player != null && player.getProfile() != null && player.getProfile().getName() != null) {
-                        if (staff.contains(player.getProfile().getName().toLowerCase())) {
-                            ChatUtil.display("&c[WARNING] &fStaff " + player.getProfile().getName() + " is online!");
-                            triggerAutoLeave(player.getProfile().getName());
-                        }
-                    }
-                }
-            }
-        } else if (packet instanceof S3EPacketTeams) {
-            S3EPacketTeams teams = (S3EPacketTeams) packet;
-            if (teams.getPlayers() != null) {
-                for (String name : teams.getPlayers()) {
-                    if (name != null && staff.contains(name.toLowerCase())) {
-                        ChatUtil.display("&c[WARNING] &fStaff " + name + " detected!");
+            S38PacketPlayerListItem pkt = (S38PacketPlayerListItem) packet;
+
+            if (pkt.getAction() == S38PacketPlayerListItem.Action.ADD_PLAYER) {
+                for (S38PacketPlayerListItem.AddPlayerData data : pkt.getEntries()) {
+                    if (data == null || data.getProfile() == null) continue;
+                    String name = data.getProfile().getName();
+                    if (name == null) continue;
+
+                    if (STAFF_LIST.contains(name.toLowerCase())) {
+                        alert(NotificationType.ERROR, "Staff Online!", name + " joined the server",
+                            "&c&l[STAFF] &r&f" + name + " &ajoined the server!");
                         triggerAutoLeave(name);
                     }
                 }
+
+            } else if (pkt.getAction() == S38PacketPlayerListItem.Action.REMOVE_PLAYER && mc.theWorld != null) {
+                for (S38PacketPlayerListItem.AddPlayerData data : pkt.getEntries()) {
+                    if (data == null || data.getProfile() == null) continue;
+                    net.minecraft.entity.player.EntityPlayer entity =
+                        mc.theWorld.getPlayerEntityByUUID(data.getProfile().getId());
+                    if (entity == null || entity == mc.thePlayer) continue;
+                    String name = entity.getGameProfile().getName();
+
+                    if (STAFF_LIST.contains(name.toLowerCase())) {
+                        alert(NotificationType.SUCCESS, "Staff Left", name + " left the server",
+                            "&a[STAFF] &f" + name + " &cleft the server.");
+                    }
+                }
             }
+            return;
         }
 
         if (packet instanceof S0CPacketSpawnPlayer) {
             validEntities.add(((S0CPacketSpawnPlayer) packet).getEntityID());
-        } 
-        else if (packet instanceof S13PacketDestroyEntities) {
+            return;
+        }
+
+        if (packet instanceof S13PacketDestroyEntities) {
             for (int id : ((S13PacketDestroyEntities) packet).getEntityIDs()) {
                 validEntities.remove(id);
-                flaggedStaff.remove(id);
+                flaggedGhost.remove(id);
             }
-        } 
-        else if (packet instanceof S14PacketEntity) {
-            checkGhostEntity(((IAccessorS14PacketEntity) packet).getEntityId());
-        } else if (packet instanceof S18PacketEntityTeleport) {
-            checkGhostEntity(((S18PacketEntityTeleport) packet).getEntityId());
+            return;
+        }
+
+        if (ghostDetect.getValue()) {
+            if (packet instanceof S14PacketEntity) {
+                checkGhost(((IAccessorS14PacketEntity) packet).getEntityId());
+            } else if (packet instanceof S18PacketEntityTeleport) {
+                checkGhost(((S18PacketEntityTeleport) packet).getEntityId());
+            }
         }
     }
 
-    private void checkGhostEntity(int entityId) {
+    private void checkGhost(int entityId) {
         if (mc.thePlayer != null && entityId == mc.thePlayer.getEntityId()) return;
+        if (validEntities.contains(entityId) || flaggedGhost.contains(entityId)) return;
 
-        if (!validEntities.contains(entityId) && !flaggedStaff.contains(entityId)) {
-            flaggedStaff.add(entityId);
-            ChatUtil.display("&c[EXPLOIT] &fGhost/Vanished Entity Detected! (ID: " + entityId + ")");
-            triggerAutoLeave("Ghost (ID " + entityId + ")");
-        }
+        flaggedGhost.add(entityId);
+        alert(NotificationType.ERROR, "Ghost Entity!", "Vanish detected (ID: " + entityId + ")",
+            "&c&l[GHOST] &r&fVanish entity detected &7(ID: " + entityId + ")");
+        triggerAutoLeave("Ghost#" + entityId);
+    }
+
+    private void alert(NotificationType type, String title, String desc, String chatMsg) {
+        NotificationManager.show(title, desc, type);
+        ChatUtil.display(chatMsg);
     }
 
     private void triggerAutoLeave(String name) {
-        NotificationManager.show("Staff Detector", "Staff " + name + " detected!", NotificationType.WARNING);
-        
-        if (autoLeave.getValue()) {
-            if (mc.thePlayer != null) {
-                ChatUtil.sendMessage("/hub");
-            }
-            this.setEnabled(false); 
+        if (autoLeave.getValue() && mc.thePlayer != null) {
+            ChatUtil.sendMessage("/hub");
+            this.setEnabled(false);
         }
     }
 }

@@ -174,6 +174,7 @@ public class Myau {
         moduleManager.modules.put(Scoreboard.class, new Scoreboard());
         moduleManager.modules.put(Targets.class, new Targets());
         moduleManager.modules.put(TargetStrafe.class, new TargetStrafe());
+        moduleManager.modules.put(TimerRange.class, new TimerRange());
         moduleManager.modules.put(Tracers.class, new Tracers());
         moduleManager.modules.put(Trajectories.class, new Trajectories());
         moduleManager.modules.put(Velocity.class, new Velocity());

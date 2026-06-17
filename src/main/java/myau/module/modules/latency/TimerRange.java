@@ -1,4 +1,4 @@
-package myau.module.modules.combat;
+package myau.module.modules.latency;
 
 import myau.event.EventTarget;
 import myau.event.types.EventType;
@@ -8,6 +8,7 @@ import myau.events.PacketEvent;
 import myau.events.Render3DEvent;
 import myau.events.TickEvent;
 import myau.module.Module;
+import myau.module.modules.latency.BackTrack;
 import myau.property.properties.BooleanProperty;
 import myau.property.properties.FloatProperty;
 import myau.property.properties.IntProperty;
@@ -130,7 +131,9 @@ public class TimerRange extends Module {
         float entityDistance = mc.thePlayer.getDistanceToEntity(targetEntity);
         int randomTickDelay = RandomUtil.nextInt(minTickDelay.getValue(), maxTickDelay.getValue());
 
-        if (!updateDistance(targetEntity) || (mc.thePlayer.isInWater() && !onLiquid.getValue()) || (mc.thePlayer.isInLava() && !onLiquid.getValue())) {
+        boolean shouldReturn = BackTrack.runWithNearestTrackedDistance(targetEntity, () -> !updateDistance(targetEntity));
+
+        if (shouldReturn || (mc.thePlayer.isInWater() && !onLiquid.getValue()) || (mc.thePlayer.isInLava() && !onLiquid.getValue())) {
             return;
         }
 
@@ -193,7 +196,9 @@ public class TimerRange extends Module {
 
             int randomTickDelay = RandomUtil.nextInt(minTickDelay.getValue(), maxTickDelay.getValue());
 
-            if (!updateDistance(nearbyEntity) || (mc.thePlayer.isInWater() && !onLiquid.getValue()) || (mc.thePlayer.isInLava() && !onLiquid.getValue())) {
+            boolean shouldReturn2 = BackTrack.runWithNearestTrackedDistance(nearbyEntity, () -> !updateDistance(nearbyEntity));
+
+            if (shouldReturn2 || (mc.thePlayer.isInWater() && !onLiquid.getValue()) || (mc.thePlayer.isInLava() && !onLiquid.getValue())) {
                 return;
             }
 

@@ -3,6 +3,7 @@ package myau.module.modules.latency;
 import myau.event.EventTarget;
 import myau.event.types.EventType;
 import myau.events.AttackEvent;
+import java.util.function.Supplier;
 import myau.events.LoadWorldEvent;
 import myau.events.PacketEvent;
 import myau.events.Render3DEvent;
@@ -127,8 +128,18 @@ public class BackTrack extends Module {
     private double packetRealY;
     private double packetRealZ;
 
+    private static BackTrack instance;
+
     public BackTrack() {
         super("BackTrack", false);
+        instance = this;
+    }
+
+    public static boolean runWithNearestTrackedDistance(net.minecraft.entity.Entity entity, Supplier<Boolean> action) {
+        if (instance == null || !instance.isEnabled()) {
+            return action.get();
+        }
+        return action.get();
     }
 
     private int getSupposedDelay() {
