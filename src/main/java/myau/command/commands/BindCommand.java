@@ -25,22 +25,19 @@ public class BindCommand extends Command {
             if (args.size() == 2 && (args.get(1).equalsIgnoreCase("l") || args.get(1).equalsIgnoreCase("list"))) {
                 List<Module> modules = Myau.moduleManager.modules.values().stream().filter(module -> module.getKey() != 0).collect(Collectors.toList());
                 if (modules.isEmpty()) {
-                    ChatUtil.display("%sNo binds&r");
+                    ChatUtil.display("No binds&r");
                 } else {
-                    ChatUtil.display("%sBinds:&r");
+                    ChatUtil.display("Binds:&r");
                     for (Module module : modules) {
                         ChatUtil.display("%s»&r %s&r", module.isHidden() ? "&8" : "&7", module.formatModule());
                     }
                 }
             } else {
                 ChatUtil.display(
-                        String.format(
-                                "%sUsage: .%s <&omodule&r> <&okey&r>&r | .%s <&omodule&r> &onone&r | .%s &olist&r",
-                                Myau.clientName,
-                                args.get(0).toLowerCase(Locale.ROOT),
-                                args.get(0).toLowerCase(Locale.ROOT),
-                                args.get(0).toLowerCase(Locale.ROOT)
-                        )
+                        "Usage: .%s <&omodule&r> <&okey&r>&r | .%s <&omodule&r> &onone&r | .%s &olist&r",
+                        args.get(0).toLowerCase(Locale.ROOT),
+                        args.get(0).toLowerCase(Locale.ROOT),
+                        args.get(0).toLowerCase(Locale.ROOT)
                 );
             }
         } else {
@@ -63,17 +60,13 @@ public class BindCommand extends Command {
             if (!args.get(1).equals("*")) {
                 Module module = Myau.moduleManager.getModule(args.get(1));
                 if (module == null) {
-                    ChatUtil.display("%sModule not found (&o%s&r)&r", args.get(1));
+                    ChatUtil.display("Module not found (&o%s&r)&r", args.get(1));
                 } else {
                     module.setKey(keyIndex);
                     if (keyIndex == 0) {
-                        ChatUtil.display(
-                                String.format("%sUnbind &o%s&r", module.getName())
-                        );
+                        ChatUtil.display("Unbind &o%s&r", module.getName());
                     } else {
-                        ChatUtil.display(
-                                String.format("%sBound &o%s&r to &l[%s]&r", module.getName(), KeyBindUtil.getKeyName(keyIndex))
-                        );
+                        ChatUtil.display("Bound &o%s&r to &l[%s]&r", module.getName(), KeyBindUtil.getKeyName(keyIndex));
                     }
                 }
             } else {
@@ -81,13 +74,9 @@ public class BindCommand extends Command {
                     module.setKey(keyIndex);
                 }
                 if (keyIndex == 0) {
-                    ChatUtil.display(
-                            String.format("%sUnbind all modules&r")
-                    );
+                    ChatUtil.display("Unbind all modules&r");
                 } else {
-                    ChatUtil.display(
-                            String.format("%sBind all modules to &l[%s]&r", KeyBindUtil.getKeyName(keyIndex))
-                    );
+                    ChatUtil.display("Bind all modules to &l[%s]&r", KeyBindUtil.getKeyName(keyIndex));
                 }
             }
         }

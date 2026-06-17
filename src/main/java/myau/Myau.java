@@ -183,6 +183,7 @@ public class Myau {
         commandManager.commands.add(new BindCommand());
         commandManager.commands.add(new ConfigCommand());
         commandManager.commands.add(new OnlineConfigCommand());
+        commandManager.commands.add(new UserConfigCommand());
         commandManager.commands.add(new DenickCommand());
         commandManager.commands.add(new FriendCommand());
         commandManager.commands.add(new HelpCommand());

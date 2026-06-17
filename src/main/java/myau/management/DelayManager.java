@@ -16,6 +16,13 @@ import net.minecraft.network.play.server.S00PacketKeepAlive;
 import net.minecraft.network.play.server.S01PacketJoinGame;
 import net.minecraft.network.play.server.S07PacketRespawn;
 import net.minecraft.network.play.server.S19PacketEntityStatus;
+import net.minecraft.network.play.server.S21PacketChunkData;
+import net.minecraft.network.play.server.S22PacketMultiBlockChange;
+import net.minecraft.network.play.server.S23PacketBlockChange;
+import net.minecraft.network.play.server.S24PacketBlockAction;
+import net.minecraft.network.play.server.S25PacketBlockBreakAnim;
+import net.minecraft.network.play.server.S26PacketMapChunkBulk;
+import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
 import net.minecraft.network.status.client.C00PacketServerQuery;
 import net.minecraft.network.status.client.C01PacketPing;
 
@@ -31,7 +38,14 @@ public class DelayManager {
     public boolean shouldDelay(Packet<INetHandlerPlayClient> packet) {
         if (this.delayModule == DelayModules.NONE) {
             return false;
-        } else if (packet instanceof S00PacketKeepAlive) {
+        } else if (packet instanceof S00PacketKeepAlive
+                || packet instanceof S21PacketChunkData
+                || packet instanceof S22PacketMultiBlockChange
+                || packet instanceof S23PacketBlockChange
+                || packet instanceof S24PacketBlockAction
+                || packet instanceof S25PacketBlockBreakAnim
+                || packet instanceof S26PacketMapChunkBulk
+                || packet instanceof S35PacketUpdateTileEntity) {
             return false;
         } else if (!(packet instanceof S01PacketJoinGame) && !(packet instanceof S07PacketRespawn)) {
             if (packet instanceof S19PacketEntityStatus) {

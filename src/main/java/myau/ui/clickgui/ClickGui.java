@@ -150,6 +150,9 @@ public class ClickGui extends GuiScreen {
         if (configWindow != null) {
             configWindow.drawWindow(x, y, delta);
         }
+
+        int onlineCount = myau.Myau.presenceManager == null ? 0 : myau.Myau.presenceManager.getOnlineCount();
+        this.fontRendererObj.drawStringWithShadow("Miau User Online: " + onlineCount, 4.0F, this.height - 12.0F, 0xFFFFFFFF);
     }
 
     @Override

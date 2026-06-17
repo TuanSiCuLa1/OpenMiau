@@ -54,7 +54,7 @@ public class BedwarUtils extends Module {
     public final IntProperty hudY = new IntProperty("hud-y", 66, 0, 500, this.hud::getValue);
     public final FloatProperty hudScale = new FloatProperty("hud-scale", 1.0F, 0.5F, 2.0F, this.hud::getValue);
     public final BooleanProperty hudShadow = new BooleanProperty("hud-shadow", true, this.hud::getValue);
-    public final BooleanProperty diamondUpgrades = new BooleanProperty("diamond-upgrades", true);
+   public final BooleanProperty diamondUpgrades = new BooleanProperty("diamond-upgrades", true);
     public final BooleanProperty itemTracker = new BooleanProperty("item-tracker", true);
     public final BooleanProperty bedTracker = new BooleanProperty("bedtracker", true);
     public final BooleanProperty invisAlert = new BooleanProperty("invis-alert", true);
@@ -129,7 +129,7 @@ public class BedwarUtils extends Module {
 
     @EventTarget
     public void onLoadWorld(LoadWorldEvent event) {
-        this.reset();
+        this.reset(false);
         this.bedTrackerDelegate.onLoadWorld(event);
     }
 
@@ -193,7 +193,7 @@ public class BedwarUtils extends Module {
         }
         String lower = text.toLowerCase();
         if (this.isNewGameMessage(lower)) {
-            this.reset();
+            this.reset(true);
             return;
         }
         if (this.diamondUpgrades.getValue()) {
@@ -411,11 +411,13 @@ public class BedwarUtils extends Module {
         }
     }
 
-    private void reset() {
-        this.trap = false;
-        this.trapType = "";
-        this.sharp = false;
-        this.protLevel = 0;
+    private void reset(boolean resetDiamondUpgrades) {
+        if (resetDiamondUpgrades) {
+            this.trap = false;
+            this.trapType = "";
+            this.sharp = false;
+            this.protLevel = 0;
+        }
         this.trackedItemMessages.clear();
         this.invisAlertCooldowns.clear();
     }

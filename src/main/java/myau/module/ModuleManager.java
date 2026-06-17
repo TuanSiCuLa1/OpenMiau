@@ -15,8 +15,11 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ModuleManager {
+    private static final Logger LOGGER = Logger.getLogger(ModuleManager.class.getName());
     private static final String MODULE_PACKAGE = "myau.module.modules.";
     private static final Map<String, String> CATEGORY_NAMES = new LinkedHashMap<>();
 
@@ -81,22 +84,29 @@ public class ModuleManager {
 
     @EventTarget
     public void onKey(KeyEvent event) {
-        for (Module module : this.modules.values()) {
-            if (module.getKey() != event.getKey()) {
-                continue;
+        List<Module> matchedModules = new ArrayList<>();
+        for (Module module : new ArrayList<>(this.modules.values())) {
+            if (module.getKey() == event.getKey()) {
+                matchedModules.add(module);
             }
-            boolean shouldNotify = module.toggle();
-            HUD hud = (HUD) this.modules.get(HUD.class);
-            if (hud != null && shouldNotify) {
-                shouldNotify = hud.toggleAlerts.getValue();
-            }
-            if(module instanceof ClickGUI){
-                shouldNotify = false;
-            }
-            if (shouldNotify) {
-                String status = module.isEnabled() ? "&a&lON" : "&c&lOFF";
-                String message = String.format("%s%s: %s&r", module.getName(), status);
-                ChatUtil.display(message);
+        }
+
+        for (Module module : matchedModules) {
+            try {
+                boolean shouldNotify = module.toggle();
+                HUD hud = (HUD) this.modules.get(HUD.class);
+                if (hud != null && shouldNotify) {
+                    shouldNotify = hud.toggleAlerts.getValue();
+                }
+                if (module instanceof ClickGUI) {
+                    shouldNotify = false;
+                }
+                if (shouldNotify) {
+                    String status = module.isEnabled() ? "&a&lON" : "&c&lOFF";
+                    ChatUtil.display("%s: %s&r", module.getName(), status);
+                }
+            } catch (Throwable throwable) {
+                LOGGER.log(Level.WARNING, String.format("Failed to toggle module on key press: module=%s key=%d", module.getName(), event.getKey()), throwable);
             }
         }
     }

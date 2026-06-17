@@ -43,7 +43,14 @@ import net.minecraft.network.play.server.S14PacketEntity;
 import net.minecraft.network.play.server.S18PacketEntityTeleport;
 import net.minecraft.network.play.server.S19PacketEntityStatus;
 import net.minecraft.network.play.server.S1CPacketEntityMetadata;
+import net.minecraft.network.play.server.S21PacketChunkData;
+import net.minecraft.network.play.server.S22PacketMultiBlockChange;
+import net.minecraft.network.play.server.S23PacketBlockChange;
+import net.minecraft.network.play.server.S24PacketBlockAction;
+import net.minecraft.network.play.server.S25PacketBlockBreakAnim;
+import net.minecraft.network.play.server.S26PacketMapChunkBulk;
 import net.minecraft.network.play.server.S29PacketSoundEffect;
+import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
 import net.minecraft.network.play.server.S40PacketDisconnect;
 import net.minecraft.network.status.client.C00PacketServerQuery;
 import net.minecraft.network.status.server.S01PacketPong;
@@ -196,10 +203,22 @@ public class BackTrack extends Module {
         updateDelayCooldown();
     }
 
+    private boolean isWorldUpdatePacket(Packet<?> packet) {
+        return packet instanceof S21PacketChunkData
+                || packet instanceof S22PacketMultiBlockChange
+                || packet instanceof S23PacketBlockChange
+                || packet instanceof S24PacketBlockAction
+                || packet instanceof S25PacketBlockBreakAnim
+                || packet instanceof S26PacketMapChunkBulk
+                || packet instanceof S35PacketUpdateTileEntity;
+    }
     @EventTarget
     public void onPacket(PacketEvent event) {
         if (!this.isEnabled() || event.isCancelled()) return;
         Packet<?> packet = event.getPacket();
+        if (event.getType() == EventType.RECEIVE && this.isWorldUpdatePacket(packet)) {
+            return;
+        }
         if (mode.getValue() == 2) {
             handlePacketMode(event, packet);
             return;
