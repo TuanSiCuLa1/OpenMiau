@@ -15,8 +15,6 @@ import myau.module.modules.player.AutoBedDef;
 import myau.module.modules.player.AutoBlockIn;
 import myau.module.modules.combat.AutoClicker;
 import myau.module.modules.player.AutoHeal;
-import myau.module.modules.player.AutoPot;
-import myau.module.modules.player.AutoRod;
 import myau.module.modules.player.AutoTool;
 import myau.module.modules.latency.BackTrack;
 import myau.module.modules.player.BedNuker;
@@ -33,7 +31,6 @@ import myau.module.modules.player.GhostHand;
 import myau.module.modules.misc.HackerDetector;
 import myau.module.modules.combat.HitBox;
 import myau.module.modules.combat.HitSelect;
-import myau.module.modules.combat.Hitflick;
 import myau.module.modules.player.InvManager;
 import myau.module.modules.player.InvWalk;
 import myau.module.modules.misc.InventoryClicker;
@@ -64,7 +61,6 @@ import myau.module.modules.movement.Speed;
 import myau.module.modules.player.SpeedMine;
 import myau.module.modules.movement.Sprint;
 import myau.module.modules.combat.TargetStrafe;
-import myau.module.modules.latency.TickBase;
 import myau.module.modules.combat.Velocity;
 import myau.module.modules.combat.Wtap;
 import myau.Myau;
@@ -264,7 +260,7 @@ public class HUD extends Module {
     }
 
     private boolean isCategoryHidden(Module module) {
-        if (this.hideCombat.getValue() && (module instanceof AimAssist || module instanceof AutoClicker || module instanceof KillAura || module instanceof Wtap || module instanceof Velocity || module instanceof Freeze || module instanceof Reach || module instanceof TargetStrafe || module instanceof NoHitDelay || module instanceof AntiFireball || module instanceof HitBox || module instanceof MoreKB || module instanceof Refill || module instanceof HitSelect || module instanceof Hitflick || module instanceof ProjectileAimBot || module instanceof TickBase)) {
+        if (this.hideCombat.getValue() && (module instanceof AimAssist || module instanceof AutoClicker || module instanceof KillAura || module instanceof Wtap || module instanceof Velocity || module instanceof Freeze || module instanceof Reach || module instanceof TargetStrafe || module instanceof NoHitDelay || module instanceof AntiFireball || module instanceof HitBox || module instanceof MoreKB || module instanceof Refill || module instanceof HitSelect || module instanceof ProjectileAimBot)) {
             return true;
         }
         if (this.hideMovement.getValue() && (module instanceof AntiAFK || module instanceof Fly || module instanceof Speed || module instanceof LongJump || module instanceof Sprint || module instanceof SafeWalk || module instanceof Jesus || module instanceof Blink || module instanceof NoFall || module instanceof NoSlow || module instanceof KeepSprint || module instanceof Eagle || module instanceof NoJumpDelay || module instanceof AntiVoid)) {
@@ -273,7 +269,7 @@ public class HUD extends Module {
         if (this.hideRender.getValue() && (module instanceof ESP || module instanceof Chams || module instanceof FullBright || module instanceof Tracers || module instanceof NameTags || module instanceof Xray || module instanceof TargetHUD || module instanceof TargetESP || module instanceof Keystrokes || module instanceof BlockOverlay || module instanceof Indicators || module instanceof BedESP || module instanceof ItemESP || module instanceof ViewClip || module instanceof NoHurtCam || module instanceof HUD || module instanceof ClickGUI || module instanceof ChestESP || module instanceof Trajectories || module instanceof Radar)) {
             return true;
         }
-        if (this.hidePlayer.getValue() && (module instanceof AutoHeal || module instanceof AutoPot || module instanceof AutoRod || module instanceof AutoTool || module instanceof ChestStealer || module instanceof InvManager || module instanceof InvWalk || module instanceof Scaffold || module instanceof AutoBlockIn || module instanceof AutoBedDef || module instanceof SpeedMine || module instanceof FastPlace || module instanceof GhostHand || module instanceof MCF || module instanceof BreakProgress || module instanceof AntiDebuff)) {
+        if (this.hidePlayer.getValue() && (module instanceof AutoHeal || module instanceof AutoTool || module instanceof ChestStealer || module instanceof InvManager || module instanceof InvWalk || module instanceof Scaffold || module instanceof AutoBlockIn || module instanceof AutoBedDef || module instanceof SpeedMine || module instanceof FastPlace || module instanceof GhostHand || module instanceof MCF || module instanceof BreakProgress || module instanceof AntiDebuff)) {
             return true;
         }
         if (this.hideMisc.getValue() && (module instanceof AutoAuth || module instanceof Spammer || module instanceof BedNuker || module instanceof BedwarUtils || module instanceof MurderDetector || module instanceof LightningTracker || module instanceof NoRotate || module instanceof NickHider || module instanceof AntiObbyTrap || module instanceof AntiObfuscate || module instanceof AntiBot || module instanceof AntiCheatDetector || module instanceof HackerDetector || module instanceof RPC || module instanceof AutoAnduril || module instanceof InventoryClicker || module instanceof ClientSpoofer || module instanceof Panic)) {

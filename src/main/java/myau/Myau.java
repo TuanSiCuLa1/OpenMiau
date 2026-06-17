@@ -50,6 +50,7 @@ public class Myau {
     public static DiscordRichPresence discordRichPresence;
     public static NotificationManager notificationManager;
     public static DragManager dragManager;
+    public static PresenceManager presenceManager;
 
     public Myau() {
         this.init();
@@ -70,6 +71,7 @@ public class Myau {
         discordRichPresence = new DiscordRichPresence();
         notificationManager = new NotificationManager();
         dragManager = new DragManager();
+        presenceManager = new PresenceManager();
         EventManager.register(rotationManager);
         EventManager.register(floatManager);
         EventManager.register(blinkManager);
@@ -80,6 +82,7 @@ public class Myau {
         EventManager.register(discordRichPresence);
         EventManager.register(notificationManager);
         EventManager.register(dragManager);
+        EventManager.register(presenceManager);
         moduleManager.modules.put(AimAssist.class, new AimAssist());
         moduleManager.modules.put(AntiAFK.class, new AntiAFK());
         moduleManager.modules.put(AntiDebuff.class, new AntiDebuff());
@@ -95,9 +98,7 @@ public class Myau {
         moduleManager.modules.put(AutoAnduril.class, new AutoAnduril());
         moduleManager.modules.put(AutoAuth.class, new AutoAuth());
         moduleManager.modules.put(AutoHeal.class, new AutoHeal());
-        moduleManager.modules.put(AutoPot.class, new AutoPot());
         moduleManager.modules.put(AutoReconnect.class, new AutoReconnect());
-        moduleManager.modules.put(AutoRod.class, new AutoRod());
         moduleManager.modules.put(AutoTool.class, new AutoTool());
         moduleManager.modules.put(AutoWeapon.class, new AutoWeapon());
         moduleManager.modules.put(AutoBedDef.class, new AutoBedDef());
@@ -110,8 +111,6 @@ public class Myau {
         moduleManager.modules.put(BreakProgress.class, new BreakProgress());
         moduleManager.modules.put(BackTrack.class, new BackTrack());
         moduleManager.modules.put(Criticals.class, new Criticals());
-        moduleManager.modules.put(Clutch.class, new Clutch());
-        moduleManager.modules.put(TickBase.class, new TickBase());
         moduleManager.modules.put(Chams.class, new Chams());
         moduleManager.modules.put(ChestESP.class, new ChestESP());
         moduleManager.modules.put(ChestStealer.class, new ChestStealer());
@@ -128,7 +127,6 @@ public class Myau {
         moduleManager.modules.put(GhostHand.class, new GhostHand());
         moduleManager.modules.put(ClickGUI.class, new ClickGUI());
         moduleManager.modules.put(HitSelect.class, new HitSelect());
-        moduleManager.modules.put(Hitflick.class, new Hitflick());
         moduleManager.modules.put(HUD.class, new HUD());
         moduleManager.modules.put(MoreKB.class, new MoreKB());
         moduleManager.modules.put(Indicators.class, new Indicators());
@@ -141,7 +139,6 @@ public class Myau {
         moduleManager.modules.put(Keystrokes.class, new Keystrokes());
         moduleManager.modules.put(HitBox.class, new HitBox());
         moduleManager.modules.put(KillAura.class, new KillAura());
-        moduleManager.modules.put(Displace.class, new Displace());
         moduleManager.modules.put(KnockbackDelay.class, new KnockbackDelay());
         moduleManager.modules.put(LagRange.class, new LagRange());
         moduleManager.modules.put(LightningTracker.class, new LightningTracker());

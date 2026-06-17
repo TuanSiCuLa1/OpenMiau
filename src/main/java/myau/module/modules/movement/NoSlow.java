@@ -3,22 +3,27 @@ package myau.module.modules.movement;
 import myau.Myau;
 import myau.enums.FloatModules;
 import myau.event.EventTarget;
+import myau.event.types.EventType;
 import myau.event.types.Priority;
 import myau.events.LivingUpdateEvent;
+import myau.events.PacketEvent;
 import myau.events.PlayerUpdateEvent;
 import myau.events.RightClickMouseEvent;
 import myau.module.Module;
+import myau.property.properties.BooleanProperty;
+import myau.property.properties.ModeProperty;
+import myau.property.properties.PercentProperty;
 import myau.util.BlockUtil;
 import myau.util.ItemUtil;
 import myau.util.PlayerUtil;
 import myau.util.TeamUtil;
-import myau.property.properties.BooleanProperty;
-import myau.property.properties.PercentProperty;
-import myau.property.properties.ModeProperty;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.passive.EntityVillager;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.ItemSword;
+import net.minecraft.network.play.client.C09PacketHeldItemChange;
 import net.minecraft.util.BlockPos;
 
 public class NoSlow extends Module {
@@ -27,6 +32,7 @@ public class NoSlow extends Module {
     public final ModeProperty swordMode = new ModeProperty("sword-mode", 1, new String[]{"NONE", "VANILLA"});
     public final PercentProperty swordMotion = new PercentProperty("sword-motion", 100, () -> this.swordMode.getValue() != 0);
     public final BooleanProperty swordSprint = new BooleanProperty("sword-sprint", true, () -> this.swordMode.getValue() != 0);
+    public final BooleanProperty antiSwitch = new BooleanProperty("anti-switch", false, () -> this.swordMode.getValue() != 0);
     public final ModeProperty foodMode = new ModeProperty("food-mode", 0, new String[]{"NONE", "VANILLA", "FLOAT"});
     public final PercentProperty foodMotion = new PercentProperty("food-motion", 100, () -> this.foodMode.getValue() != 0);
     public final BooleanProperty foodSprint = new BooleanProperty("food-sprint", true, () -> this.foodMode.getValue() != 0);
@@ -57,6 +63,14 @@ public class NoSlow extends Module {
 
     public boolean isAnyActive() {
         return mc.thePlayer.isUsingItem() && (this.isSwordActive() || this.isFoodActive() || this.isBowActive());
+    }
+
+    public boolean isAntiSwitchActive() {
+        if (!this.isEnabled() || !this.antiSwitch.getValue() || mc.thePlayer == null || mc.theWorld == null) {
+            return false;
+        }
+        ItemStack heldItem = mc.thePlayer.getHeldItem();
+        return heldItem != null && heldItem.getItem() instanceof ItemSword && mc.thePlayer.isUsingItem();
     }
 
     public boolean canSprint() {
@@ -98,6 +112,18 @@ public class NoSlow extends Module {
         } else {
             this.lastSlot = -1;
             Myau.floatManager.setFloatState(false, FloatModules.NO_SLOW);
+        }
+    }
+
+    @EventTarget(Priority.HIGHEST)
+    public void onPacket(PacketEvent event) {
+        if (event.getType() != EventType.SEND || !this.isAntiSwitchActive() || !(event.getPacket() instanceof C09PacketHeldItemChange)) {
+            return;
+        }
+
+        C09PacketHeldItemChange packet = (C09PacketHeldItemChange) event.getPacket();
+        if (packet.getSlotId() != mc.thePlayer.inventory.currentItem) {
+            event.setCancelled(true);
         }
     }
 

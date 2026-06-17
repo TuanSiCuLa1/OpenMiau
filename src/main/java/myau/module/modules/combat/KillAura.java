@@ -171,6 +171,20 @@ public class KillAura extends Module {
         }
     }
 
+    private boolean shouldRightHoldBlock() {
+        return this.target != null
+                && this.canAutoBlock()
+                && RotationUtil.distanceToBox(this.target.getBox()) < (double) this.attackRange.getValue();
+    }
+
+    private void updateRightHoldBlock() {
+        if (this.autoBlock.getValue() == 10) {
+            this.setRightHold(this.shouldRightHoldBlock());
+        } else {
+            this.setRightHold(false);
+        }
+    }
+
     private void interactAttack(float yaw, float pitch) {
         this.interactAttack(yaw, pitch, true);
     }
@@ -454,6 +468,12 @@ public class KillAura extends Module {
         return (mc.thePlayer.isUsingItem() || this.blockingState) && ItemUtil.isHoldingSword();
     }
 
+    private boolean isNoSlowAntiSwitchActive() {
+        return Myau.moduleManager != null
+                && Myau.moduleManager.modules.get(NoSlow.class) instanceof NoSlow
+                && ((NoSlow) Myau.moduleManager.modules.get(NoSlow.class)).isAntiSwitchActive();
+    }
+
     @EventTarget(Priority.LOW)
     public void onUpdate(UpdateEvent event) {
         if (event.getType() == EventType.POST && this.blinkReset) {
@@ -462,15 +482,13 @@ public class KillAura extends Module {
             Myau.blinkManager.setBlinkState(true, BlinkModules.AUTO_BLOCK);
         }
         if (this.isEnabled() && event.getType() == EventType.PRE) {
+            this.updateRightHoldBlock();
             if (this.attackDelayMS > 0L) {
                 this.attackDelayMS -= 50L;
             }
             boolean attack = this.target != null && this.canAttack();
             boolean block = attack && this.canAutoBlock();
             if (!block) {
-                if (this.autoBlock.getValue() == 10) {
-                    this.setRightHold(false);
-                }
                 Myau.blinkManager.setBlinkState(false, BlinkModules.AUTO_BLOCK);
                 this.isBlocking = false;
                 this.fakeBlockState = false;
@@ -622,8 +640,10 @@ public class KillAura extends Module {
                                         case 1:
                                             if (this.isPlayerBlocking()) {
                                                 int slot = this.findEmptySlot(item);
-                                                PacketUtil.sendPacket(new C09PacketHeldItemChange(slot));
-                                                ((IAccessorPlayerControllerMP) mc.playerController).setCurrentPlayerItem(slot);
+                                                if (!this.isNoSlowAntiSwitchActive()) {
+                                                    PacketUtil.sendPacket(new C09PacketHeldItemChange(slot));
+                                                    ((IAccessorPlayerControllerMP) mc.playerController).setCurrentPlayerItem(slot);
+                                                }
                                                 attack = false;
                                             }
                                             if (this.attackDelayMS <= 50L) {
@@ -663,9 +683,11 @@ public class KillAura extends Module {
                                             } else if (!this.isPlayerBlocking()) {
                                                 swap = true;
                                             } else if (this.attackDelayMS <= 50L) {
-                                                PacketUtil.sendPacket(new C09PacketHeldItemChange(swordsSlot));
-                                                ((IAccessorPlayerControllerMP) mc.playerController).setCurrentPlayerItem(swordsSlot);
-                                                this.startBlock(mc.thePlayer.inventory.getStackInSlot(swordsSlot));
+                                                if (!this.isNoSlowAntiSwitchActive()) {
+                                                    PacketUtil.sendPacket(new C09PacketHeldItemChange(swordsSlot));
+                                                    ((IAccessorPlayerControllerMP) mc.playerController).setCurrentPlayerItem(swordsSlot);
+                                                    this.startBlock(mc.thePlayer.inventory.getStackInSlot(swordsSlot));
+                                                }
                                                 attack = false;
                                                 this.blockTick = 0;
                                             }
@@ -767,17 +789,9 @@ public class KillAura extends Module {
                             }
                             break;
                         case 10:
-                            if (this.hasValidTarget()) {
-                                this.setRightHold(true);
-                                Myau.blinkManager.setBlinkState(false, BlinkModules.AUTO_BLOCK);
-                                this.isBlocking = true;
-                                this.fakeBlockState = false;
-                            } else {
-                                this.setRightHold(false);
-                                Myau.blinkManager.setBlinkState(false, BlinkModules.AUTO_BLOCK);
-                                this.isBlocking = false;
-                                this.fakeBlockState = false;
-                            }
+                            Myau.blinkManager.setBlinkState(false, BlinkModules.AUTO_BLOCK);
+                            this.isBlocking = this.shouldRightHoldBlock();
+                            this.fakeBlockState = false;
                             break;
                     }
                 }
