@@ -8,6 +8,9 @@ import java.net.HttpURLConnection;
 import java.net.URLEncoder;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MyauAPI {
     public static final String APIBASE = "https://api.rinbounce.wtf/";
@@ -21,20 +24,46 @@ public class MyauAPI {
     public static String listUserConfigs() throws Exception { return get(clientPath("user-configs"), "Miau/UserConfig"); }
     public static String loadUserConfig(String configId) throws Exception { return get(clientPath("user-configs/" + encode(configId)), "Miau/UserConfig"); }
     public static String rpcConfig() throws Exception { return get(APIBASE + "api/rpc", "Miau/RPC"); }
-    public static String publishPresence(String json) throws Exception { return post(clientPath("presence"), json, "Miau/Presence"); }
+
+    public static String requestAuthHandshake(String json) throws Exception {
+        return request("POST", clientPath("auth"), json, "Miau/Auth", Collections.<String, String>emptyMap());
+    }
+
+    public static String publishPresence(String json) throws Exception {
+        String token = MyauClientAuth.getToken();
+        if (token == null) {
+            throw new Exception("No Mojang-verified auth token available.");
+        }
+        Map<String, String> headers = new HashMap<String, String>();
+        headers.put("Authorization", "Bearer " + token);
+        try {
+            return request("POST", clientPath("presence"), json, "Miau/Presence", headers);
+        } catch (Exception e) {
+            String message = e.getMessage();
+            if (message != null && (message.startsWith("HTTP 401") || message.startsWith("HTTP 403") || message.startsWith("HTTP 404"))) {
+                MyauClientAuth.invalidate();
+            }
+            throw e;
+        }
+    }
+
     public static String encode(String value) throws Exception { return URLEncoder.encode(value, "UTF-8").replace("+", "%20"); }
 
     private static String clientPath(String path) throws Exception { return API_V1 + "/client/" + encode(BRANCH) + "/" + path; }
-    private static String get(String url, String userAgent) throws Exception { return request("GET", url, null, userAgent); }
-    private static String post(String url, String body, String userAgent) throws Exception { return request("POST", url, body, userAgent); }
+    private static String get(String url, String userAgent) throws Exception { return request("GET", url, null, userAgent, Collections.<String, String>emptyMap()); }
 
-    private static String request(String method, String url, String body, String userAgent) throws Exception {
+    private static String request(String method, String url, String body, String userAgent, Map<String, String> extraHeaders) throws Exception {
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
         try {
             connection.setRequestMethod(method);
             connection.setConnectTimeout(TIMEOUT_MS);
             connection.setReadTimeout(TIMEOUT_MS);
             connection.setRequestProperty("User-Agent", userAgent);
+            if (extraHeaders != null) {
+                for (Map.Entry<String, String> entry : extraHeaders.entrySet()) {
+                    connection.setRequestProperty(entry.getKey(), entry.getValue());
+                }
+            }
             if (body != null) {
                 byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
                 connection.setDoOutput(true);
