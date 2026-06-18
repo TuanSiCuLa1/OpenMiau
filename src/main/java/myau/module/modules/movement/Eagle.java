@@ -1,9 +1,11 @@
 package myau.module.modules.movement;
 
+import myau.Myau;
 import myau.event.EventTarget;
 import myau.event.types.EventType;
 import myau.events.TickEvent;
 import myau.module.Module;
+import myau.module.modules.player.InvWalk;
 import myau.property.properties.BooleanProperty;
 import myau.property.properties.IntProperty;
 import myau.util.KeyBindUtil;
@@ -32,8 +34,16 @@ public class Eagle extends Module {
         super("Eagle", false);
     }
 
+    private boolean isInvWalking() {
+        InvWalk invWalk = (InvWalk) Myau.moduleManager.modules.get(InvWalk.class);
+        return invWalk != null && invWalk.isEnabled() && invWalk.canInvWalk();
+    }
+
     private boolean canSneak() {
         if (mc.currentScreen != null || mc.thePlayer == null || mc.theWorld == null) {
+            return false;
+        }
+        if (this.isInvWalking()) {
             return false;
         }
         if (!mc.gameSettings.keyBindBack.isKeyDown()) {
