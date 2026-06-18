@@ -20,11 +20,14 @@ public final class MyauClientAuth {
 
     private static final byte[] __k = { 0x3F, 0x7A, 0x12, 0x5E, 0x44, (byte)0x8B, 0x29, (byte)0xA1 };
     private static final byte[] __s = {
-        0x47, 0x1D, 0x63, 0x27, 0x75, (byte)0xFF, 0x43, (byte)0xC2,
-        0x52, 0x08, 0x62, 0x31, 0x25, (byte)0xF8, 0x5C, (byte)0xC8,
-        0x54, 0x4D, 0x2B, 0x29, 0x26, (byte)0xB8, 0x45, (byte)0xC4,
-        0x59, 0x0C, 0x2A, 0x36, 0x71, (byte)0xB9, 0x4D, (byte)0x97,
-        0x0F, 0x14, 0x26, 0x24
+        0x4A, 0x1E, 0x65, 0x15, 0x08, (byte)0xE2, 0x53, (byte)0xE5,
+        0x69, 0x1E, 0x26, 0x08, 0x76, (byte)0xEE, 0x7C, (byte)0xD6,
+        0x6D, 0x1B, 0x66, 0x30, 0x69, (byte)0xB2, 0x7F, (byte)0xD2,
+        0x71, 0x32, 0x3F, 0x10, 0x31, (byte)0xCA, 0x61, (byte)0xF6,
+        0x69, 0x43, 0x55, 0x39, 0x21, (byte)0xBC, 0x1E, (byte)0x99,
+        0x0E, 0x4A, 0x26, 0x73, 0x32, (byte)0xBD, 0x79, (byte)0x95,
+        0x72, 0x19, 0x43, 0x1F, 0x00, (byte)0xBA, 0x4B, (byte)0xFB,
+        0x07, 0x09, 0x4B, 0x09, 0x2B, (byte)0xEE, 0x71, (byte)0xD8
     };
 
     private static String __cs() {
@@ -37,6 +40,7 @@ public final class MyauClientAuth {
     private static volatile String cachedToken;
     private static volatile long cachedExpiresAt;
     private static volatile String cachedUid;
+    private static volatile String cachedUsername;
     private static volatile long nextAttemptAt;
 
     private MyauClientAuth() {
@@ -53,6 +57,13 @@ public final class MyauClientAuth {
         synchronized (LOCK) {
             now = System.currentTimeMillis();
             existing = cachedToken;
+            if (existing != null && !isCachedAccountCurrent()) {
+                cachedToken = null;
+                cachedExpiresAt = 0L;
+                cachedUid = null;
+                cachedUsername = null;
+                existing = null;
+            }
             if (existing != null && cachedExpiresAt - now > REFRESH_BEFORE_EXPIRY_MS) {
                 return existing;
             }
@@ -69,6 +80,7 @@ public final class MyauClientAuth {
                 cachedToken = handshake.token;
                 cachedExpiresAt = handshake.expiresAt;
                 cachedUid = handshake.uid;
+                cachedUsername = handshake.username;
                 nextAttemptAt = 0L;
                 return handshake.token;
             } catch (Exception e) {
@@ -83,11 +95,17 @@ public final class MyauClientAuth {
             cachedToken = null;
             cachedExpiresAt = 0L;
             cachedUid = null;
+            cachedUsername = null;
         }
     }
 
     public static String getCachedUid() {
         return cachedUid;
+    }
+
+    public static String getAuthenticatedUid() {
+        String token = getToken();
+        return token == null ? null : cachedUid;
     }
 
     private static Handshake handshake() throws Exception {
@@ -133,6 +151,7 @@ public final class MyauClientAuth {
         h.token = json.get("token").getAsString();
         h.expiresAt = json.get("expiresAt").getAsLong();
         h.uid = uid;
+        h.username = json.has("username") ? json.get("username").getAsString() : username;
         return h;
     }
 
@@ -161,7 +180,16 @@ public final class MyauClientAuth {
         h.token = json.get("token").getAsString();
         h.expiresAt = json.get("expiresAt").getAsLong();
         h.uid = uid;
+        h.username = json.has("username") ? json.get("username").getAsString() : username;
         return h;
+    }
+
+    private static boolean isCachedAccountCurrent() {
+        String username = cachedUsername;
+        if (username == null) return false;
+        Minecraft mc = Minecraft.getMinecraft();
+        Session session = mc.getSession();
+        return session != null && username.equalsIgnoreCase(session.getUsername());
     }
 
     private static String randomServerId() {
@@ -173,5 +201,6 @@ public final class MyauClientAuth {
         String token;
         long expiresAt;
         String uid;
+        String username;
     }
 }

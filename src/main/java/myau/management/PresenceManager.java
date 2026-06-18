@@ -66,9 +66,11 @@ public class PresenceManager {
         Thread thread = new Thread(() -> {
             try {
                 JsonObject body = new JsonObject();
+                String uid = MyauClientAuth.getAuthenticatedUid();
+                if (uid == null) throw new Exception("No authenticated uid available.");
                 body.addProperty("server", server);
                 body.addProperty("username", this.mc.getSession().getUsername());
-                body.addProperty("uuid", this.mc.getSession().getPlayerID());
+                body.addProperty("uuid", uid);
                 body.addProperty("version", ClientInfo.VERSION);
                 this.updateFromResponse(MyauAPI.publishPresence(body.toString()));
             } catch (Exception ignored) {
