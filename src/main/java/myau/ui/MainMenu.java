@@ -1,5 +1,6 @@
 package myau.ui;
 
+import me.ksyz.accountmanager.utils.SystemUtils;
 import myau.ClientInfo;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
@@ -12,46 +13,81 @@ import org.lwjgl.opengl.GL11;
 
 import java.awt.Color;
 import java.io.IOException;
+import java.net.URI;
 
 public class MainMenu extends GuiScreen {
     private static final Minecraft mc = Minecraft.getMinecraft();
     private static final String HEART = "\u2764";
-    private static final int BUTTON_WIDTH = 178;
-    private static final int BUTTON_HEIGHT = 34;
+    private static final String DISCORD_TEXT = "Click to join our Discord server.";
+    private static final String DISCORD_URL = "https://discord.gg/PKxAz6wbXb";
+    private static final int MENU_BUTTON_WIDTH = 140;
+    private static final int MENU_BUTTON_HEIGHT = 25;
+    private static final int DISCORD_BUTTON_ID = 10;
+    private static final int OK_BUTTON_ID = 11;
 
     private long openedAt;
+    private boolean showingWelcome;
+    private float discordHover;
 
     @Override
     public void initGui() {
         this.openedAt = System.currentTimeMillis();
+        this.showingWelcome = false;
         this.buttonList.clear();
 
-        int panelW = Math.min(520, this.width - 36);
-        int panelH = 214;
-        int panelX = this.width / 2 - panelW / 2;
-        int panelY = this.height / 2 - panelH / 2;
-        int buttonX = panelX + panelW - BUTTON_WIDTH - 30;
-        int buttonY = panelY + 42;
+        int buttonX = this.width / 2 - MENU_BUTTON_WIDTH / 2;
+        int buttonY = (int) (this.height / 2.0F - MENU_BUTTON_HEIGHT / 2.0F - 25.0F);
+        this.buttonList.add(new MenuButton(0, buttonX, buttonY, MENU_BUTTON_WIDTH, MENU_BUTTON_HEIGHT, "Singleplayer"));
+        this.buttonList.add(new MenuButton(1, buttonX, buttonY + 30, MENU_BUTTON_WIDTH, MENU_BUTTON_HEIGHT, "Multiplayer"));
+        this.buttonList.add(new MenuButton(2, buttonX, buttonY + 60, MENU_BUTTON_WIDTH, MENU_BUTTON_HEIGHT, "Settings"));
+        this.buttonList.add(new MenuButton(3, buttonX, buttonY + 90, MENU_BUTTON_WIDTH, MENU_BUTTON_HEIGHT, "Exit"));
 
-        this.buttonList.add(new MenuButton(0, buttonX, buttonY, BUTTON_WIDTH, BUTTON_HEIGHT, "Singleplayer", "Play your worlds"));
-        this.buttonList.add(new MenuButton(1, buttonX, buttonY + 43, BUTTON_WIDTH, BUTTON_HEIGHT, "Multiplayer", "Join servers"));
-        this.buttonList.add(new MenuButton(2, buttonX, buttonY + 86, BUTTON_WIDTH, BUTTON_HEIGHT, "Settings", "Configure Minecraft"));
-        this.buttonList.add(new MenuButton(3, buttonX, buttonY + 129, BUTTON_WIDTH, BUTTON_HEIGHT, "Exit", "Close Miau"));
+        int dialogW = Math.min(360, this.width - 42);
+        int dialogH = 154;
+        int dialogX = this.width / 2 - dialogW / 2;
+        int dialogY = this.height / 2 - dialogH / 2;
+        int dialogButtonW = (dialogW - 50) / 2;
+        int dialogButtonY = dialogY + dialogH - 45;
+        this.buttonList.add(new MenuButton(DISCORD_BUTTON_ID, dialogX + 18, dialogButtonY, dialogButtonW, 30, "Discord"));
+        this.buttonList.add(new MenuButton(OK_BUTTON_ID, dialogX + 32 + dialogButtonW, dialogButtonY, dialogButtonW, 30, "OK"));
+        this.updateWelcomeButtons();
     }
-
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         float time = (System.currentTimeMillis() - this.openedAt) / 1000.0F;
-        this.drawScene(time, mouseX, mouseY);
-        this.drawGlassPanel(time);
-        this.drawHeroAccents(time);
-        this.drawBranding(time);
-        super.drawScreen(mouseX, mouseY, partialTicks);
+        this.updateHover(mouseX, mouseY);
+        this.drawLettuceBackground(time, mouseX, mouseY);
+        this.drawLettuceHeader(time);
+        this.drawDiscordChip();
         this.drawFooter();
+        super.drawScreen(mouseX, mouseY, partialTicks);
     }
 
     @Override
+    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
+        if (!this.showingWelcome && mouseButton == 0) {
+            float discordWidth = 25.0F + this.discordHover * (this.fontRendererObj.getStringWidth(DISCORD_TEXT) + 10.0F);
+            if (isHovering(8.0F, 8.0F, discordWidth, 25.0F, mouseX, mouseY)) {
+                SystemUtils.openWebLink(URI.create(DISCORD_URL));
+                return;
+            }
+        }
+        super.mouseClicked(mouseX, mouseY, mouseButton);
+    }
+    @Override
     protected void actionPerformed(GuiButton button) throws IOException {
+        if (this.showingWelcome) {
+            if (button.id == DISCORD_BUTTON_ID) {
+                SystemUtils.openWebLink(URI.create(DISCORD_URL));
+                this.showingWelcome = false;
+                this.updateWelcomeButtons();
+            } else if (button.id == OK_BUTTON_ID) {
+                this.showingWelcome = false;
+                this.updateWelcomeButtons();
+            }
+            return;
+        }
+
         switch (button.id) {
             case 0:
                 mc.displayGuiScreen(new GuiSelectWorld(this));
@@ -72,6 +108,53 @@ public class MainMenu extends GuiScreen {
     public boolean doesGuiPauseGame() {
         return false;
     }
+
+    private void updateHover(int mouseX, int mouseY) {
+        float discordWidth = 25.0F + this.discordHover * (this.fontRendererObj.getStringWidth(DISCORD_TEXT) + 10.0F);
+        float discordTarget = isHovering(8.0F, 8.0F, discordWidth, 25.0F, mouseX, mouseY) ? 1.0F : 0.0F;
+        this.discordHover += (discordTarget - this.discordHover) * 0.16F;
+    }
+
+    private void drawLettuceBackground(float time, int mouseX, int mouseY) {
+        drawGradientRect(0, 0, this.width, this.height, 0xFF07080D, 0xFF11131B);
+        GlStateManager.disableTexture2D();
+        GlStateManager.enableBlend();
+        GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
+        GL11.glShadeModel(GL11.GL_SMOOTH);
+        float parallaxX = (mouseX - this.width / 2.0F) * 0.01F;
+        float parallaxY = (mouseY - this.height / 2.0F) * 0.008F;
+        drawBlob(this.width * 0.25F + parallaxX + sin(time, 0.35F, 18.0F), this.height * 0.18F + parallaxY, 180.0F, new Color(106, 181, 253, 34));
+        drawBlob(this.width * 0.78F - parallaxX + cos(time, 0.28F, 22.0F), this.height * 0.72F - parallaxY, 220.0F, new Color(111, 119, 253, 30));
+        drawVignette();
+        drawSubtleGrid(time);
+        GL11.glShadeModel(GL11.GL_FLAT);
+        GlStateManager.disableBlend();
+        GlStateManager.enableTexture2D();
+    }
+
+    private void drawLettuceHeader(float time) {
+        String title = "Miau";
+        float scale = Math.max(4.0F, Math.min(5.2F, this.width / 150.0F));
+        int textWidth = this.fontRendererObj.getStringWidth(title);
+        int titleColor = blend(new Color(106, 181, 253), new Color(111, 119, 253), sin01(time * 1.4F)).getRGB();
+        GlStateManager.pushMatrix();
+        GlStateManager.translate(this.width / 2.0F - textWidth * scale / 2.0F, this.height / 2.0F - 80.0F, 0.0F);
+        GlStateManager.scale(scale, scale, 1.0F);
+        this.fontRendererObj.drawStringWithShadow(title, 0, 0, titleColor);
+        GlStateManager.popMatrix();
+    }
+
+    private void drawDiscordChip() {
+        float width = 25.0F + this.discordHover * (this.fontRendererObj.getStringWidth(DISCORD_TEXT) + 10.0F);
+        Color fill = blend(new Color(0, 0, 0, 100), new Color(0, 0, 0, 150), this.discordHover);
+        drawRoundedRect(8, 8, width, 25, 12.0F, fill.getRGB());
+        drawRoundedOutline(8, 8, width, 25, 12.0F, 0x20202020);
+        this.fontRendererObj.drawStringWithShadow("D", 17, 16, 0xFFFFFFFF);
+        if (this.discordHover > 0.05F) {
+            drawScissoredText(DISCORD_TEXT, 35, 17, 0xFFFFFFFF, 35, 8, width - 35, 25);
+        }
+    }
+
 
     private void drawScene(float time, int mouseX, int mouseY) {
         drawGradientRect(0, 0, this.width, this.height, 0xFF070A18, 0xFF15112A);
@@ -153,7 +236,7 @@ public class MainMenu extends GuiScreen {
         drawRoundedRect(leftX, panelY + panelH - 66, 204, 36, 18.0F, 0x20000000);
         drawRoundedOutline(leftX, panelY + panelH - 66, 204, 36, 18.0F, 0x44FFFFFF);
         this.fontRendererObj.drawStringWithShadow("Discord", leftX + 14, panelY + panelH - 57, 0xFFFFFFFF);
-        this.fontRendererObj.drawStringWithShadow("discord.gg/ssFYeKx3Yb", leftX + 14, panelY + panelH - 45, 0xBFD6E7FF);
+        this.fontRendererObj.drawStringWithShadow("discord.gg/PKxAz6wbXb", leftX + 14, panelY + panelH - 45, 0xBFD6E7FF);
 
         GlStateManager.disableTexture2D();
         GlStateManager.enableBlend();
@@ -188,8 +271,35 @@ public class MainMenu extends GuiScreen {
 
     private void drawFooter() {
         String made = "Made with     by ksyz, Miau Project, idle.";
-        this.fontRendererObj.drawStringWithShadow(made, 5, this.height - 13, 0xEFFFFFFF);
-        this.fontRendererObj.drawStringWithShadow(HEART, 5 + this.fontRendererObj.getStringWidth("Made with "), this.height - 13, 0xFFFF4D6D);
+        this.fontRendererObj.drawStringWithShadow(made, 1, this.height - 10, 0xFFFFFFFF);
+        this.fontRendererObj.drawStringWithShadow(HEART, 1 + this.fontRendererObj.getStringWidth("Made with "), this.height - 10, 0xFFFF0000);
+        String version = ClientInfo.getDisplayVersion();
+        this.fontRendererObj.drawStringWithShadow(version, this.width - this.fontRendererObj.getStringWidth(version) - 2, this.height - 10, 0x99FFFFFF);
+    }
+    private void drawWelcomeDialog() {
+        drawRect(0, 0, this.width, this.height, 0xA8000000);
+
+        int dialogW = Math.min(360, this.width - 42);
+        int dialogH = 154;
+        int dialogX = this.width / 2 - dialogW / 2;
+        int dialogY = this.height / 2 - dialogH / 2;
+
+        drawRoundedRect(dialogX + 7, dialogY + 9, dialogW, dialogH, 18.0F, 0x72000000);
+        drawRoundedRect(dialogX, dialogY, dialogW, dialogH, 18.0F, 0xEE101628);
+        drawRoundedOutline(dialogX, dialogY, dialogW, dialogH, 18.0F, 0x95B7D9FF);
+
+        this.fontRendererObj.drawStringWithShadow("Welcome to Miau Client", dialogX + 20, dialogY + 22, 0xFFFFFFFF);
+        this.fontRendererObj.drawStringWithShadow("Cam on ban da su dung client.", dialogX + 20, dialogY + 46, 0xDDEAF4FF);
+        this.fontRendererObj.drawStringWithShadow("Tham gia Discord de nhan thong bao va ho tro.", dialogX + 20, dialogY + 60, 0xBFD6E7FF);
+        this.fontRendererObj.drawStringWithShadow("discord.gg/PKxAz6wbXb", dialogX + 20, dialogY + 78, 0xFF86B9FF);
+    }
+
+    private void updateWelcomeButtons() {
+        for (GuiButton button : this.buttonList) {
+            boolean welcomeButton = button.id == DISCORD_BUTTON_ID || button.id == OK_BUTTON_ID;
+            button.visible = this.showingWelcome == welcomeButton;
+            button.enabled = button.visible;
+        }
     }
 
     private void drawDiagonalBeam(float time) {
@@ -235,6 +345,45 @@ public class MainMenu extends GuiScreen {
         GL11.glEnd();
     }
 
+    private void drawVignette() {
+        drawGradientRect(0, 0, this.width, this.height / 4, 0xAA000000, 0x00000000);
+        drawGradientRect(0, this.height * 3 / 4, this.width, this.height, 0x00000000, 0xAA000000);
+        drawRect(0, 0, 18, this.height, 0x2A000000);
+        drawRect(this.width - 18, 0, this.width, this.height, 0x2A000000);
+    }
+
+    private void drawSubtleGrid(float time) {
+        GL11.glLineWidth(1.0F);
+        GL11.glBegin(GL11.GL_LINES);
+        color(0x09FFFFFF);
+        int spacing = 34;
+        int offset = (int) ((time * 7.0F) % spacing);
+        for (int x = -spacing + offset; x < this.width + spacing; x += spacing) {
+            GL11.glVertex2f(x, 0);
+            GL11.glVertex2f(x + 80, this.height);
+        }
+        for (int y = -spacing + offset; y < this.height + spacing; y += spacing) {
+            GL11.glVertex2f(0, y);
+            GL11.glVertex2f(this.width, y + 26);
+        }
+        GL11.glEnd();
+    }
+
+    private void drawScissoredText(String text, int x, int y, int color, float clipX, float clipY, float clipWidth, float clipHeight) {
+        int scaleFactor = new net.minecraft.client.gui.ScaledResolution(mc).getScaleFactor();
+        GL11.glEnable(GL11.GL_SCISSOR_TEST);
+        GL11.glScissor((int) (clipX * scaleFactor), (int) ((this.height - clipY - clipHeight) * scaleFactor), (int) (clipWidth * scaleFactor), (int) (clipHeight * scaleFactor));
+        this.fontRendererObj.drawStringWithShadow(text, x, y, color);
+        GL11.glDisable(GL11.GL_SCISSOR_TEST);
+    }
+
+    private void drawCenteredStringWithShadow(String text, float x, float y, int color) {
+        this.fontRendererObj.drawStringWithShadow(text, x - this.fontRendererObj.getStringWidth(text) / 2.0F, y, color);
+    }
+
+    private static boolean isHovering(float x, float y, float width, float height, int mouseX, int mouseY) {
+        return mouseX >= x && mouseY >= y && mouseX < x + width && mouseY < y + height;
+    }
     private static void drawBlob(float centerX, float centerY, float radius, Color color) {
         GL11.glBegin(GL11.GL_TRIANGLE_FAN);
         GL11.glColor4f(color.getRed() / 255.0F, color.getGreen() / 255.0F, color.getBlue() / 255.0F, color.getAlpha() / 255.0F);
@@ -273,37 +422,39 @@ public class MainMenu extends GuiScreen {
     }
 
     private static class MenuButton extends GuiButton {
-        private final String description;
         private float hoverProgress;
 
-        private MenuButton(int id, int x, int y, int width, int height, String text, String description) {
+        private MenuButton(int id, int x, int y, int width, int height, String text) {
             super(id, x, y, width, height, text);
-            this.description = description;
         }
 
         @Override
         public void drawButton(Minecraft mc, int mouseX, int mouseY) {
             if (!this.visible) return;
             this.hovered = mouseX >= this.xPosition && mouseY >= this.yPosition && mouseX < this.xPosition + this.width && mouseY < this.yPosition + this.height;
-            this.hoverProgress += ((this.hovered ? 1.0F : 0.0F) - this.hoverProgress) * 0.18F;
+            this.hoverProgress += ((this.hovered ? 1.0F : 0.0F) - this.hoverProgress) * 0.16F;
 
-            int fill = blend(new Color(255, 255, 255, 24), new Color(90, 155, 255, 82), this.hoverProgress).getRGB();
-            int stroke = blend(new Color(255, 255, 255, 54), new Color(167, 202, 255, 220), this.hoverProgress).getRGB();
-            int glow = blend(new Color(0, 0, 0, 0), new Color(80, 145, 255, 48), this.hoverProgress).getRGB();
+            Color rectColor = new Color(35, 37, 43, 102);
+            rectColor = blend(rectColor, brighter(rectColor, 0.4F), this.hoverProgress);
+            drawRoundedRect(this.xPosition, this.yPosition, this.width, this.height, 12.0F, rectColor.getRGB());
+            drawRoundedOutline(this.xPosition, this.yPosition, this.width, this.height, 12.0F, 0x641E1E1E);
 
-            if (this.hoverProgress > 0.02F) {
-                drawRoundedRect(this.xPosition - 5, this.yPosition - 4, this.width + 10, this.height + 8, 17.0F, glow);
-            }
-            drawRoundedRect(this.xPosition, this.yPosition, this.width, this.height, 14.0F, fill);
-            drawRoundedOutline(this.xPosition, this.yPosition, this.width, this.height, 14.0F, stroke);
+            int textColor = blend(Color.WHITE, new Color(210, 222, 255), this.hoverProgress).getRGB();
+            mc.fontRendererObj.drawStringWithShadow(this.displayString, this.xPosition + this.width / 2.0F - mc.fontRendererObj.getStringWidth(this.displayString) / 2.0F, this.yPosition + this.height / 2.0F - 4.0F, textColor);
+        }
 
-            int textColor = blend(new Color(232, 240, 255), Color.WHITE, this.hoverProgress).getRGB();
-            mc.fontRendererObj.drawStringWithShadow(this.displayString, this.xPosition + 16, this.yPosition + 7, textColor);
-            mc.fontRendererObj.drawStringWithShadow(this.description, this.xPosition + 16, this.yPosition + 18, 0x92FFFFFF);
-            mc.fontRendererObj.drawStringWithShadow("›", this.xPosition + this.width - 18, this.yPosition + 10, 0xEFFFFFFF);
+        private static Color brighter(Color color, float factor) {
+            int i = (int) (1.0F / (1.0F - factor));
+            int r = color.getRed();
+            int g = color.getGreen();
+            int b = color.getBlue();
+            if (r == 0 && g == 0 && b == 0) return new Color(i, i, i, color.getAlpha());
+            if (r > 0 && r < i) r = i;
+            if (g > 0 && g < i) g = i;
+            if (b > 0 && b < i) b = i;
+            return new Color(Math.min((int) (r / factor), 255), Math.min((int) (g / factor), 255), Math.min((int) (b / factor), 255), color.getAlpha());
         }
     }
-
     private static void drawRoundedRect(float x, float y, float width, float height, float radius, int color) {
         drawRounded(x, y, width, height, radius, color, true);
     }
