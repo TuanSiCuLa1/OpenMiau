@@ -42,7 +42,7 @@ public class ChatUtil {
 
     private static boolean hasClientPrefix(String message) {
         String formattedPrefix = ChatColors.formatColor(Myau.clientName);
-        return message.startsWith(Myau.clientName) || message.startsWith(formattedPrefix);
+        return message.startsWith(Myau.clientName) || message.startsWith(formattedPrefix) || message.startsWith(ChatColors.PREFIX_CLEAN);
     }
 
     private static Object[] prependClientName(Object[] objects) {

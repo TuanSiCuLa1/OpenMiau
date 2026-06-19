@@ -1,7 +1,5 @@
 package myau.module.modules.player;
 
-import myau.module.modules.player.BedNuker;
-import myau.module.modules.render.HUD;
 import myau.module.modules.movement.LongJump;
 import myau.Myau;
 import myau.event.EventTarget;
@@ -11,8 +9,6 @@ import myau.events.*;
 import myau.management.RotationState;
 import myau.module.Module;
 import myau.property.properties.BooleanProperty;
-import myau.property.properties.ColorProperty;
-import myau.property.properties.IntProperty;
 import myau.property.properties.ModeProperty;
 import myau.property.properties.PercentProperty;
 import myau.util.*;
@@ -20,10 +16,6 @@ import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.RenderGlobal;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.WorldRenderer;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
@@ -32,7 +24,6 @@ import net.minecraft.potion.Potion;
 import net.minecraft.util.*;
 import net.minecraft.util.MovingObjectPosition.MovingObjectType;
 import net.minecraft.world.WorldSettings.GameType;
-import org.lwjgl.opengl.GL11;
 import myau.util.font.Fonts;
 import myau.util.shader.RoundedUtils;
 import net.minecraft.client.renderer.RenderHelper;
@@ -40,11 +31,6 @@ import net.minecraft.client.renderer.RenderHelper;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.LinkedList;
-import java.util.Queue;
 
 public class Scaffold extends Module {
     private static final Minecraft mc = Minecraft.getMinecraft();

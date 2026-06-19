@@ -11,7 +11,6 @@ import myau.event.EventManager;
 import myau.management.*;
 import myau.module.Module;
 import myau.module.ModuleManager;
-import myau.module.modules.*;
 import myau.module.modules.combat.*;
 import myau.module.modules.movement.*;
 import myau.module.modules.render.*;
@@ -22,7 +21,7 @@ import myau.module.modules.minigames.BedwarUtils;
 import myau.module.modules.target.Targets;
 import myau.property.Property;
 import myau.property.PropertyManager;
-import myau.util.notification.NotificationManager;
+import myau.notification.NotificationManager;
 
 import org.lwjgl.opengl.Display;
 
@@ -34,7 +33,7 @@ import java.util.Locale;
 import java.util.Objects;
 public class Myau {
     public static final boolean DEVELOPMENT_SWITCH = false;
-    public static final String clientName = "&7[&cM&6i&ea&au&7]&r ";
+    public static String clientName = "&7[&cM&6i&ea&au&7]&r ";
     public static String version = ClientInfo.VERSION;
     public static RotationManager rotationManager;
     public static FloatManager floatManager;

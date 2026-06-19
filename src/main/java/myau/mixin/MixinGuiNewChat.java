@@ -52,4 +52,41 @@ public abstract class MixinGuiNewChat {
             openMyauDuplicateCount = 1;
         }
     }
+
+    private myau.module.modules.render.HUD openMyauCachedHud;
+
+    @org.spongepowered.asm.mixin.injection.Redirect(method = "drawChat", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/FontRenderer;drawStringWithShadow(Ljava/lang/String;FFI)I"))
+    private int openMyau$renderCustomChatPrefix(net.minecraft.client.gui.FontRenderer fontRenderer, String text, float x, float y, int color) {
+        if (text != null && text.contains(myau.enums.ChatColors.PREFIX_CLEAN)) {
+            if (openMyauCachedHud == null) {
+                openMyauCachedHud = (myau.module.modules.render.HUD) myau.Myau.moduleManager.getModule(myau.module.modules.render.HUD.class);
+            }
+            if (openMyauCachedHud != null && openMyauCachedHud.isEnabled()) {
+                int prefixIndex = text.indexOf(myau.enums.ChatColors.PREFIX_CLEAN);
+                String before = text.substring(0, prefixIndex);
+                float currentX = x;
+                
+                if (!before.isEmpty()) {
+                    currentX = fontRenderer.drawStringWithShadow(before, currentX, y, color);
+                }
+                
+                long time = System.currentTimeMillis();
+                int alpha = (color >> 24) & 0xFF;
+                
+                for (int i = 0; i < myau.enums.ChatColors.PREFIX_CLEAN.length(); i++) {
+                    char c = myau.enums.ChatColors.PREFIX_CLEAN.charAt(i);
+                    int charColor = openMyauCachedHud.getColor(time, i * 15).getRGB();
+                    int finalColor = (alpha << 24) | (charColor & 0x00FFFFFF);
+                    currentX = fontRenderer.drawStringWithShadow(String.valueOf(c), currentX, y, finalColor);
+                }
+                
+                String after = text.substring(prefixIndex + myau.enums.ChatColors.PREFIX_CLEAN.length());
+                if (!after.isEmpty()) {
+                    currentX = fontRenderer.drawStringWithShadow(after, currentX, y, color);
+                }
+                return (int) currentX;
+            }
+        }
+        return fontRenderer.drawStringWithShadow(text, x, y, color);
+    }
 }

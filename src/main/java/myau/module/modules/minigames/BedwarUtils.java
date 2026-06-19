@@ -3,8 +3,8 @@ package myau.module.modules.minigames;
 import myau.Myau;
 import myau.event.EventTarget;
 import myau.event.types.EventType;
-import myau.util.notification.NotificationManager;
-import myau.util.notification.NotificationType;
+import myau.notification.NotificationManager;
+import myau.notification.NotificationType;
 import myau.event.types.Priority;
 import myau.events.LoadWorldEvent;
 import myau.events.PacketEvent;
@@ -429,11 +429,11 @@ public class BedwarUtils extends Module {
         mc.thePlayer.addChatMessage(
                 new ChatComponentText(this.getMyauPrefix() + " §f" + formattedPlayer + " §fhas §a" + item));
         
-        NotificationManager.show(
-                "Item Alerts",
-                EnumChatFormatting.getTextWithoutFormattingCodes(formattedPlayer) + " has " + item,
-                NotificationType.INFO
-        );
+        Myau.notificationManager.builder(NotificationType.INFO)
+                .title("Item Alerts")
+                .description(EnumChatFormatting.getTextWithoutFormattingCodes(formattedPlayer) + " has " + item)
+                .duration(2000)
+                .buildAndPublish();
     }
 
     private String getMyauPrefix() {

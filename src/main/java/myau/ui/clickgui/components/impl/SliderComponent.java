@@ -1,17 +1,13 @@
 package myau.ui.clickgui.components.impl;
 
 import myau.ui.clickgui.components.Component;
-import myau.module.Module;
 import myau.property.Property;
 import myau.property.properties.FloatProperty;
 import myau.property.properties.IntProperty;
 import myau.property.properties.PercentProperty;
 import myau.property.properties.ModeProperty;
 import myau.util.render.RenderUtils;
-import myau.util.font.FontManager;
-import myau.util.font.Font;
 import myau.util.font.Fonts;
-import net.minecraft.client.Minecraft;
 import org.lwjgl.opengl.GL11;
 
 import java.awt.Color;
