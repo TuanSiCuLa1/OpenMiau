@@ -1,12 +1,21 @@
 package myau.ui.clickgui.components.impl;
 
 import myau.ui.clickgui.components.Component;
+<<<<<<< HEAD
 import myau.util.render.Themes;
 import myau.util.font.Font;
 import myau.util.font.Fonts;
 import myau.util.math.MathUtil;
 import myau.util.render.RenderUtil;
 import myau.util.render.ColorUtil;
+=======
+import myau.util.Themes;
+import myau.util.font.Font;
+import myau.util.font.Fonts;
+import myau.util.math.MathUtil;
+import myau.util.render.RenderUtils;
+import myau.util.ColorUtil;
+>>>>>>> 746610b90671b5ee596a876af938a43584190552
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.WorldRenderer;
@@ -59,7 +68,11 @@ public class ThemeSelectComponent extends Component {
 
         int bgAlpha = (int) (150 + hoverAnim * 50);
         int bgColor = new Color(18, 21, 30, bgAlpha).getRGB();
+<<<<<<< HEAD
         RenderUtil.drawRoundedRectangle(cx, cy, cx + w, cy + h, 6, bgColor);
+=======
+        RenderUtils.drawRoundedRectangle(cx, cy, cx + w, cy + h, 6, bgColor);
+>>>>>>> 746610b90671b5ee596a876af938a43584190552
 
         drawHorizontalGradient(cx, cy, cx + w, cy + gradientH, this.theme.getFirstColor().getRGB(), this.theme.getSecondColor().getRGB());
 
@@ -69,14 +82,22 @@ public class ThemeSelectComponent extends Component {
 
         if (selectAnim > 0.01f) {
             Color bloomColor = new Color(this.theme.getFirstColor().getRed(), this.theme.getFirstColor().getGreen(), this.theme.getFirstColor().getBlue(), (int)(255 * selectAnim));
+<<<<<<< HEAD
             RenderUtil.drawRect(cx + 2, cy + h - 2, cx + w - 2, cy + h, bloomColor.getRGB());
+=======
+            RenderUtils.drawRect(cx + 2, cy + h - 2, cx + w - 2, cy + h, bloomColor.getRGB());
+>>>>>>> 746610b90671b5ee596a876af938a43584190552
         }
     }
 
     @Override
     public boolean onClick(int mouseX, int mouseY, int mouseButton) {
         if (mouseButton == 0 && this.hovered && this.categoryComponent.opened) {
+<<<<<<< HEAD
             myau.util.render.Themes.setCurrentTheme(this.theme);
+=======
+            myau.util.Themes.setCurrentTheme(this.theme);
+>>>>>>> 746610b90671b5ee596a876af938a43584190552
             return true;
         }
         return false;

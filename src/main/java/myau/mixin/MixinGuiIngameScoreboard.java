@@ -31,7 +31,11 @@ public abstract class MixinGuiIngameScoreboard {
                 
                 BlurUtils.prepareBloom();
                 this.renderScoreboard(objective, scaledRes);
+<<<<<<< HEAD
                 BlurUtils.bloomEnd(hud.bloomPasses.getValue(), hud.bloomRadius.getValue());
+=======
+                BlurUtils.bloomEnd(4, 3f);
+>>>>>>> 746610b90671b5ee596a876af938a43584190552
                 
                 this.renderScoreboard(objective, scaledRes);
                 

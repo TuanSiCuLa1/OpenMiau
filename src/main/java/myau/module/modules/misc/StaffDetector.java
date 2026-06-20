@@ -7,8 +7,14 @@ import myau.events.PacketEvent;
 import myau.module.Module;
 import myau.property.properties.BooleanProperty;
 import myau.mixin.IAccessorS14PacketEntity;
+<<<<<<< HEAD
 import myau.util.client.ChatUtil;
 import myau.Myau;
+=======
+import myau.util.ChatUtil;
+import myau.Myau;
+import myau.notification.NotificationManager;
+>>>>>>> 746610b90671b5ee596a876af938a43584190552
 import myau.notification.NotificationType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.Packet;
@@ -213,7 +219,11 @@ public class StaffDetector extends Module {
     }
 
     private void alert(NotificationType type, String title, String desc, String chatMsg) {
+<<<<<<< HEAD
         Myau.notificationManager.builder(type).title(title).description(desc).duration(3000).buildAndPublish();
+=======
+        Myau.notificationManager.builder(type).title(title).description(desc).duration(2000).buildAndPublish();
+>>>>>>> 746610b90671b5ee596a876af938a43584190552
         ChatUtil.display(chatMsg);
     }
 

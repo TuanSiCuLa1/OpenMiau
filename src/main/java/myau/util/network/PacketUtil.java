@@ -6,6 +6,7 @@ import net.minecraft.network.play.INetHandlerPlayClient;
 import net.minecraft.network.play.server.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+<<<<<<< HEAD:src/main/java/myau/util/network/PacketUtil.java
 import myau.util.math.*;
 import myau.util.time.*;
 import myau.util.player.*;
@@ -15,6 +16,8 @@ import myau.util.client.*;
 import myau.util.misc.*;
 import myau.util.render.*;
 import myau.util.animation.*;
+=======
+>>>>>>> 746610b90671b5ee596a876af938a43584190552:src/main/java/myau/util/PacketUtil.java
 
 public class PacketUtil {
     private static final Minecraft mc = Minecraft.getMinecraft();

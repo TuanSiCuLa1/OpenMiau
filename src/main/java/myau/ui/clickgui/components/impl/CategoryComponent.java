@@ -3,8 +3,13 @@ package myau.ui.clickgui.components.impl;
 import myau.ui.clickgui.animation.ScrollOffsetAnimation;
 import myau.ui.clickgui.components.Component;
 import myau.module.Module;
+<<<<<<< HEAD
 import myau.util.render.RenderUtil;
 import myau.util.animation.AnimationTimer;
+=======
+import myau.util.render.RenderUtils;
+import myau.util.Timer;
+>>>>>>> 746610b90671b5ee596a876af938a43584190552
 import myau.util.font.Font;
 import myau.util.font.Fonts;
 import net.minecraft.client.Minecraft;
@@ -83,7 +88,6 @@ public class CategoryComponent {
 
     public CategoryComponent(String category) {
         this.category = category;
-        this.width = this.category.equalsIgnoreCase("Config") ? 135 : 92;
         this.x = 5;
         this.moduleY = this.y = 5;
         this.titleHeight = 13;
@@ -121,7 +125,11 @@ public class CategoryComponent {
         }
 
         if (this.category.equalsIgnoreCase("Themes")) {
+<<<<<<< HEAD
             for (myau.util.render.Themes theme : myau.util.render.Themes.values()) {
+=======
+            for (myau.util.Themes theme : myau.util.Themes.values()) {
+>>>>>>> 746610b90671b5ee596a876af938a43584190552
                 ThemeSelectComponent tsc = new ThemeSelectComponent(this, moduleRenderY, theme);
                 this.modules.add(tsc);
                 moduleRenderY += tsc.getHeightF();
@@ -288,7 +296,6 @@ public class CategoryComponent {
     }
 
     public void render(FontRenderer renderer) {
-        this.width = this.category.equalsIgnoreCase("Config") ? 135 : 92;
         Font titleRenderer = Fonts.MINECRAFT.get(24);
 
         if (smoothTimer != null && System.currentTimeMillis() - smoothTimer.last >= 280) {

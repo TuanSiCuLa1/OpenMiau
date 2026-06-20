@@ -61,11 +61,14 @@ public class HUD extends Module {
     public final BooleanProperty toggleSound = new BooleanProperty("toggle-sounds", true);
     public final BooleanProperty toggleAlerts = new BooleanProperty("toggle-alerts", false);
     public final BooleanProperty shaders = new BooleanProperty("Shaders", true);
+<<<<<<< HEAD
     public final BooleanProperty blurSettings = new BooleanProperty("Blur Settings", false, () -> this.shaders.getValue());
     public final FloatProperty blurRadius = new FloatProperty("Blur Radius", 3.0F, 1.0F, 10.0F, () -> this.shaders.getValue() && this.blurSettings.getValue());
     public final IntProperty blurPasses = new IntProperty("Blur Passes", 2, 1, 10, () -> this.shaders.getValue() && this.blurSettings.getValue());
     public final FloatProperty bloomRadius = new FloatProperty("Bloom Radius", 3.0F, 1.0F, 10.0F, () -> this.shaders.getValue() && this.blurSettings.getValue());
     public final IntProperty bloomPasses = new IntProperty("Bloom Passes", 4, 1, 10, () -> this.shaders.getValue() && this.blurSettings.getValue());
+=======
+>>>>>>> 746610b90671b5ee596a876af938a43584190552
 
     // Hàm lấy Component tự động
     private InterfaceComponent getComponent(Module module) {
@@ -227,7 +230,11 @@ public class HUD extends Module {
             if (this.shaders.getValue()) {
                 myau.util.shader.BlurUtils.prepareBloom();
                 renderElements(l, delta, animatingComponents);
+<<<<<<< HEAD
                 myau.util.shader.BlurUtils.bloomEnd(this.bloomPasses.getValue(), this.bloomRadius.getValue());
+=======
+                myau.util.shader.BlurUtils.bloomEnd(4, 3f);
+>>>>>>> 746610b90671b5ee596a876af938a43584190552
             }
             renderElements(l, delta, animatingComponents);
         }

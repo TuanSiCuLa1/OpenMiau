@@ -39,15 +39,24 @@ public class ClickGui extends GuiScreen {
 
     public ClickGui() {
         categories = new ArrayList<>();
+<<<<<<< HEAD
         String[] values = new String[]{"Combat", "Target", "Movement", "Player", "Render", "Themes", "Misc", "Latency", "Search", "Minigames"};
+=======
+        String[] values = new String[]{"Combat", "Target", "Movement", "Player", "Render", "Themes", "Misc", "Latency", "Config", "Search", "Minigames"};
+>>>>>>> 746610b90671b5ee596a876af938a43584190552
 
         float startX = 15;
         float marginX = 105;
 
         for (int i = 0; i < values.length; ++i) {
             CategoryComponent cc = new CategoryComponent(values[i]);
+<<<<<<< HEAD
             cc.setX(startX + (i / 2) * marginX, false);
             cc.setY(15 + (i % 2) * 60, false);   
+=======
+            cc.setX(startX + (i / 2) * marginX, false); // i/2 = cột
+            cc.setY(15 + (i % 2) * 60, false);          // i%2 = hàng
+>>>>>>> 746610b90671b5ee596a876af938a43584190552
             categories.add(cc);
         }
     }
@@ -100,6 +109,7 @@ public class ClickGui extends GuiScreen {
             categoryComponent.reloadModules();
         }
 
+        // Khởi tạo ConfigWindow nếu chưa có (Để góc dưới cùng bên phải)
         if (configWindow == null) {
             configWindow = new ConfigWindow(actualScreenWidth - 350, actualScreenHeight - 250);
         } else {
@@ -157,6 +167,7 @@ public class ClickGui extends GuiScreen {
         int scaledY = (int) (centerY + (y - centerY) / scaleFactor);
 
         List<CategoryComponent> renderOrder = getCategoriesInRenderOrder();
+<<<<<<< HEAD
         CategoryComponent topmostUnderCursor = getTopmostUnderCursor(renderOrder, scaledX, scaledY);
 
         GL11.glPushMatrix();
@@ -164,10 +175,17 @@ public class ClickGui extends GuiScreen {
         GL11.glScaled(scaleFactor, scaleFactor, 1.0);
         GL11.glTranslatef(-centerX, -centerY, 0);
 
+=======
+        CategoryComponent topmostUnderCursor = getTopmostUnderCursor(renderOrder, x, y);
+
+        myau.module.modules.render.HUD hud = (myau.module.modules.render.HUD) myau.Myau.moduleManager.modules.get(myau.module.modules.render.HUD.class);
+        
+>>>>>>> 746610b90671b5ee596a876af938a43584190552
         if (hud != null && hud.shaders.getValue()) {
             BlurUtils.prepareBloom();
             for (CategoryComponent c : renderOrder) {
                 c.render(this.fontRendererObj);
+<<<<<<< HEAD
                 c.mousePosition(scaledX, scaledY, c == topmostUnderCursor);
 
                 for (Component m : c.getModules()) {
@@ -178,6 +196,18 @@ public class ClickGui extends GuiScreen {
                 configWindow.drawWindow(scaledX, scaledY, 0);
             }
             BlurUtils.bloomEnd(hud.bloomPasses.getValue(), hud.bloomRadius.getValue());
+=======
+                c.mousePosition(x, y, c == topmostUnderCursor);
+
+                for (Component m : c.getModules()) {
+                    m.drawScreen(x, y);
+                }
+            }
+            if (configWindow != null) {
+                configWindow.drawWindow(x, y, 0);
+            }
+            BlurUtils.bloomEnd(4, 3f);
+>>>>>>> 746610b90671b5ee596a876af938a43584190552
         }
 
         for (CategoryComponent c : renderOrder) {
@@ -190,15 +220,20 @@ public class ClickGui extends GuiScreen {
         }
         GL11.glColor3f(1.0f, 1.0f, 1.0f);
 
+        // Vẽ Config Window
         if (configWindow != null) {
             configWindow.drawWindow(scaledX, scaledY, delta);
         }
+<<<<<<< HEAD
 
         GL11.glPopMatrix();
+=======
+>>>>>>> 746610b90671b5ee596a876af938a43584190552
     }
 
     @Override
     public void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
+<<<<<<< HEAD
         if (openingAnimation < 0.95f) return;
 
         float centerX = this.width / 2.0f;
@@ -209,6 +244,10 @@ public class ClickGui extends GuiScreen {
         int scaledY = (int) (centerY + (mouseY - centerY) / scaleFactor);
 
         if (configWindow != null && configWindow.mouseClicked(scaledX, scaledY, mouseButton)) {
+=======
+        // Ưu tiên tương tác Config Window trước
+        if (configWindow != null && configWindow.mouseClicked(mouseX, mouseY, mouseButton)) {
+>>>>>>> 746610b90671b5ee596a876af938a43584190552
             return;
         }
 
@@ -280,6 +319,7 @@ public class ClickGui extends GuiScreen {
             int mouseX = Mouse.getEventX() * this.width / mc.displayWidth;
             int mouseY = this.height - Mouse.getEventY() * this.height / mc.displayHeight - 1;
 
+<<<<<<< HEAD
             float centerX = this.width / 2.0f;
             float centerY = this.height / 2.0f;
             float ease = 1.0f - (float) Math.pow(1.0f - openingAnimation, 3);
@@ -288,6 +328,10 @@ public class ClickGui extends GuiScreen {
             int scaledY = (int) (centerY + (mouseY - centerY) / scaleFactor);
 
             if (configWindow != null) configWindow.onScroll(wheelInput, scaledX, scaledY);
+=======
+            // Xử lý scroll Config Window trước
+            if (configWindow != null) configWindow.onScroll(wheelInput, mouseX, mouseY);
+>>>>>>> 746610b90671b5ee596a876af938a43584190552
 
             for (CategoryComponent category : categories) {
                 category.onScroll(wheelInput);
@@ -297,13 +341,16 @@ public class ClickGui extends GuiScreen {
 
     @Override
     public void keyTyped(char t, int k) {
+        // 1. Chặn phím tắt nếu đang gõ chữ trong ConfigWindow
         if (configWindow != null && configWindow.keyTyped(t, k)) return;
 
+        // Kiểm tra xem người dùng có đang cài Keybind cho module nào không
         boolean isBinding = binding();
 
         SearchBarComponent searchBar = null;
         CategoryComponent searchCategory = null;
 
+        // Tìm Category Search và Component SearchBar
         for (CategoryComponent category : categories) {
             if (category.category.equalsIgnoreCase("Search")) {
                 searchCategory = category;
@@ -314,22 +361,30 @@ public class ClickGui extends GuiScreen {
             }
         }
 
+        // 2. Logic Xử lý phím cho Search
         if (searchBar != null && searchCategory != null) {
             if (searchBar.focused) {
+                // Nếu đang gõ Search mà bấm ESC -> Thoát khỏi chế độ gõ (không đóng GUI)
                 if (k == Keyboard.KEY_ESCAPE) {
                     searchBar.focused = false;
                     return;
                 }
             } else if (!isBinding && k != Keyboard.KEY_ESCAPE && k != Keyboard.KEY_RETURN && k != Keyboard.KEY_BACK) {
+                // TỰ ĐỘNG BẮT PHÍM (Giống Rise Client)
+                // Nếu gõ chữ cái, số, hoặc khoảng trắng -> Tự động chuyển qua Search
                 if (String.valueOf(t).matches("[a-zA-Z0-9 ]")) {
+                    // Mở xổ Panel Search ra nếu nó đang bị thu gọn
                     if (!searchCategory.isOpened()) {
                         searchCategory.mouseClicked(true);
                     }
+                    // Bật focus để nó nhận chữ ngay lập tức
                     searchBar.focused = true;
+                    // (Phím vừa gõ sẽ được truyền tiếp xuống vòng lặp bên dưới để add vào ô Search)
                 }
             }
         }
 
+        // 3. Xử lý đóng ClickGUI bằng ESC
         if (k == Keyboard.KEY_ESCAPE) {
             if (!isBinding) {
                 this.mc.displayGuiScreen(null);
@@ -337,6 +392,7 @@ public class ClickGui extends GuiScreen {
             }
         }
 
+        // 4. Truyền phím xuống cho toàn bộ các module/setting/searchbar
         for (CategoryComponent category : categories) {
             if (category.isOpened() && !category.getModules().isEmpty()) {
                 for (Component module : category.getModules()) {
