@@ -6,7 +6,7 @@ import com.mojang.authlib.properties.Property;
 import myau.Myau;
 import myau.command.Command;
 import myau.enums.ChatColors;
-import myau.util.ChatUtil;
+import myau.util.client.ChatUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.network.NetworkPlayerInfo;
 

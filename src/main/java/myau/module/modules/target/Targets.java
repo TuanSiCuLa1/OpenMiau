@@ -3,7 +3,7 @@ package myau.module.modules.target;
 import myau.module.modules.misc.AntiBot;
 import myau.module.Module;
 import myau.property.properties.BooleanProperty;
-import myau.util.TeamUtil;
+import myau.util.player.TeamUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityOtherPlayerMP;
 import net.minecraft.entity.EntityLivingBase;

@@ -75,14 +75,6 @@ public abstract class MixinEntityRenderer implements MotionBlurShaderHook {
     )
     private void updateCameraAndRender(float float1, long long2, CallbackInfo callbackInfo) {
         if (this.mc.thePlayer != null) {
-            Scaffold scaffold = (Scaffold) Myau.moduleManager.modules.get(Scaffold.class);
-            if (scaffold.isEnabled() && scaffold.itemSpoof.getValue()) {
-                int slot = scaffold.getSlot();
-                if (slot >= 0) {
-                    this.slot = new Box<>(this.mc.thePlayer.inventory.currentItem);
-                    this.mc.thePlayer.inventory.currentItem = slot;
-                }
-            }
             KillAura killAura = (KillAura) Myau.moduleManager.modules.get(KillAura.class);
             if (killAura.isEnabled() && killAura.isBlocking()) {
                 this.using = new Box<>(((IAccessorEntityPlayer) this.mc.thePlayer).getItemInUse());
@@ -173,15 +165,6 @@ public abstract class MixinEntityRenderer implements MotionBlurShaderHook {
             at = {@At("HEAD")}
     )
     private void updateRenderer(CallbackInfo callbackInfo) {
-        Scaffold scaffold = (Scaffold) Myau.moduleManager.modules.get(Scaffold.class);
-        if (scaffold.isEnabled() && scaffold.itemSpoof.getValue()) {
-            int slot = scaffold.getSlot();
-            if (slot >= 0) {
-                this.slot = new Box<>(this.mc.thePlayer.inventory.currentItem);
-                this.mc.thePlayer.inventory.currentItem = slot;
-            }
-        }
-
         AutoBlockIn autoBlockIn = (AutoBlockIn) Myau.moduleManager.modules.get(AutoBlockIn.class);
         if (autoBlockIn.isEnabled() && autoBlockIn.itemSpoof.getValue()) {
             int slot = autoBlockIn.getSlot();

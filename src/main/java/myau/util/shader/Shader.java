@@ -4,6 +4,15 @@ import org.lwjgl.opengl.GL20;
 
 import java.util.HashMap;
 import java.util.Map;
+import myau.util.math.*;
+import myau.util.time.*;
+import myau.util.player.*;
+import myau.util.world.*;
+import myau.util.network.*;
+import myau.util.client.*;
+import myau.util.misc.*;
+import myau.util.render.*;
+import myau.util.animation.*;
 
 public abstract class Shader {
     private static final String vertex = "#version 120\n" +

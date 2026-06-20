@@ -13,10 +13,10 @@ import myau.property.properties.BooleanProperty;
 import myau.property.properties.FloatProperty;
 import myau.property.properties.IntProperty;
 import myau.property.properties.ModeProperty;
-import myau.util.ChatUtil;
-import myau.util.PacketUtil;
-import myau.util.RandomUtil;
-import myau.util.RenderUtil;
+import myau.util.client.ChatUtil;
+import myau.util.network.PacketUtil;
+import myau.util.math.RandomUtil;
+import myau.util.render.RenderUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
@@ -283,7 +283,7 @@ public class TimerRange extends Module {
             if (resetOnLagBack.getValue() && packet instanceof S08PacketPlayerPosLook) {
                 shouldResetTimer();
                 if (shouldReset) {
-                    if (chatDebug.getValue()) ChatUtil.sendFormatted("§c[TimerRange] §fLagback Received | Timer Reset");
+                    if (chatDebug.getValue()) ChatUtil.sendFormatted("§c[TimerRange] §fLagback Received | AnimationTimer Reset");
                     shouldReset = false;
                 }
             }
@@ -292,7 +292,7 @@ public class TimerRange extends Module {
                 if (((S12PacketEntityVelocity) packet).getEntityID() == mc.thePlayer.getEntityId()) {
                     shouldResetTimer();
                     if (shouldReset) {
-                        if (chatDebug.getValue()) ChatUtil.sendFormatted("§c[TimerRange] §fKnockback Received | Timer Reset");
+                        if (chatDebug.getValue()) ChatUtil.sendFormatted("§c[TimerRange] §fKnockback Received | AnimationTimer Reset");
                         shouldReset = false;
                     }
                 }

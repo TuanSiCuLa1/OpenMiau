@@ -5,7 +5,7 @@ import myau.command.Command;
 import myau.config.online.OnlineConfigApplier;
 import myau.config.online.OnlineConfigClient;
 import myau.config.online.OnlineConfigEntry;
-import myau.util.ChatUtil;
+import myau.util.client.ChatUtil;
 import net.minecraft.event.ClickEvent;
 import net.minecraft.event.HoverEvent;
 import net.minecraft.util.ChatComponentText;

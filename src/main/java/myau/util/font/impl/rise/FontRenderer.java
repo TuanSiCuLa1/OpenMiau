@@ -1,6 +1,6 @@
 package myau.util.font.impl.rise;
 
-import myau.util.ColorUtil;
+import myau.util.render.ColorUtil;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.util.MathHelper;
 import org.lwjgl.BufferUtils;
@@ -12,6 +12,15 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
+import myau.util.math.*;
+import myau.util.time.*;
+import myau.util.player.*;
+import myau.util.world.*;
+import myau.util.network.*;
+import myau.util.client.*;
+import myau.util.misc.*;
+import myau.util.render.*;
+import myau.util.animation.*;
 
 public class FontRenderer extends myau.util.font.Font {
 

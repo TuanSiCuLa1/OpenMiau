@@ -1,17 +1,13 @@
 package myau.ui.clickgui.components.impl;
 
 import myau.ui.clickgui.components.Component;
-import myau.module.Module;
 import myau.property.Property;
 import myau.property.properties.FloatProperty;
 import myau.property.properties.IntProperty;
 import myau.property.properties.PercentProperty;
 import myau.property.properties.ModeProperty;
-import myau.util.render.RenderUtils;
-import myau.util.font.FontManager;
-import myau.util.font.Font;
+import myau.util.render.RenderUtil;
 import myau.util.font.Fonts;
-import net.minecraft.client.Minecraft;
 import org.lwjgl.opengl.GL11;
 
 import java.awt.Color;
@@ -114,7 +110,7 @@ public class SliderComponent extends Component {
 
     @Override
     public void render() {
-        RenderUtils.drawRoundedRectangle(
+        RenderUtil.drawRoundedRectangle(
             this.moduleComponent.categoryComponent.getX() + 4 + (xOffset / 2),
             this.moduleComponent.categoryComponent.getY() + this.o + 11,
             this.moduleComponent.categoryComponent.getX() + 4 + this.moduleComponent.categoryComponent.getWidth() - 8,
@@ -130,7 +126,7 @@ public class SliderComponent extends Component {
             right = left + 84;
         }
 
-        RenderUtils.drawRoundedRectangle(
+        RenderUtil.drawRoundedRectangle(
             left,
             this.moduleComponent.categoryComponent.getY() + this.o + 11,
             right,

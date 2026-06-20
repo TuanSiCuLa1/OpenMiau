@@ -5,7 +5,7 @@ import myau.event.EventTarget;
 import myau.events.Render2DEvent;
 import myau.module.modules.render.Scoreboard;
 import myau.module.modules.render.TargetHUD;
-import myau.util.RenderUtil;
+import myau.util.render.RenderUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiChat;
 import net.minecraft.client.gui.ScaledResolution;

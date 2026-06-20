@@ -5,8 +5,8 @@ import myau.event.types.EventType;
 import myau.events.StrafeEvent;
 import myau.events.UpdateEvent;
 import myau.module.Module;
-import myau.util.KeyBindUtil;
-import myau.util.MoveUtil;
+import myau.util.client.KeyBindUtil;
+import myau.util.player.MoveUtil;
 import myau.property.properties.FloatProperty;
 import net.minecraft.client.Minecraft;
 

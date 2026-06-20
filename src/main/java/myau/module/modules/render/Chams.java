@@ -4,7 +4,7 @@ import myau.event.EventTarget;
 import myau.events.RenderLivingEvent;
 import myau.events.TickEvent;
 import myau.module.Module;
-import myau.util.TeamUtil;
+import myau.util.player.TeamUtil;
 import myau.property.properties.BooleanProperty;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.EntityLivingBase;

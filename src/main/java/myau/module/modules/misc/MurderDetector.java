@@ -6,7 +6,7 @@ import myau.events.Render2DEvent;
 import myau.events.TickEvent;
 import myau.module.Module;
 import myau.property.properties.BooleanProperty;
-import myau.util.ChatUtil;
+import myau.util.client.ChatUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.network.NetworkPlayerInfo;

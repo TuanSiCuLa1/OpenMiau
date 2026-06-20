@@ -1,13 +1,10 @@
 package myau.ui.clickgui.components.impl;
 
 import myau.ui.clickgui.animation.ScrollOffsetAnimation;
-import myau.ui.clickgui.ClickGui;
 import myau.ui.clickgui.components.Component;
 import myau.module.Module;
-import myau.module.modules.target.Targets;
-import myau.util.render.RenderUtils;
-import myau.util.ColorUtil;
-import myau.util.Timer;
+import myau.util.render.RenderUtil;
+import myau.util.animation.AnimationTimer;
 import myau.util.font.Font;
 import myau.util.font.Fonts;
 import net.minecraft.client.Minecraft;
@@ -42,8 +39,8 @@ public class CategoryComponent {
     public float yy;
     public boolean hovering = false;
     public boolean hoveringOverCategory = false;
-    public Timer smoothTimer;
-    private Timer textTimer;
+    public AnimationTimer smoothTimer;
+    private AnimationTimer textTimer;
     public float big;
 
     private static final int TRANSLUCENT_BACKGROUND = new Color(0, 0, 0, 110).getRGB();
@@ -96,14 +93,9 @@ public class CategoryComponent {
         this.lastHeight = this.y + this.titleHeight + 4;
         this.animationStartHeight = this.lastHeight;
 
-        moduleRenderY = addTargetSettingsComponent(moduleRenderY);
-
         List<Module> mods = myau.Myau.moduleManager.getModulesByCategory().get(category);
         if (mods != null) {
             for (Module mod : mods) {
-                if (mod instanceof Targets) {
-                    continue;
-                }
                 ModuleComponent b = new ModuleComponent(mod, this, moduleRenderY);
                 this.modules.add(b);
                 moduleRenderY += 16;
@@ -128,14 +120,19 @@ public class CategoryComponent {
             return;
         }
 
-        moduleRenderY = addTargetSettingsComponent(moduleRenderY);
+        if (this.category.equalsIgnoreCase("Themes")) {
+            for (myau.util.render.Themes theme : myau.util.render.Themes.values()) {
+                ThemeSelectComponent tsc = new ThemeSelectComponent(this, moduleRenderY, theme);
+                this.modules.add(tsc);
+                moduleRenderY += tsc.getHeightF();
+            }
+            syncAfterModuleReload();
+            return;
+        }
 
         List<Module> mods = myau.Myau.moduleManager.getModulesByCategory().get(this.category);
         if (mods != null) {
             for (Module mod : mods) {
-                if (mod instanceof Targets) {
-                    continue;
-                }
                 ModuleComponent component = new ModuleComponent(mod, this, moduleRenderY);
                 component.restoreOpenState(Boolean.TRUE.equals(openStates.get(mod.getName())));
                 this.modules.add(component);
@@ -145,53 +142,47 @@ public class CategoryComponent {
         syncAfterModuleReload();
     }
 
-    private float addTargetSettingsComponent(float moduleRenderY) {
-        if (!this.category.equalsIgnoreCase("Target")) {
-            return moduleRenderY;
-        }
-        Module targets = myau.Myau.moduleManager.modules.get(Targets.class);
-        if (!(targets instanceof Targets)) {
-            return moduleRenderY;
-        }
-        ModuleComponent targetSettings = new ModuleComponent(targets, this, moduleRenderY, true);
-        this.modules.add(targetSettings);
-        return moduleRenderY + targetSettings.getHeightF();
-    }
-
     public void updateSearchResults(String query) {
         if (!this.category.equalsIgnoreCase("Search")) return;
 
         Map<String, Boolean> openStates = captureModuleOpenStates();
 
+        // Lấy lại cái SearchBar (luôn ở vị trí 0)
         Component searchBar = null;
         if (!this.modules.isEmpty() && this.modules.get(0) instanceof SearchBarComponent) {
             searchBar = this.modules.get(0);
         }
 
+        // Xóa sạch danh sách hiện tại
         this.modules.clear();
 
         float moduleRenderY = this.titleHeight + 3;
 
+        // Add lại SearchBar lên đầu
         if (searchBar != null) {
             this.modules.add(searchBar);
             moduleRenderY += searchBar.getHeightF();
         }
 
+        // Quét toàn bộ module trong Client
         if (query != null && !query.trim().isEmpty()) {
             String lowerQuery = query.toLowerCase().replace(" ", "");
 
             for (Module mod : myau.Myau.moduleManager.modules.values()) {
-                if (mod.getName().equalsIgnoreCase("ClickGUI") || mod.getName().equalsIgnoreCase("GUI") || mod instanceof Targets) continue;
+                // Bỏ qua các module dạng GUI
+                if (mod.getName().equalsIgnoreCase("ClickGUI") || mod.getName().equalsIgnoreCase("GUI")) continue;
 
+                // Nếu tên module chứa từ khóa tìm kiếm
                 if (mod.getName().toLowerCase().replace(" ", "").contains(lowerQuery)) {
                     ModuleComponent component = new ModuleComponent(mod, this, moduleRenderY);
                     component.restoreOpenState(Boolean.TRUE.equals(openStates.get(mod.getName())));
                     this.modules.add(component);
-                    moduleRenderY += component.getHeightF(); 
+                    moduleRenderY += component.getHeightF(); // Cộng dồn chiều cao
                 }
             }
         }
 
+        // Cập nhật lại thanh Scroll cho mượt
         syncAfterModuleReload();
     }
 
@@ -266,8 +257,8 @@ public class CategoryComponent {
         float animationDuration = 250.0f;
 
         this.opened = on;
-        (this.smoothTimer = new Timer(animationDuration)).start();
-        (this.textTimer = new Timer(animationDuration)).start();
+        (this.smoothTimer = new AnimationTimer(animationDuration)).start();
+        (this.textTimer = new AnimationTimer(animationDuration)).start();
     }
 
     public void onScroll(int mouseScrollInput) {
@@ -350,7 +341,7 @@ public class CategoryComponent {
 
         GL11.glPushMatrix();
 
-        RenderUtils.drawRoundedGradientOutlinedRectangle(this.x - 2, this.y, this.x + this.width + 2, extra, 10, TRANSLUCENT_BACKGROUND,
+        RenderUtil.drawRoundedGradientOutlinedRectangle(this.x - 2, this.y, this.x + this.width + 2, extra, 10, TRANSLUCENT_BACKGROUND,
                 REGULAR_OUTLINE, REGULAR_OUTLINE2);
         renderItemForCategory(this.category, (int) (this.x + 1), (int) (this.y + 4), opened || hovering);
         titleRenderer.draw(this.category, namePos, this.y + 4, CATEGORY_NAME_COLOR, false);
@@ -361,7 +352,7 @@ public class CategoryComponent {
 
         if (this.opened || smoothTimer != null) {
             GL11.glEnable(GL11.GL_SCISSOR_TEST);
-            RenderUtils.scissor(0, moduleAreaTop, this.x + this.width + 4, moduleAreaHeight);
+            RenderUtil.scissor(0, moduleAreaTop, this.x + this.width + 4, moduleAreaHeight);
 
             float scrollOffset = moduleY - this.y;
             GL11.glPushMatrix();
@@ -580,7 +571,8 @@ public class CategoryComponent {
 
     private static Map<String, CategoryIconStacks> buildCategoryIconStacks() {
         Map<String, CategoryIconStacks> iconStacks = new HashMap<>();
-        String[] categories = new String[]{"Combat", "Movement", "Render", "Player", "Misc", "Latency", "Minigames", "Target", "Search"};
+        // 👉 FIX: Thêm chữ "Search" vào mảng này
+        String[] categories = new String[]{"Combat", "Movement", "Render", "Player", "Misc", "Latency", "Minigames", "Target", "Search", "Themes"};
         for (String cat : categories) {
             ItemStack normalStack = createCategoryIconStack(cat, false);
             ItemStack activeStack = createCategoryIconStack(cat, true);
@@ -611,6 +603,8 @@ public class CategoryComponent {
             itemStack = new ItemStack(Items.arrow);
         } else if (category.equalsIgnoreCase("Search")) {
             itemStack = new ItemStack(Items.name_tag);
+        } else if (category.equalsIgnoreCase("Themes")) {
+            itemStack = new ItemStack(Items.dye, 1, 9);
         } else {
             return null;
         }

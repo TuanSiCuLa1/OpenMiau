@@ -20,7 +20,7 @@ import myau.event.types.EventType;
 import myau.events.TickEvent;
 import myau.module.Module;
 import myau.property.properties.BooleanProperty;
-import myau.util.ChatUtil;
+import myau.util.client.ChatUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.EnumChatFormatting;

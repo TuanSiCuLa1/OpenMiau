@@ -1,8 +1,7 @@
 package myau.module.modules.player;
 
-import myau.module.modules.player.BedNuker;
-import myau.module.modules.render.HUD;
 import myau.module.modules.movement.LongJump;
+import myau.module.modules.render.HUD;
 import myau.Myau;
 import myau.event.EventTarget;
 import myau.event.types.EventType;
@@ -11,8 +10,6 @@ import myau.events.*;
 import myau.management.RotationState;
 import myau.module.Module;
 import myau.property.properties.BooleanProperty;
-import myau.property.properties.ColorProperty;
-import myau.property.properties.IntProperty;
 import myau.property.properties.ModeProperty;
 import myau.property.properties.PercentProperty;
 import myau.util.*;
@@ -20,10 +17,6 @@ import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.RenderGlobal;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.WorldRenderer;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
@@ -32,19 +25,14 @@ import net.minecraft.potion.Potion;
 import net.minecraft.util.*;
 import net.minecraft.util.MovingObjectPosition.MovingObjectType;
 import net.minecraft.world.WorldSettings.GameType;
-import org.lwjgl.opengl.GL11;
 import myau.util.font.Fonts;
 import myau.util.shader.RoundedUtils;
 import net.minecraft.client.renderer.RenderHelper;
+import myau.util.shader.BlurUtils;
 
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.LinkedList;
-import java.util.Queue;
 
 public class Scaffold extends Module {
     private static final Minecraft mc = Minecraft.getMinecraft();
@@ -748,9 +736,9 @@ public class Scaffold extends Module {
 
         ScaledResolution sr = new ScaledResolution(mc);
         String amount = String.valueOf(count);
-        String prefix = "Amount: ";
+        String info = "Slot: " + (mc.thePlayer.inventory.currentItem + 1) + " | Blocks: " + amount;
 
-        float textWidth = Fonts.MAIN.get(18).width(prefix) + Fonts.MAIN.get(18).width(amount);
+        float textWidth = Fonts.MAIN.get(18).width(info);
         float width = 16f + 8f + textWidth + 8f;
         float height = 22f;
         float x = (sr.getScaledWidth() - width) / 2f;
@@ -763,6 +751,26 @@ public class Scaffold extends Module {
         GlStateManager.translate(centerX, centerY, 0);
         GlStateManager.scale(animationProgress, animationProgress, 1f);
         GlStateManager.translate(-centerX, -centerY, 0);
+
+        HUD hud = (HUD) Myau.moduleManager.getModule(HUD.class);
+        boolean shaders = hud != null && hud.shaders.getValue();
+
+        if (shaders) {
+            int blurP = hud.blurPasses.getValue();
+            float blurR = hud.blurRadius.getValue();
+            int bloomP = hud.bloomPasses.getValue();
+            float bloomR = hud.bloomRadius.getValue();
+
+            // Blur pass
+            BlurUtils.prepareBlur();
+            RoundedUtils.drawRound(x, y, width, height, 4f, new Color(0, 0, 0, 150));
+            BlurUtils.blurEnd(blurP, blurR);
+
+            // Bloom pass
+            BlurUtils.prepareBloom();
+            RoundedUtils.drawRound(x - 1, y - 1, width + 2, height + 2, 4f, new Color(81, 99, 149, 80));
+            BlurUtils.bloomEnd(bloomP, bloomR);
+        }
 
         int bgAlpha = (int) (150 * animationProgress);
         RoundedUtils.drawRound(x, y, width, height, 4f, new Color(0, 0, 0, bgAlpha));
@@ -778,8 +786,7 @@ public class Scaffold extends Module {
         float fontY = y + (height / 2f) - (Fonts.MAIN.get(18).height() / 2f);
         float textX = x + 24f;
 
-        Fonts.MAIN.get(18).drawWithShadow(prefix, textX, fontY, new Color(200, 200, 200, textAlpha).getRGB());
-        Fonts.MAIN.get(18).drawWithShadow(amount, textX + Fonts.MAIN.get(18).width(prefix), fontY, new Color(81, 99, 149, textAlpha).getRGB());
+        Fonts.MAIN.get(18).drawWithShadow(info, textX, fontY, new Color(200, 200, 200, textAlpha).getRGB());
 
         GlStateManager.popMatrix();
     }

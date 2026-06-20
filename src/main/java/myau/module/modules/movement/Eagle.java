@@ -8,7 +8,7 @@ import myau.module.Module;
 import myau.module.modules.player.InvWalk;
 import myau.property.properties.BooleanProperty;
 import myau.property.properties.IntProperty;
-import myau.util.KeyBindUtil;
+import myau.util.client.KeyBindUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemBlock;

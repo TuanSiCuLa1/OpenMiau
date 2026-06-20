@@ -4,7 +4,7 @@ import myau.event.EventTarget;
 import myau.event.types.EventType;
 import myau.events.PacketEvent;
 import myau.module.Module;
-import myau.util.ChatUtil;
+import myau.util.client.ChatUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.play.server.S2CPacketSpawnGlobalEntity;
 

@@ -1,6 +1,15 @@
 package myau.util.animation;
 
 import java.util.function.Function;
+import myau.util.math.*;
+import myau.util.time.*;
+import myau.util.player.*;
+import myau.util.world.*;
+import myau.util.network.*;
+import myau.util.client.*;
+import myau.util.misc.*;
+import myau.util.render.*;
+import myau.util.animation.*;
 
 /**
  * Easing functions for smooth animations.
