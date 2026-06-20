@@ -3,8 +3,8 @@ package myau.command.commands;
 import myau.Myau;
 import myau.command.Command;
 import myau.module.Module;
-import myau.util.ChatUtil;
-import myau.util.KeyBindUtil;
+import myau.util.client.ChatUtil;
+import myau.util.client.KeyBindUtil;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 

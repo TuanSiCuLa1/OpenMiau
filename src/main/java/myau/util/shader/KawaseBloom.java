@@ -1,6 +1,6 @@
 package myau.util.shader;
 
-import myau.util.render.RenderUtils;
+import myau.util.render.RenderUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.shader.Framebuffer;
@@ -12,6 +12,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.lwjgl.opengl.GL11.*;
+import myau.util.math.*;
+import myau.util.time.*;
+import myau.util.player.*;
+import myau.util.world.*;
+import myau.util.network.*;
+import myau.util.client.*;
+import myau.util.misc.*;
+import myau.util.render.*;
+import myau.util.animation.*;
 
 public class KawaseBloom {
     private static final Minecraft mc = Minecraft.getMinecraft();
@@ -28,7 +37,7 @@ public class KawaseBloom {
         }
         framebufferList.clear();
 
-        framebufferList.add(framebuffer = RenderUtils.createFrameBuffer(null, false));
+        framebufferList.add(framebuffer = RenderUtil.createFrameBuffer(null, false));
 
         for (int i = 1; i <= iterations; i++) {
             Framebuffer currentBuffer = new Framebuffer((int) (mc.displayWidth / Math.pow(2, i)), (int) (mc.displayHeight / Math.pow(2, i)), false);
@@ -50,7 +59,7 @@ public class KawaseBloom {
             currentIterations = iterations;
         }
 
-        RenderUtils.setAlphaLimit(0);
+        RenderUtil.setAlphaLimit(0);
         GlStateManager.enableBlend();
         GlStateManager.blendFunc(GL_ONE, GL_ONE);
 
@@ -80,22 +89,22 @@ public class KawaseBloom {
         kawaseUp.setUniformf("halfpixel", 1.0f / lastBuffer.framebufferWidth, 1.0f / lastBuffer.framebufferHeight);
         kawaseUp.setUniformf("iResolution", lastBuffer.framebufferWidth, lastBuffer.framebufferHeight);
         GlStateManager.setActiveTexture(GL13.GL_TEXTURE16);
-        RenderUtils.bindTexture(framebufferTexture);
+        RenderUtil.bindTexture(framebufferTexture);
         GlStateManager.setActiveTexture(GL13.GL_TEXTURE0);
-        RenderUtils.bindTexture(framebufferList.get(1).framebufferTexture);
+        RenderUtil.bindTexture(framebufferList.get(1).framebufferTexture);
         ShaderUtils.drawQuads();
         kawaseUp.unload();
 
 
         GlStateManager.clearColor(0, 0, 0, 0);
         mc.getFramebuffer().bindFramebuffer(false);
-        RenderUtils.bindTexture(framebufferList.get(0).framebufferTexture);
-        RenderUtils.setAlphaLimit(0);
+        RenderUtil.bindTexture(framebufferList.get(0).framebufferTexture);
+        RenderUtil.setAlphaLimit(0);
         GlStateManager.enableBlend();
         GlStateManager.blendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         ShaderUtils.drawQuads();
         GlStateManager.bindTexture(0);
-        RenderUtils.setAlphaLimit(0);
+        RenderUtil.setAlphaLimit(0);
 
         GlStateManager.enableBlend();
         GlStateManager.blendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -105,7 +114,7 @@ public class KawaseBloom {
         framebuffer.framebufferClear();
         framebuffer.bindFramebuffer(false);
         shader.init();
-        RenderUtils.bindTexture(framebufferTexture);
+        RenderUtil.bindTexture(framebufferTexture);
         shader.setUniformf("offset", offset, offset);
         shader.setUniformi("inTexture", 0);
         shader.setUniformi("check", 0);

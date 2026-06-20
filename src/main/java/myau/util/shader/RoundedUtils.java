@@ -1,6 +1,6 @@
 package myau.util.shader;
 
-import myau.util.render.RenderUtils;
+import myau.util.render.RenderUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
@@ -10,6 +10,15 @@ import org.lwjgl.opengl.GL20;
 import java.awt.*;
 
 import static org.lwjgl.opengl.GL11.*;
+import myau.util.math.*;
+import myau.util.time.*;
+import myau.util.player.*;
+import myau.util.world.*;
+import myau.util.network.*;
+import myau.util.client.*;
+import myau.util.misc.*;
+import myau.util.render.*;
+import myau.util.animation.*;
 
 public class RoundedUtils {
     public static ShaderUtils roundedShader = new ShaderUtils("roundedRect");
@@ -32,12 +41,12 @@ public class RoundedUtils {
     }
 
     public static void drawGradientCornerLR(float x, float y, float width, float height, float radius, Color topLeft, Color bottomRight) {
-        Color mixedColor = RenderUtils.interpolateColorC(topLeft, bottomRight, .5f);
+        Color mixedColor = RenderUtil.interpolateColorC(topLeft, bottomRight, .5f);
         drawGradientRound(x, y, width, height, radius, mixedColor, topLeft, bottomRight, mixedColor);
     }
 
     public static void drawGradientCornerRL(float x, float y, float width, float height, float radius, Color bottomLeft, Color topRight) {
-        Color mixedColor = RenderUtils.interpolateColorC(topRight, bottomLeft, .5f);
+        Color mixedColor = RenderUtil.interpolateColorC(topRight, bottomLeft, .5f);
         drawGradientRound(x, y, width, height, radius, bottomLeft, mixedColor, mixedColor, topRight);
     }
 
@@ -46,11 +55,11 @@ public class RoundedUtils {
     }
 
     public static void drawRound(float x, float y, float width, float height, float radius, boolean blur, int color) {
-        RenderUtils.resetColor();
+        RenderUtil.resetColor();
         GlStateManager.enableBlend();
         GlStateManager.blendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        RenderUtils.setAlphaLimit(0);
+        RenderUtil.setAlphaLimit(0);
 
         roundedShader.init();
         setupRoundedRectUniforms(x, y, width, height, radius, roundedShader);
@@ -63,8 +72,8 @@ public class RoundedUtils {
     }
 
     public static void drawGradientRound(float x, float y, float width, float height, float radius, Color bottomLeft, Color topLeft, Color bottomRight, Color topRight) {
-        RenderUtils.setAlphaLimit(0);
-        RenderUtils.resetColor();
+        RenderUtil.setAlphaLimit(0);
+        RenderUtil.resetColor();
         GlStateManager.enableBlend();
         GlStateManager.blendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         roundedGradientShader.init();
@@ -79,8 +88,8 @@ public class RoundedUtils {
     }
 
     public static void drawGradientRound(float x, float y, float width, float height, float radius, int bottomLeft, int topLeft, int bottomRight, int topRight) {
-        RenderUtils.setAlphaLimit(0);
-        RenderUtils.resetColor();
+        RenderUtil.setAlphaLimit(0);
+        RenderUtil.resetColor();
         GlStateManager.enableBlend();
         GlStateManager.blendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -98,11 +107,11 @@ public class RoundedUtils {
     }
 
     public static void drawRound(float x, float y, float width, float height, float radius, boolean blur, Color color) {
-        RenderUtils.resetColor();
+        RenderUtil.resetColor();
         GlStateManager.enableBlend();
         GlStateManager.blendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        RenderUtils.setAlphaLimit(0);
+        RenderUtil.setAlphaLimit(0);
         roundedShader.init();
 
         setupRoundedRectUniforms(x, y, width, height, radius, roundedShader);
@@ -116,11 +125,11 @@ public class RoundedUtils {
 
 
     public static void drawRoundOutline(float x, float y, float width, float height, float radius, float outlineThickness, Color color, Color outlineColor) {
-        RenderUtils.resetColor();
+        RenderUtil.resetColor();
         GlStateManager.enableBlend();
         GlStateManager.blendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        RenderUtils.setAlphaLimit(0);
+        RenderUtil.setAlphaLimit(0);
         roundedOutlineShader.init();
 
         ScaledResolution sr = new ScaledResolution(Minecraft.getMinecraft());
@@ -137,8 +146,8 @@ public class RoundedUtils {
 
 
     public static void drawRoundTextured(float x, float y, float width, float height, float radius, float alpha) {
-        RenderUtils.resetColor();
-        RenderUtils.setAlphaLimit(0);
+        RenderUtil.resetColor();
+        RenderUtil.setAlphaLimit(0);
         GlStateManager.enableBlend();
         GlStateManager.blendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         roundedTexturedShader.init();

@@ -6,7 +6,7 @@ import myau.event.types.Priority;
 import myau.events.MoveInputEvent;
 import myau.events.PacketEvent;
 import myau.module.Module;
-import myau.util.TimerUtil;
+import myau.util.time.TimerUtil;
 import myau.property.properties.FloatProperty;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.play.client.C02PacketUseEntity;

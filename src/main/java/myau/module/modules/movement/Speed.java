@@ -8,7 +8,7 @@ import myau.events.LivingUpdateEvent;
 import myau.events.StrafeEvent;
 import myau.mixin.IAccessorEntity;
 import myau.module.Module;
-import myau.util.MoveUtil;
+import myau.util.player.MoveUtil;
 import myau.property.properties.FloatProperty;
 import myau.property.properties.ModeProperty;
 import myau.property.properties.PercentProperty;

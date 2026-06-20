@@ -1,4 +1,4 @@
-package myau.util;
+package myau.util.player;
 
 import myau.Myau;
 import myau.module.modules.movement.KeepSprint;
@@ -21,6 +21,15 @@ import net.minecraft.util.BlockPos;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.MathHelper;
 import net.minecraftforge.common.ForgeHooks;
+import myau.util.math.*;
+import myau.util.time.*;
+import myau.util.player.*;
+import myau.util.world.*;
+import myau.util.network.*;
+import myau.util.client.*;
+import myau.util.misc.*;
+import myau.util.render.*;
+import myau.util.animation.*;
 
 public class PlayerUtil {
     private static final Minecraft mc = Minecraft.getMinecraft();

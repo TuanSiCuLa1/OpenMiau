@@ -4,7 +4,6 @@ import myau.event.EventTarget;
 import myau.event.types.EventType;
 import myau.event.types.Priority;
 import myau.events.UpdateEvent;
-import myau.events.TickEvent;
 import myau.events.Render2DEvent;
 import myau.util.font.Fonts;
 import myau.util.shader.RoundedUtils;
@@ -14,8 +13,6 @@ import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
-import net.minecraft.network.play.client.C09PacketHeldItemChange;
-
 import java.awt.Color;
 
 public class SlotComponent {

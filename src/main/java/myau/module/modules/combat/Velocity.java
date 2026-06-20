@@ -14,8 +14,8 @@ import myau.property.properties.FloatProperty;
 import myau.property.properties.IntProperty;
 import myau.property.properties.ModeProperty;
 import myau.property.properties.PercentProperty;
-import myau.util.ChatUtil;
-import myau.util.MoveUtil;
+import myau.util.client.ChatUtil;
+import myau.util.player.MoveUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.network.play.server.S12PacketEntityVelocity;
@@ -204,7 +204,7 @@ public class Velocity extends Module {
                 if (mc.thePlayer.onGround
                         && mc.thePlayer.hurtTime >= 9
                         && !this.isInLiquidOrWeb()
-                        && myau.util.RandomUtil.nextInt(1, 100) <= this.chance.getValue()) {
+                        && myau.util.math.RandomUtil.nextInt(1, 100) <= this.chance.getValue()) {
                     mc.thePlayer.jump();
                 }
             }

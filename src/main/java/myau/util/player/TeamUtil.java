@@ -1,4 +1,4 @@
-package myau.util;
+package myau.util.player;
 
 import myau.Myau;
 import net.minecraft.client.Minecraft;
@@ -14,6 +14,15 @@ import java.awt.*;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import myau.util.math.*;
+import myau.util.time.*;
+import myau.util.player.*;
+import myau.util.world.*;
+import myau.util.network.*;
+import myau.util.client.*;
+import myau.util.misc.*;
+import myau.util.render.*;
+import myau.util.animation.*;
 
 public class TeamUtil {
     private static final Minecraft mc = Minecraft.getMinecraft();

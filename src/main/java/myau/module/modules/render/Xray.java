@@ -7,7 +7,7 @@ import myau.events.PacketEvent;
 import myau.events.Render3DEvent;
 import myau.mixin.IAccessorMinecraft;
 import myau.module.Module;
-import myau.util.RenderUtil;
+import myau.util.render.RenderUtil;
 import myau.property.properties.*;
 import myau.property.properties.BooleanProperty;
 import myau.property.properties.ModeProperty;

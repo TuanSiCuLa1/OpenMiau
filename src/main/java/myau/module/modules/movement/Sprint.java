@@ -4,7 +4,7 @@ import myau.event.EventTarget;
 import myau.events.TickEvent;
 import myau.mixin.IAccessorEntityLivingBase;
 import myau.module.Module;
-import myau.util.KeyBindUtil;
+import myau.util.client.KeyBindUtil;
 import myau.property.properties.BooleanProperty;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.ai.attributes.AttributeModifier;

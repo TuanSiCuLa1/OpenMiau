@@ -4,7 +4,7 @@ import myau.event.EventTarget;
 import myau.event.types.EventType;
 import myau.events.PacketEvent;
 import myau.events.TickEvent;
-import myau.util.PacketUtil;
+import myau.util.network.PacketUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.Packet;
 import net.minecraft.network.handshake.client.C00Handshake;

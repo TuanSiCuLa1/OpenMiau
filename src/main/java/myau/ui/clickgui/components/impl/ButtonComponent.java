@@ -32,7 +32,7 @@ public class ButtonComponent extends Component {
     }
 
     public void render() {
-        Font renderer = Fonts.MINECRAFT.get(18); 
+        Font renderer = Fonts.MINECRAFT.get(18); // Use our Fonts enum directly
         GL11.glPushMatrix();
         GL11.glScaled(0.5D, 0.5D, 0.5D);
         renderer.draw((this.property.getValue() ? "[+]  " : "[-]  ") + this.property.getName(), (float) ((this.moduleComponent.categoryComponent.getX() + 4) * 2) + xOffset, (float) ((this.moduleComponent.categoryComponent.getY() + this.o + 4) * 2), this.property.getValue() ? ENABLED_COLOR : -1, false);

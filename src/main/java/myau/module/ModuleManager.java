@@ -7,8 +7,8 @@ import myau.events.KeyEvent;
 import myau.events.TickEvent;
 import myau.module.modules.render.ClickGUI;
 import myau.module.modules.render.HUD;
-import myau.util.ChatUtil;
-import myau.util.SoundUtil;
+import myau.util.client.ChatUtil;
+import myau.util.client.SoundUtil;
 
 import java.util.ArrayList;
 import java.util.Comparator;

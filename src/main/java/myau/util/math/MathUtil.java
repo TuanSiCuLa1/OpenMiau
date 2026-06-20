@@ -7,6 +7,15 @@ import net.minecraft.util.MathHelper;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.concurrent.ThreadLocalRandom;
+import myau.util.math.*;
+import myau.util.time.*;
+import myau.util.player.*;
+import myau.util.world.*;
+import myau.util.network.*;
+import myau.util.client.*;
+import myau.util.misc.*;
+import myau.util.render.*;
+import myau.util.animation.*;
 
 @UtilityClass
 public class MathUtil {
@@ -68,11 +77,11 @@ public class MathUtil {
         return a;
     }
 
-    public double lerp(final double a, final double b, final double c) {
+    public static double lerp(final double a, final double b, final double c) {
         return a + c * (b - a);
     }
 
-    public float lerp(final float a, final float b, final float c) {
+    public static float lerp(final float a, final float b, final float c) {
         return a + c * (b - a);
     }
 

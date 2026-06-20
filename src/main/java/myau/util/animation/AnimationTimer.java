@@ -1,11 +1,11 @@
-package myau.util;
+package myau.util.animation;
 
-public class Timer {
+public class AnimationTimer {
     public float updates;
     public long last;
     public float cached = Float.NaN;
 
-    public Timer(float updates) {
+    public AnimationTimer(float updates) {
         this.updates = updates;
     }
 

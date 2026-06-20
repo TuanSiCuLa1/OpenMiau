@@ -1,4 +1,4 @@
-package myau.util;
+package myau.util.player;
 
 import com.google.common.collect.Multimap;
 import myau.mixin.IAccessorItemSword;
@@ -15,6 +15,15 @@ import net.minecraft.potion.PotionEffect;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import myau.util.math.*;
+import myau.util.time.*;
+import myau.util.player.*;
+import myau.util.world.*;
+import myau.util.network.*;
+import myau.util.client.*;
+import myau.util.misc.*;
+import myau.util.render.*;
+import myau.util.animation.*;
 
 public class ItemUtil {
     private static final Minecraft mc = Minecraft.getMinecraft();

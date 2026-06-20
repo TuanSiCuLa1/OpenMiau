@@ -1,12 +1,29 @@
-package myau.util;
+package myau.util.network;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.Packet;
 import net.minecraft.network.play.INetHandlerPlayClient;
 import net.minecraft.network.play.server.*;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+<<<<<<< HEAD:src/main/java/myau/util/network/PacketUtil.java
+import myau.util.math.*;
+import myau.util.time.*;
+import myau.util.player.*;
+import myau.util.world.*;
+import myau.util.network.*;
+import myau.util.client.*;
+import myau.util.misc.*;
+import myau.util.render.*;
+import myau.util.animation.*;
+=======
+>>>>>>> 746610b90671b5ee596a876af938a43584190552:src/main/java/myau/util/PacketUtil.java
 
 public class PacketUtil {
     private static final Minecraft mc = Minecraft.getMinecraft();
+    private static final Logger LOGGER = LogManager.getLogger("PacketUtil");
+    private static int chunkErrorCount = 0;
+    private static long lastChunkErrorTime = 0;
 
     public static void sendPacket(Packet<?> packet) {
         mc.getNetHandler().getNetworkManager().sendPacket(packet);
@@ -81,7 +98,7 @@ public class PacketUtil {
         } else if (packet instanceof S20PacketEntityProperties) {
             mc.getNetHandler().handleEntityProperties((S20PacketEntityProperties) packet);
         } else if (packet instanceof S21PacketChunkData) {
-            mc.getNetHandler().handleChunkData((S21PacketChunkData) packet);
+            handleChunkDataSafe((S21PacketChunkData) packet);
         } else if (packet instanceof S22PacketMultiBlockChange) {
             mc.getNetHandler().handleMultiBlockChange((S22PacketMultiBlockChange) packet);
         } else if (packet instanceof S23PacketBlockChange) {
@@ -91,7 +108,7 @@ public class PacketUtil {
         } else if (packet instanceof S25PacketBlockBreakAnim) {
             mc.getNetHandler().handleBlockBreakAnim((S25PacketBlockBreakAnim) packet);
         } else if (packet instanceof S26PacketMapChunkBulk) {
-            mc.getNetHandler().handleMapChunkBulk((S26PacketMapChunkBulk) packet);
+            handleMapChunkBulkSafe((S26PacketMapChunkBulk) packet);
         } else if (packet instanceof S27PacketExplosion) {
             mc.getNetHandler().handleExplosion((S27PacketExplosion) packet);
         } else if (packet instanceof S28PacketEffect) {
@@ -164,6 +181,112 @@ public class PacketUtil {
             mc.getNetHandler().handleEntityNBT((S49PacketUpdateEntityNBT) packet);
         } else {
             throw new IllegalArgumentException("Unable to match packet type to handle: " + packet.getClass());
+        }
+    }
+
+    /**
+     * Validates S21PacketChunkData for ViaVersion compatibility issues
+     */
+    private static boolean validateChunkData(S21PacketChunkData packet) {
+        try {
+            if (packet == null) return false;
+            
+            // Check if chunk coordinate is valid
+            int chunkX = packet.getChunkX();
+            int chunkZ = packet.getChunkZ();
+            
+            // Validate chunk coordinates are within reasonable bounds
+            if (Math.abs(chunkX) > 30000000 || Math.abs(chunkZ) > 30000000) {
+                LOGGER.warn("Invalid chunk coordinates from ViaVersion: x={}, z={}", chunkX, chunkZ);
+                return false;
+            }
+            
+            // Check if extractedSize is valid (ViaVersion can corrupt this)
+            int extractedSize = packet.getExtractedSize();
+            if (extractedSize < 0 || extractedSize > 2097152) { // 2MB max
+                LOGGER.warn("Invalid chunk data size from ViaVersion: {} bytes at x={}, z={}", extractedSize, chunkX, chunkZ);
+                return false;
+            }
+            
+            return true;
+        } catch (Exception e) {
+            LOGGER.error("Chunk validation failed due to ViaVersion packet corruption", e);
+            return false;
+        }
+    }
+
+    /**
+     * Validates S26PacketMapChunkBulk for ViaVersion compatibility issues
+     */
+    private static boolean validateMapChunkBulk(S26PacketMapChunkBulk packet) {
+        try {
+            if (packet == null) return false;
+            
+            // Check chunk count
+            int chunkCount = packet.getChunkCount();
+            if (chunkCount <= 0 || chunkCount > 1024) {
+                LOGGER.warn("Invalid bulk chunk count from ViaVersion: {}", chunkCount);
+                return false;
+            }
+            
+            return true;
+        } catch (Exception e) {
+            LOGGER.error("Bulk chunk validation failed due to ViaVersion packet corruption", e);
+            return false;
+        }
+    }
+
+    /**
+     * Logs chunk packet errors with rate limiting
+     */
+    private static void logChunkError(String packetType, Exception e, Object... details) {
+        long currentTime = System.currentTimeMillis();
+        
+        // Reset counter if last error was more than 5 seconds ago
+        if (currentTime - lastChunkErrorTime > 5000) {
+            chunkErrorCount = 0;
+        }
+        
+        chunkErrorCount++;
+        lastChunkErrorTime = currentTime;
+        
+        // Log full details for first few errors, then summarize
+        if (chunkErrorCount <= 3) {
+            LOGGER.error("ViaVersion chunk packet error #{} [{}]: {}", chunkErrorCount, packetType, details.length > 0 ? details[0] : "", e);
+        } else if (chunkErrorCount == 4) {
+            LOGGER.error("ViaVersion chunk errors continuing (suppressing further detailed logs)");
+        } else if (chunkErrorCount % 50 == 0) {
+            LOGGER.error("ViaVersion chunk error count: {} total", chunkErrorCount);
+        }
+    }
+
+    /**
+     * Safely handles S21PacketChunkData with ViaVersion compatibility
+     */
+    private static void handleChunkDataSafe(S21PacketChunkData packet) {
+        try {
+            if (!validateChunkData(packet)) {
+                LOGGER.warn("Skipping invalid chunk data packet at x={}, z={}", packet.getChunkX(), packet.getChunkZ());
+                return;
+            }
+            mc.getNetHandler().handleChunkData(packet);
+        } catch (Exception e) {
+            logChunkError("S21PacketChunkData", e, "x=" + packet.getChunkX() + ", z=" + packet.getChunkZ());
+        }
+    }
+
+    /**
+     * Safely handles S26PacketMapChunkBulk with ViaVersion compatibility
+     */
+    private static void handleMapChunkBulkSafe(S26PacketMapChunkBulk packet) {
+        try {
+            if (!validateMapChunkBulk(packet)) {
+                LOGGER.warn("Skipping invalid bulk chunk packet with {} chunks", packet.getChunkCount());
+                return;
+            }
+            mc.getNetHandler().handleMapChunkBulk(packet);
+        } catch (Exception e) {
+            logChunkError("S26PacketMapChunkBulk", e, "chunkCount=" + packet.getChunkCount());
         }
     }
 }

@@ -1,4 +1,4 @@
-package myau.util; 
+package myau.util.client; 
 
 import myau.Myau;
 import myau.enums.ChatColors;
@@ -9,6 +9,15 @@ import net.minecraft.util.IChatComponent;
 
 import java.util.IllegalFormatException;
 import java.util.MissingFormatArgumentException;
+import myau.util.math.*;
+import myau.util.time.*;
+import myau.util.player.*;
+import myau.util.world.*;
+import myau.util.network.*;
+import myau.util.client.*;
+import myau.util.misc.*;
+import myau.util.render.*;
+import myau.util.animation.*;
 
 public class ChatUtil {
     private static final Minecraft mc = Minecraft.getMinecraft();
@@ -42,7 +51,7 @@ public class ChatUtil {
 
     private static boolean hasClientPrefix(String message) {
         String formattedPrefix = ChatColors.formatColor(Myau.clientName);
-        return message.startsWith(Myau.clientName) || message.startsWith(formattedPrefix);
+        return message.startsWith(Myau.clientName) || message.startsWith(formattedPrefix) || message.startsWith(ChatColors.PREFIX_CLEAN);
     }
 
     private static Object[] prependClientName(Object[] objects) {

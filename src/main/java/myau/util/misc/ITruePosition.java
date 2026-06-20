@@ -1,4 +1,4 @@
-package myau.util;
+package myau.util.misc;
 
 public interface ITruePosition {
     double getTrueX();

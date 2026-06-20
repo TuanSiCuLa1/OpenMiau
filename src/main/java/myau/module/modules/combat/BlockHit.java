@@ -10,9 +10,9 @@ import myau.events.AttackEvent;
 import myau.events.TickEvent;
 import myau.module.Module;
 import myau.property.properties.*;
-import myau.util.ItemUtil;
-import myau.util.KeyBindUtil;
-import myau.util.TimerUtil;
+import myau.util.player.ItemUtil;
+import myau.util.client.KeyBindUtil;
+import myau.util.time.TimerUtil;
 
 public class BlockHit extends Module {
 

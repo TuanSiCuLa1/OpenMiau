@@ -1,4 +1,4 @@
-package myau.util;
+package myau.util.player;
 
 import myau.mixin.IAccessorEntity;
 import net.minecraft.client.Minecraft;
@@ -7,6 +7,15 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
+import myau.util.math.*;
+import myau.util.time.*;
+import myau.util.player.*;
+import myau.util.world.*;
+import myau.util.network.*;
+import myau.util.client.*;
+import myau.util.misc.*;
+import myau.util.render.*;
+import myau.util.animation.*;
 
 public class RotationUtil {
     private static final Minecraft mc = Minecraft.getMinecraft();

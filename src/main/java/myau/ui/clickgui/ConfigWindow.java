@@ -5,11 +5,11 @@ import myau.config.Config;
 import myau.config.online.OnlineConfigApplier;
 import myau.config.online.OnlineConfigClient;
 import myau.config.online.OnlineConfigEntry;
-import myau.util.ChatUtil;
+import myau.util.client.ChatUtil;
 import myau.util.font.Font;
 import myau.util.font.Fonts;
 import myau.util.math.MathUtil;
-import myau.util.render.RenderUtils;
+import myau.util.render.RenderUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ScaledResolution;
 import org.lwjgl.input.Keyboard;
@@ -121,12 +121,12 @@ public class ConfigWindow {
         onlineScrollY = MathUtil.lerp(onlineScrollY, targetOnlineScrollY, 0.015f * delta);
         userScrollY = MathUtil.lerp(userScrollY, targetUserScrollY, 0.015f * delta);
 
-        RenderUtils.drawRoundedGradientOutlinedRectangle(x, y, x + width, y + height, 8,
+        RenderUtil.drawRoundedGradientOutlinedRectangle(x, y, x + width, y + height, 8,
                 new Color(0, 0, 0, 150).getRGB(), new Color(81, 99, 149).getRGB(), new Color(97, 67, 133).getRGB());
         Font titleFont = Fonts.MINECRAFT.get(22);
         Font regularFont = Fonts.MINECRAFT.get(18);
         Font smallFont = Fonts.MINECRAFT.get(16);
-        RenderUtils.drawRect(x, y + 20, x + width, y + 21, new Color(255, 255, 255, 50).getRGB());
+        RenderUtil.drawRect(x, y + 20, x + width, y + 21, new Color(255, 255, 255, 50).getRGB());
         titleFont.draw("Config Manager", x + width / 2 - titleFont.width("Config Manager") / 2, y + 5, Color.WHITE.getRGB(), true);
 
         float tabY = y + 25;
@@ -143,7 +143,7 @@ public class ConfigWindow {
     private void drawTab(String text, float tabX, float tabY, float tabWidth, boolean selected, int mouseX, int mouseY, Font font) {
         boolean hovered = isHovered(mouseX, mouseY, tabX, tabY, tabWidth, 16);
         int color = selected ? new Color(255, 255, 255, 45).getRGB() : hovered ? new Color(255, 255, 255, 25).getRGB() : new Color(0, 0, 0, 80).getRGB();
-        RenderUtils.drawRoundedRectangle(tabX, tabY, tabX + tabWidth, tabY + 16, 4, color);
+        RenderUtil.drawRoundedRectangle(tabX, tabY, tabX + tabWidth, tabY + 16, 4, color);
         font.draw(text, tabX + tabWidth / 2 - font.width(text) / 2, tabY + 4, selected ? Color.WHITE.getRGB() : new Color(180, 180, 180).getRGB(), true);
     }
 
@@ -152,7 +152,7 @@ public class ConfigWindow {
         float inputY = y + 48;
         float listY = inputY + 22;
         float listWidth = width - 16;
-        RenderUtils.drawRect(startX, inputY, startX + listWidth, inputY + 15, new Color(0, 0, 0, 100).getRGB());
+        RenderUtil.drawRect(startX, inputY, startX + listWidth, inputY + 15, new Color(0, 0, 0, 100).getRGB());
         String displayTxt = (typeText.length() == 0 && !isTyping) ? "Create new..." : typeText.toString() + (isTyping && System.currentTimeMillis() % 1000 < 500 ? "_" : "");
         regularFont.draw(displayTxt, startX + 4, inputY + 3, isTyping ? Color.WHITE.getRGB() : new Color(150, 150, 150).getRGB(), false);
         GL11.glEnable(GL11.GL_SCISSOR_TEST);
@@ -162,7 +162,7 @@ public class ConfigWindow {
             String name = removeJsonExtension(file.getName());
             boolean hovered = mouseX >= startX && mouseX <= startX + listWidth && mouseY >= currentY && mouseY <= currentY + 25 && mouseY > listY && mouseY < y + height;
             int bgColor = hovered ? new Color(255, 255, 255, 30).getRGB() : new Color(0, 0, 0, 50).getRGB();
-            RenderUtils.drawRoundedRectangle(startX, currentY, startX + listWidth, currentY + 25, 4, bgColor);
+            RenderUtil.drawRoundedRectangle(startX, currentY, startX + listWidth, currentY + 25, 4, bgColor);
             regularFont.draw(name, startX + 4, currentY + 3, Color.WHITE.getRGB(), false);
             smallFont.draw("Last Used: " + formatLastUsed(file), startX + 4, currentY + 14, new Color(150, 150, 150).getRGB(), false);
             currentY += 28;
@@ -182,7 +182,7 @@ public class ConfigWindow {
             for (OnlineConfigEntry entry : entries) {
                 boolean hovered = mouseX >= startX && mouseX <= startX + listWidth && mouseY >= currentY && mouseY <= currentY + 25 && mouseY > listY && mouseY < y + height;
                 int bgColor = hovered ? new Color(255, 255, 255, 30).getRGB() : new Color(0, 0, 0, 50).getRGB();
-                RenderUtils.drawRoundedRectangle(startX, currentY, startX + listWidth, currentY + 25, 4, bgColor);
+                RenderUtil.drawRoundedRectangle(startX, currentY, startX + listWidth, currentY + 25, 4, bgColor);
                 regularFont.draw(entry.getName(), startX + 4, currentY + 3, Color.WHITE.getRGB(), false);
                 String meta = userConfig ? "by " + entry.getAuthor() + " | " + entry.getLoadCount() + " loads" : "by " + entry.getAuthor() + " | " + safe(entry.setting_type);
                 smallFont.draw(meta, startX + 4, currentY + 14, new Color(150, 150, 150).getRGB(), false);
@@ -375,6 +375,16 @@ public class ConfigWindow {
 
     private void scissor(double x, double y, double width, double height) {
         ScaledResolution sr = new ScaledResolution(mc);
+        if (ClickGui.openingScale != 1.0f) {
+            double scaleFactor = ClickGui.openingScale;
+            double centerX = sr.getScaledWidth() / 2.0;
+            double centerY = sr.getScaledHeight() / 2.0;
+            x = centerX + (x - centerX) * scaleFactor;
+            y = centerY + (y - centerY) * scaleFactor;
+            width *= scaleFactor;
+            height *= scaleFactor;
+        }
+
         final double scale = sr.getScaleFactor();
         y = sr.getScaledHeight() - y;
         x *= scale;

@@ -1,4 +1,4 @@
-package myau.util;
+package myau.util.player;
 
 import myau.Myau;
 import myau.management.RotationState;
@@ -7,6 +7,15 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.potion.Potion;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.MathHelper;
+import myau.util.math.*;
+import myau.util.time.*;
+import myau.util.player.*;
+import myau.util.world.*;
+import myau.util.network.*;
+import myau.util.client.*;
+import myau.util.misc.*;
+import myau.util.render.*;
+import myau.util.animation.*;
 
 public class MoveUtil {
     private static final Minecraft mc = Minecraft.getMinecraft();

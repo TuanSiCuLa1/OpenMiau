@@ -3,8 +3,8 @@ package myau.module.modules.minigames;
 import myau.Myau;
 import myau.event.EventTarget;
 import myau.event.types.EventType;
-import myau.util.notification.NotificationManager;
-import myau.util.notification.NotificationType;
+import myau.notification.NotificationManager;
+import myau.notification.NotificationType;
 import myau.event.types.Priority;
 import myau.events.LoadWorldEvent;
 import myau.events.PacketEvent;
@@ -13,10 +13,10 @@ import myau.events.TickEvent;
 import myau.module.Module;
 import myau.property.properties.*;
 import myau.enums.ChatColors;
-import myau.util.ChatUtil;
-import myau.util.ColorUtil;
-import myau.util.SoundUtil;
-import myau.util.TeamUtil;
+import myau.util.client.ChatUtil;
+import myau.util.render.ColorUtil;
+import myau.util.client.SoundUtil;
+import myau.util.player.TeamUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiChat;
 import net.minecraft.client.gui.GuiScreen;
@@ -429,11 +429,11 @@ public class BedwarUtils extends Module {
         mc.thePlayer.addChatMessage(
                 new ChatComponentText(this.getMyauPrefix() + " §f" + formattedPlayer + " §fhas §a" + item));
         
-        NotificationManager.show(
-                "Item Alerts",
-                EnumChatFormatting.getTextWithoutFormattingCodes(formattedPlayer) + " has " + item,
-                NotificationType.INFO
-        );
+        Myau.notificationManager.builder(NotificationType.INFO)
+                .title("Item Alerts")
+                .description(EnumChatFormatting.getTextWithoutFormattingCodes(formattedPlayer) + " has " + item)
+                .duration(2000)
+                .buildAndPublish();
     }
 
     private String getMyauPrefix() {

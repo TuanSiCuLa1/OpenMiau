@@ -1,10 +1,10 @@
 package myau.ui.clickgui.components.impl;
 
 import myau.ui.clickgui.components.Component;
-import myau.util.render.RenderUtils;
+import myau.util.render.RenderUtil;
 import myau.util.font.Font;
 import myau.util.font.Fonts;
-import myau.util.Themes;
+import myau.util.render.Themes;
 import myau.util.vector.Vector2d;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
@@ -54,7 +54,7 @@ public class BindComponent extends Component {
                 : Color.GRAY.getRGB(); 
 
         String iconPath = moduleComponent.mod.isHidden() ? EYE_OFF_ICON_PATH : EYE_ICON_PATH;
-        RenderUtils.drawIcon(RenderUtils.getIcon(iconPath), iconX, iconY, iconSize, themeColor);
+        RenderUtil.drawIcon(RenderUtil.getIcon(iconPath), iconX, iconY, iconSize, themeColor);
     }
 
     public void drawScreen(int x, int y) {

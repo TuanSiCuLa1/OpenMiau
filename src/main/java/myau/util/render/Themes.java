@@ -1,4 +1,4 @@
-package myau.util;
+package myau.util.render;
 
 import myau.util.vector.Vector2d;
 import net.minecraft.util.EnumChatFormatting;
@@ -9,6 +9,15 @@ import java.util.Arrays;
 import java.util.function.Function;
 
 import static net.minecraft.util.EnumChatFormatting.*;
+import myau.util.math.*;
+import myau.util.time.*;
+import myau.util.player.*;
+import myau.util.world.*;
+import myau.util.network.*;
+import myau.util.client.*;
+import myau.util.misc.*;
+import myau.util.render.*;
+import myau.util.animation.*;
 
 public enum Themes {
 

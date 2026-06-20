@@ -8,7 +8,7 @@ import myau.module.modules.render.Chams;
 import myau.module.modules.render.ESP;
 import myau.module.modules.render.FreeLook;
 import myau.module.modules.render.NameTags;
-import myau.util.ITruePosition;
+import myau.util.misc.ITruePosition;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;

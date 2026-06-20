@@ -1,4 +1,4 @@
-package myau.util;
+package myau.util.time;
 
 public class TimerUtil {
     private long lastMS = 0L;

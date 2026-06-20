@@ -3,8 +3,8 @@ package myau.ui.clickgui.components.impl;
 
 import myau.ui.clickgui.components.Component;
 import myau.property.properties.ColorProperty;
-import myau.util.render.RenderUtils;
-import myau.util.Timer;
+import myau.util.render.RenderUtil;
+import myau.util.animation.AnimationTimer;
 import myau.util.font.Font;
 import myau.util.font.Fonts;
 import org.lwjgl.opengl.GL11;
@@ -24,7 +24,7 @@ public class ColorComponent extends Component {
     private float cachedSat;
     private float cachedBri;
 
-    private Timer smoothTimer;
+    private AnimationTimer smoothTimer;
     private float animationProgress;
     private float animationStartProgress;
     private float animationTargetProgress;
@@ -110,9 +110,9 @@ public class ColorComponent extends Component {
 
         float boxX = cx + 4 + (xOffset / 2);
         float boxY = cy + o + 3f;
-        RenderUtils.drawRect(boxX - 0.5, boxY - 0.5,
+        RenderUtil.drawRect(boxX - 0.5, boxY - 0.5,
                 boxX + PREVIEW_BOX_SIZE + 0.5, boxY + PREVIEW_BOX_SIZE + 0.5, 0xFF3C3C46);
-        RenderUtils.drawRect(boxX, boxY,
+        RenderUtil.drawRect(boxX, boxY,
                 boxX + PREVIEW_BOX_SIZE, boxY + PREVIEW_BOX_SIZE,
                 getColorRGB());
 
@@ -135,9 +135,9 @@ public class ColorComponent extends Component {
         float scrollOffset = moduleComponent.categoryComponent.moduleY - cy;
         float contentTopScreen = cy + o + LABEL_HEIGHT + scrollOffset;
         float revealH = (getExpandedHeight() - LABEL_HEIGHT) * progress;
-        RenderUtils.scissorPushGui(cx, contentTopScreen, cw, revealH);
+        RenderUtil.scissorPushGui(cx, contentTopScreen, cw, revealH);
         renderPickerContent(cx, cy);
-        RenderUtils.scissorPop();
+        RenderUtil.scissorPop();
     }
 
     private void renderPickerContent(float cx, float cy) {
@@ -162,19 +162,19 @@ public class ColorComponent extends Component {
         float sat = (dragMode != 0 || isBlack) ? cachedSat : satFromSetting;
 
         int hueRGB = Color.HSBtoRGB(hue, 1f, 1f) | 0xFF000000;
-        RenderUtils.drawRect(areaLeft, sqTop, sqRight, sqBottom, hueRGB);
-        RenderUtils.drawHorizontalGradientRect(areaLeft, sqTop, sqRight, sqBottom,
+        RenderUtil.drawRect(areaLeft, sqTop, sqRight, sqBottom, hueRGB);
+        RenderUtil.drawHorizontalGradientRect(areaLeft, sqTop, sqRight, sqBottom,
                 0xFFFFFFFF, 0x00FFFFFF);
-        RenderUtils.drawVerticalGradientRect(areaLeft, sqTop, sqRight, sqBottom,
+        RenderUtil.drawVerticalGradientRect(areaLeft, sqTop, sqRight, sqBottom,
                 0x00000000, 0xFF000000);
 
-        RenderUtils.drawOutline(areaLeft - 1, sqTop - 1, sqRight + 1, sqBottom + 1,
+        RenderUtil.drawOutline(areaLeft - 1, sqTop - 1, sqRight + 1, sqBottom + 1,
                 1f, 0xFF3C3C46);
 
         float indX = areaLeft + sat * SQUARE_SIZE;
         float indY = sqTop + (1f - bri) * SQUARE_SIZE;
-        RenderUtils.drawRect(indX - 2, indY, indX + 3, indY + 1, 0xFFFFFFFF);
-        RenderUtils.drawRect(indX, indY - 2, indX + 1, indY + 3, 0xFFFFFFFF);
+        RenderUtil.drawRect(indX - 2, indY, indX + 3, indY + 1, 0xFFFFFFFF);
+        RenderUtil.drawRect(indX, indY - 2, indX + 1, indY + 3, 0xFFFFFFFF);
 
         float hueLeft = sqRight + HUE_GAP;
         float hueRight = hueLeft + HUE_BAR_WIDTH;
@@ -184,15 +184,15 @@ public class ColorComponent extends Component {
             float h2 = (float) (i + 1) / HUE_STEPS;
             int c1 = Color.HSBtoRGB(h1, 1f, 1f) | 0xFF000000;
             int c2 = Color.HSBtoRGB(h2, 1f, 1f) | 0xFF000000;
-            RenderUtils.drawVerticalGradientRect(hueLeft, sqTop + i * stepH,
+            RenderUtil.drawVerticalGradientRect(hueLeft, sqTop + i * stepH,
                     hueRight, sqTop + (i + 1) * stepH, c1, c2);
         }
 
-        RenderUtils.drawOutline(hueLeft - 1, sqTop - 1, hueRight + 1, sqBottom + 1,
+        RenderUtil.drawOutline(hueLeft - 1, sqTop - 1, hueRight + 1, sqBottom + 1,
                 1f, 0xFF3C3C46);
 
         float hueIndY = sqTop + Math.max(0, Math.min(1, hue)) * SQUARE_SIZE;
-        RenderUtils.drawRect(hueLeft - 1, hueIndY - 1,
+        RenderUtil.drawRect(hueLeft - 1, hueIndY - 1,
                 hueRight + 1, hueIndY + 2, 0xFFFFFFFF);
     }
 
@@ -233,7 +233,7 @@ public class ColorComponent extends Component {
                 this.animationStartProgress = currentProgress;
                 this.expanded = !this.expanded;
                 this.animationTargetProgress = this.expanded ? 1f : 0f;
-                (this.smoothTimer = new Timer(ANIMATION_DURATION)).start();
+                (this.smoothTimer = new AnimationTimer(ANIMATION_DURATION)).start();
                 moduleComponent.updateSettingPositions();
                 return true;
             }

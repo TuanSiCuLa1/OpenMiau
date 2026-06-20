@@ -8,6 +8,9 @@
     "MixinItemRenderer",
     "MixinPlayerControllerMP",
     "MixinGuiMultiplayer",
-    "IAccessorPlayerControllerMP"
+    "MixinInventoryPlayer",
+    "IAccessorPlayerControllerMP",
+    "IInventoryPlayerAccessor",
+    "IAccessorS3EPacketTeams"
   ]
 }

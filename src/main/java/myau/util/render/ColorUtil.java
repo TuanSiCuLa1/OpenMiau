@@ -1,10 +1,19 @@
-package myau.util;
+package myau.util.render;
 
 import myau.util.font.Font;
 import myau.util.vector.Vector2d;
 import org.lwjgl.opengl.GL11;
 
 import java.awt.*;
+import myau.util.math.*;
+import myau.util.time.*;
+import myau.util.player.*;
+import myau.util.world.*;
+import myau.util.network.*;
+import myau.util.client.*;
+import myau.util.misc.*;
+import myau.util.render.*;
+import myau.util.animation.*;
 
 public final class ColorUtil {
     public static final Color RED = new Color(255, 0, 0);
@@ -213,12 +222,29 @@ public final class ColorUtil {
             if (hud != null && hud.isEnabled()) {
                 c = hud.getColor(System.currentTimeMillis(), i);
             } else {
-                myau.util.Themes theme = myau.util.Themes.getCurrentTheme();
+                myau.util.render.Themes theme = Themes.getCurrentTheme();
                 c = theme.getAccentColor(new myau.util.vector.Vector2d(0, i * 15));
             }
             sb.append(getClosestVanillaColor(c)).append(name.charAt(i));
         }
         return sb.toString();
+    }
+
+    public static int getColor(int red, int green, int blue, int alpha) {
+        return (alpha << 24) | (red << 16) | (green << 8) | blue;
+    }
+
+    public static int getColor(int red, int green, int blue) {
+        return getColor(red, green, blue, 255);
+    }
+
+    public static int[] getRGBA(int color) {
+        return new int[]{
+                (color >> 16) & 0xFF,
+                (color >> 8) & 0xFF,
+                color & 0xFF,
+                (color >> 24) & 0xFF
+        };
     }
 }
 

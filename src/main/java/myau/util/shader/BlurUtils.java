@@ -1,18 +1,27 @@
 package myau.util.shader;
 
-import myau.util.render.RenderUtils;
+import myau.util.render.RenderUtil;
 import net.minecraft.client.shader.Framebuffer;
+import myau.util.math.*;
+import myau.util.time.*;
+import myau.util.player.*;
+import myau.util.world.*;
+import myau.util.network.*;
+import myau.util.client.*;
+import myau.util.misc.*;
+import myau.util.render.*;
+import myau.util.animation.*;
 
 public class BlurUtils {
     private static Framebuffer stencilFrameBufferBlur = new Framebuffer(1, 1, false);
     private static Framebuffer stencilFrameBufferBloom = new Framebuffer(1, 1, false);
     public static void prepareBlur() {
-        stencilFrameBufferBlur = RenderUtils.createFrameBuffer(stencilFrameBufferBlur);
+        stencilFrameBufferBlur = RenderUtil.createFrameBuffer(stencilFrameBufferBlur);
         stencilFrameBufferBlur.framebufferClear();
         stencilFrameBufferBlur.bindFramebuffer(false);
     }
     public static void prepareBloom() {
-        stencilFrameBufferBloom = RenderUtils.createFrameBuffer(stencilFrameBufferBloom);
+        stencilFrameBufferBloom = RenderUtil.createFrameBuffer(stencilFrameBufferBloom);
         stencilFrameBufferBloom.framebufferClear();
         stencilFrameBufferBloom.bindFramebuffer(false);
     }

@@ -1,7 +1,7 @@
 package myau.module.modules.misc;
 
 import myau.module.Module;
-import myau.util.RawMouseHelper;
+import myau.util.client.RawMouseHelper;
 import net.java.games.input.Controller;
 import net.java.games.input.ControllerEnvironment;
 import net.java.games.input.Mouse;

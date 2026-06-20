@@ -4,7 +4,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import myau.ClientInfo;
 import myau.Myau;
-import myau.util.ChatUtil;
+import myau.util.client.ChatUtil;
 
 public final class ConfigVersionUtil {
     public static final String VERSION_KEY = "version";

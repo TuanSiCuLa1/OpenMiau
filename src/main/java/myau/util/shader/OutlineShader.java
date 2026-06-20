@@ -2,6 +2,15 @@ package myau.util.shader;
 
 import net.minecraft.client.Minecraft;
 import org.lwjgl.opengl.GL20;
+import myau.util.math.*;
+import myau.util.time.*;
+import myau.util.player.*;
+import myau.util.world.*;
+import myau.util.network.*;
+import myau.util.client.*;
+import myau.util.misc.*;
+import myau.util.render.*;
+import myau.util.animation.*;
 
 public class OutlineShader extends OutlineESPShader {
     private static final String FRAG = "#version 120\n" +
