@@ -1,6 +1,6 @@
 package myau.module.modules.latency;
 
-import myau.module.modules.misc.BedNuker;
+import myau.module.modules.player.BedNuker;
 import myau.module.modules.render.HUD;
 import myau.Myau;
 import myau.event.EventTarget;
@@ -11,10 +11,10 @@ import myau.events.TickEvent;
 import myau.mixin.IAccessorPlayerControllerMP;
 import myau.mixin.IAccessorRenderManager;
 import myau.module.Module;
-import myau.util.ItemUtil;
-import myau.util.RenderUtil;
-import myau.util.RotationUtil;
-import myau.util.TeamUtil;
+import myau.util.player.ItemUtil;
+import myau.util.render.RenderUtil;
+import myau.util.player.RotationUtil;
+import myau.util.player.TeamUtil;
 import myau.property.properties.*;
 import myau.property.properties.BooleanProperty;
 import myau.property.properties.ModeProperty;
