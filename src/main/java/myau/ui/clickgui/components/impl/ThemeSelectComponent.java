@@ -68,7 +68,8 @@ public class ThemeSelectComponent extends Component {
         font.drawCentered(this.theme.getThemeName(), cx + w / 2.0f, cy + gradientH + 8, textColor.getRGB());
 
         if (selectAnim > 0.01f) {
-            Color bloomColor = new Color(this.theme.getFirstColor().getRed(), this.theme.getFirstColor().getGreen(), this.theme.getFirstColor().getBlue(), (int)(255 * selectAnim));
+            int safeAlpha = Math.max(0, Math.min(255, (int)(255 * selectAnim)));
+            Color bloomColor = new Color(this.theme.getFirstColor().getRed(), this.theme.getFirstColor().getGreen(), this.theme.getFirstColor().getBlue(), safeAlpha);
             myau.util.shader.RoundedUtils.drawRoundOutline(cx - 0.5f, cy - 0.5f, w + 1, h + 1, 6, 1.5f, new Color(0,0,0,0), bloomColor);
         }
     }

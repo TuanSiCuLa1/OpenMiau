@@ -49,6 +49,10 @@ import net.minecraft.network.play.server.S1CPacketEntityMetadata;
 import net.minecraft.util.*;
 import net.minecraft.util.MovingObjectPosition.MovingObjectType;
 import net.minecraft.world.WorldSettings.GameType;
+import net.minecraft.entity.SharedMonsterAttributes;
+import net.minecraft.entity.EnumCreatureAttribute;
+import net.minecraft.enchantment.EnchantmentHelper;
+import net.minecraft.potion.Potion;
 
 import java.awt.*;
 import java.text.DecimalFormat;
@@ -121,6 +125,8 @@ public class KillAura extends Module {
     public final BooleanProperty inventoryCheck;
     public final ModeProperty showTarget;
     public final ModeProperty debugLog;
+    public final BooleanProperty tickLookahead;
+    public final BooleanProperty smartKill;
     private int ticks = 255;
     
     // HitSelect state
@@ -200,8 +206,8 @@ public class KillAura extends Module {
                     }
                 }
 
-                if ((mc.thePlayer.getDistanceToEntity(this.target.getEntity()) <= this.attackRange.getValue() && !this.rayCast.getValue()) ||
-                        (this.rayCast.getValue() && rayCastPos != null && rayCastPos.entityHit == this.target.getEntity())) {
+                if ((mc.thePlayer.getDistanceToEntity(this.target.getEntity()) <= this.attackRange.getValue() && !this.rayCast.getValue() && !this.tickLookahead.getValue()) ||
+                        ((this.rayCast.getValue() || this.tickLookahead.getValue()) && rayCastPos != null && rayCastPos.entityHit == this.target.getEntity())) {
                     rayCastHit = true;
                 } else if (rayCastPos != null && rayCastPos.typeOfHit == net.minecraft.util.MovingObjectPosition.MovingObjectType.ENTITY) {
                     if (!(rayCastPos.entityHit instanceof net.minecraft.entity.projectile.EntityFireball || rayCastPos.entityHit instanceof net.minecraft.entity.item.EntityItemFrame)) {
@@ -220,6 +226,12 @@ public class KillAura extends Module {
                     if (mc.playerController.getCurrentGameType() != GameType.SPECTATOR) {
                         PlayerUtil.attackEntity(this.target.getEntity());
                     }
+                    LastAttackData lastAttack = this.targetMap.get(this.target.getEntity().getEntityId());
+                    if (lastAttack == null) {
+                        this.targetMap.put(this.target.getEntity().getEntityId(), new LastAttackData(this.getDamage(this.target.getEntity())));
+                    } else {
+                        lastAttack.reset(true, this.getDamage(this.target.getEntity()));
+                    }
                     this.hitRegistered = true;
                     return true;
                 }
@@ -232,6 +244,10 @@ public class KillAura extends Module {
     private boolean shouldDelayHit() {
         if (this.target == null || this.target.getEntity() == null) return false;
         EntityLivingBase living = this.target.getEntity();
+        
+        if (this.smartKill.getValue() && living.getHealth() <= this.getDamage(living)) {
+            return false;
+        }
         
         switch (this.clickMode.getValue()) {
             case 1: // ACTIVE
@@ -625,6 +641,8 @@ public class KillAura extends Module {
         this.inventoryCheck = new BooleanProperty("inventory-check", true);
         this.showTarget = new ModeProperty("show-target", 0, new String[]{"NONE", "SIGMA_RING", "ABOVE_BOX", "FULL_BOX"});
         this.debugLog = new ModeProperty("debug-log", 0, new String[]{"NONE", "HEALTH"});
+        this.tickLookahead = new BooleanProperty("tick-lookahead", false);
+        this.smartKill = new BooleanProperty("smart-kill", true);
     }
 
     public EntityLivingBase getTarget() {
@@ -1170,9 +1188,18 @@ public class KillAura extends Module {
                                                 : Double.compare(RotationUtil.distanceToEntity(entityLivingBase1), RotationUtil.distanceToEntity(entityLivingBase2));
                                     }
                             );
+                            if (this.mode.getValue() == 1 && targets.size() > 1) {
+                                targets.sort((e1, e2) -> {
+                                    LastAttackData data1 = KillAura.this.targetMap.get(e1.getEntityId());
+                                    LastAttackData data2 = KillAura.this.targetMap.get(e2.getEntityId());
+                                    double score1 = -((e1.getHealth() * 25.0D) + (data1 == null ? 0 : data1.getTime()));
+                                    double score2 = -((e2.getHealth() * 25.0D) + (data2 == null ? 0 : data2.getTime()));
+                                    return Double.compare(score1, score2);
+                                });
+                            }
                             if (this.mode.getValue() == 1 && this.hitRegistered) {
                                 this.hitRegistered = false;
-                                this.switchTick++;
+                                this.switchTick = 0;
                             }
                             if (this.mode.getValue() == 0 || this.switchTick >= targets.size()) {
                                 this.switchTick = 0;
@@ -1519,6 +1546,7 @@ public class KillAura extends Module {
     @Override
     public void onDisabled() {
         this.setRightHold(false);
+        this.targetMap.clear();
         Myau.blinkManager.setBlinkState(false, BlinkModules.AUTO_BLOCK);
         this.blockingState = false;
         this.isBlocking = false;
@@ -1608,6 +1636,58 @@ public class KillAura extends Module {
 
         public double getZ() {
             return this.z;
+        }
+    }
+
+    private final java.util.Map<Integer, LastAttackData> targetMap = new java.util.HashMap<>();
+
+    private double getDamage(EntityLivingBase target) {
+        float baseDamage = 1.0F;
+        if (mc.thePlayer.getEntityAttribute(SharedMonsterAttributes.attackDamage) != null) {
+            baseDamage = (float) mc.thePlayer.getEntityAttribute(SharedMonsterAttributes.attackDamage).getAttributeValue();
+        }
+        float enchantmentBonus = 0.0F;
+        if (mc.thePlayer.getHeldItem() != null) {
+            enchantmentBonus = EnchantmentHelper.getModifierForCreature(
+                    mc.thePlayer.getHeldItem(),
+                    target != null ? target.getCreatureAttribute() : EnumCreatureAttribute.UNDEFINED
+            );
+        }
+        boolean isCritical = mc.thePlayer.fallDistance > 0.0F
+                && !mc.thePlayer.onGround
+                && !mc.thePlayer.isOnLadder()
+                && !mc.thePlayer.isInWater()
+                && !mc.thePlayer.isPotionActive(Potion.blindness)
+                && mc.thePlayer.ridingEntity == null;
+        if (isCritical && baseDamage > 0.0F) {
+            baseDamage *= 1.5F;
+        }
+        baseDamage += enchantmentBonus;
+        return baseDamage;
+    }
+
+    public static class LastAttackData {
+        private long time;
+        private double damage;
+
+        public LastAttackData(double damage) {
+            this.time = System.currentTimeMillis();
+            this.damage = damage;
+        }
+
+        public void reset(boolean reset, double damage) {
+            if (reset) {
+                this.time = System.currentTimeMillis();
+            }
+            this.damage = damage;
+        }
+
+        public long getTime() {
+            return System.currentTimeMillis() - this.time;
+        }
+
+        public double getDamage() {
+            return this.damage;
         }
     }
 }

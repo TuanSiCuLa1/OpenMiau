@@ -19,6 +19,7 @@ public class OMDelayVelocity extends VelocityMode {
 
     @Override
     public void onPacket(PacketEvent event) {
+        if (mc.thePlayer == null || mc.theWorld == null) return;
         if (event.getType() == myau.event.types.EventType.RECEIVE && !event.isCancelled()) {
             if (event.getPacket() instanceof S12PacketEntityVelocity) {
                 S12PacketEntityVelocity packet = (S12PacketEntityVelocity) event.getPacket();
