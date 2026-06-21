@@ -31,8 +31,9 @@ import java.util.stream.Collectors;
 
 public class ESP extends Module {
     private static final Minecraft mc = Minecraft.getMinecraft();
-    private final OutlineShader outlineRenderer = new OutlineShader();
-    private final GlowShader glowShader = new GlowShader();
+    private OutlineShader outlineRenderer = null;
+    private GlowShader glowShader = null;
+    private boolean shadersAvailable = true;
     private Framebuffer framebuffer = null;
     private boolean outline = true;
     private boolean glow = true;
@@ -88,6 +89,30 @@ public class ESP extends Module {
         super("ESP", false);
     }
 
+    private boolean ensureOutlineShaders() {
+        if (!this.shadersAvailable) {
+            return false;
+        }
+        try {
+            if (this.outlineRenderer == null) {
+                this.outlineRenderer = new OutlineShader();
+            }
+            if (this.glowShader == null) {
+                this.glowShader = new GlowShader();
+            }
+            if (!this.outlineRenderer.isValid() || !this.glowShader.isValid()) {
+                this.shadersAvailable = false;
+                return false;
+            }
+            return true;
+        } catch (Throwable throwable) {
+            this.shadersAvailable = false;
+            this.outlineRenderer = null;
+            this.glowShader = null;
+            return false;
+        }
+    }
+
     @EventTarget
     public void onTick(TickEvent event) {
         if (!this.isEnabled() || mc.theWorld == null) {
@@ -121,41 +146,48 @@ public class ESP extends Module {
         if (this.isEnabled() && (this.mode.getValue() == 1 || this.mode.getValue() == 3 || this.healthBar.getValue() == 1)) {
             List<EntityPlayer> renderedEntities = TeamUtil.getLoadedEntitiesSorted().stream().filter(entity -> entity instanceof EntityPlayer && this.shouldRenderPlayer((EntityPlayer) entity)).map(EntityPlayer.class::cast).collect(Collectors.toList());
             if (!renderedEntities.isEmpty()) {
-                if (this.mode.getValue() == 3) {
-                    GlStateManager.pushMatrix();
-                    GlStateManager.pushAttrib();
-                    if (this.framebuffer == null) {
-                        this.framebuffer = new Framebuffer(mc.displayWidth, mc.displayHeight, false);
+                if (this.mode.getValue() == 3 && this.ensureOutlineShaders()) {
+                    try {
+                        GlStateManager.pushMatrix();
+                        GlStateManager.pushAttrib();
+                        if (this.framebuffer == null) {
+                            this.framebuffer = new Framebuffer(mc.displayWidth, mc.displayHeight, false);
+                        }
+                        this.framebuffer.bindFramebuffer(false);
+                        ((IAccessorEntityRenderer) mc.entityRenderer).callSetupCameraTransform(event.getPartialTicks(), 0);
+                        boolean shadow = mc.gameSettings.entityShadows;
+                        mc.gameSettings.entityShadows = false;
+                        this.outline = false;
+                        this.glow = false;
+                        this.glowShader.use();
+                        for (EntityPlayer player : renderedEntities) {
+                            Color entityColor = this.getEntityColor(player);
+                            this.glowShader.W(entityColor);
+                            boolean invisible = player.isInvisible();
+                            player.setInvisible(false);
+                            mc.getRenderManager().renderEntityStatic(player, event.getPartialTicks(), true);
+                            player.setInvisible(invisible);
+                        }
+                        this.glowShader.stop();
+                        this.glow = true;
+                        this.outline = true;
+                        mc.gameSettings.entityShadows = shadow;
+                        mc.entityRenderer.disableLightmap();
+                        mc.entityRenderer.setupOverlayRendering();
+                        mc.getFramebuffer().bindFramebuffer(false);
+                        this.outlineRenderer.use();
+                        RenderUtil.drawFramebuffer(this.framebuffer);
+                        this.outlineRenderer.stop();
+                        this.framebuffer.framebufferClear();
+                        mc.getFramebuffer().bindFramebuffer(false);
+                        GlStateManager.popAttrib();
+                        GlStateManager.popMatrix();
+                    } catch (Throwable throwable) {
+                        this.shadersAvailable = false;
+                        this.outline = true;
+                        this.glow = true;
+                        mc.getFramebuffer().bindFramebuffer(false);
                     }
-                    this.framebuffer.bindFramebuffer(false);
-                    ((IAccessorEntityRenderer) mc.entityRenderer).callSetupCameraTransform(event.getPartialTicks(), 0);
-                    boolean shadow = mc.gameSettings.entityShadows;
-                    mc.gameSettings.entityShadows = false;
-                    this.outline = false;
-                    this.glow = false;
-                    this.glowShader.use();
-                    for (EntityPlayer player : renderedEntities) {
-                        Color entityColor = this.getEntityColor(player);
-                        this.glowShader.W(entityColor);
-                        boolean invisible = player.isInvisible();
-                        player.setInvisible(false);
-                        mc.getRenderManager().renderEntityStatic(player, event.getPartialTicks(), true);
-                        player.setInvisible(invisible);
-                    }
-                    this.glowShader.stop();
-                    this.glow = true;
-                    this.outline = true;
-                    mc.gameSettings.entityShadows = shadow;
-                    mc.entityRenderer.disableLightmap();
-                    mc.entityRenderer.setupOverlayRendering();
-                    mc.getFramebuffer().bindFramebuffer(false);
-                    this.outlineRenderer.use();
-                    RenderUtil.drawFramebuffer(this.framebuffer);
-                    this.outlineRenderer.stop();
-                    this.framebuffer.framebufferClear();
-                    mc.getFramebuffer().bindFramebuffer(false);
-                    GlStateManager.popAttrib();
-                    GlStateManager.popMatrix();
                 }
                 if (this.mode.getValue() == 1 || this.healthBar.getValue() == 1) {
                     RenderUtil.enableRenderState();

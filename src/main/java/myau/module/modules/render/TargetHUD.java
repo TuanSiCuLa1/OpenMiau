@@ -43,7 +43,7 @@ public class TargetHUD extends Module {
     private float oldHealth = 0.0F;
     private float newHealth = 0.0F;
     private float maxHealth = 0.0F;
-    public final ModeProperty style = new ModeProperty("style", 0, new String[]{"MYAU", "CLEAN", "RAVEN", "RAVEN_NEW"});
+    public final ModeProperty style = new ModeProperty("style", 0, new String[]{"MYAU", "CLEAN", "RAVEN 1", "RAVEN 2"});
     public final ModeProperty color = new ModeProperty("color", 0, new String[]{"DEFAULT", "HUD"}, () -> this.style.getValue() == 0 || this.style.getValue() == 2 || this.style.getValue() == 3);
     public final FloatProperty scale = new FloatProperty("scale", 1.0F, 0.5F, 1.5F);
     public final DragProperty drag = new DragProperty("Position", new myau.util.vector.Vector2d(150, 150));
@@ -150,11 +150,11 @@ public class TargetHUD extends Module {
                 return;
             }
             if (this.style.getValue() == 2) {
-                drawRavenStyle(this.target, healthRatio, targetColor);
+                drawRavenTargetHUD(this.target, healthRatio, targetColor, 0);
                 return;
             }
             if (this.style.getValue() == 3) {
-                drawRavenNewStyle(this.target, healthRatio, targetColor);
+                drawRavenTargetHUD(this.target, healthRatio, targetColor, 1);
                 return;
             }
             Color healthBarColor = this.color.getValue() == 0 ? ColorUtil.getHealthBlend(healthRatio) : targetColor;
@@ -311,7 +311,7 @@ public class TargetHUD extends Module {
         GlStateManager.enableTexture2D();
     }
 
-    private void drawRavenStyle(EntityLivingBase entity, float healthRatio, Color targetColor) {
+    private void drawRavenTargetHUD(EntityLivingBase entity, float healthRatio, Color targetColor, int mode) {
         String name = entity.getDisplayName().getFormattedText();
         String healthText;
         if (entity.getHealth() == (int) entity.getHealth()) {
@@ -330,134 +330,83 @@ public class TargetHUD extends Module {
             healthText += health <= playerRatio ? " §aW" : " §cL";
         }
 
+        String string = name + healthText;
         int padding = 8;
-        int textWidth = mc.fontRendererObj.getStringWidth(name + healthText) + padding;
+        int targetStrWithPadding = mc.fontRendererObj.getStringWidth(string) + padding;
+        
         int x = (int) this.drag.position.x;
         int y = (int) this.drag.position.y;
-        int minX = x; // Removed padding subtraction to align exactly at the drag coordinate
-        int minY = y;
-        int maxX = x + textWidth + padding;
-        int maxY = y + (mc.fontRendererObj.FONT_HEIGHT + 5) - 6 + padding;
         
-        this.drag.scale.x = (maxX - minX) * this.scale.getValue();
-        this.drag.scale.y = (maxY + 13 - minY) * this.scale.getValue();
+        int n6 = x;
+        int n7 = y;
+        int n8 = x + targetStrWithPadding + padding;
+        int n9 = y + (mc.fontRendererObj.FONT_HEIGHT + 5) - 6 + padding * 2;
         
+        this.drag.scale.x = (n8 - n6) * this.scale.getValue();
+        this.drag.scale.y = (n9 + 13 - n7) * this.scale.getValue();
+
         Color[] gradient = this.getRavenGradient(targetColor);
-        int outlineAlpha = 255;
-        int backgroundAlpha = 110;
-        int barAlpha = 210;
+        int alpha = 255;
+        int maxAlphaOutline = 110;
+        int maxAlphaBackground = 210;
 
         GlStateManager.pushMatrix();
         GlStateManager.scale(this.scale.getValue(), this.scale.getValue(), 1.0F);
         float invScale = 1.0F / this.scale.getValue();
-        float sx = minX * invScale;
-        float sy = minY * invScale;
-        float ex = maxX * invScale;
-        float ey = (maxY + 13) * invScale;
-        float barLeft = (minX + 6) * invScale;
-        float barRight = (maxX - 6) * invScale;
-        float barTop = maxY * invScale;
-        float barBottom = (maxY + 5) * invScale;
-        float healthBar = (float) (int) (barRight + (barLeft - barRight) * (1.0F - (health < 0.05F ? 0.05F : health)));
-        if (healthBar - barLeft < 3.0F) {
-            healthBar = barLeft + 3.0F;
+        float sx = n6 * invScale;
+        float sy = n7 * invScale;
+        float ex = n8 * invScale;
+        float ey = (n9 + 13) * invScale;
+        
+        if (mode == 0) {
+            float bloomRadius = 2f;
+            float blurRadius = 3f;
+            myau.util.shader.BlurUtils.prepareBloom();
+            myau.util.shader.RoundedUtils.drawRound(sx, sy, ex - sx, ey - sy, 8.0f, true, new Color(0, 0, 0, maxAlphaBackground));
+            myau.util.shader.BlurUtils.bloomEnd(3, bloomRadius);
+            myau.util.shader.BlurUtils.prepareBlur();
+            myau.util.shader.RoundedUtils.drawRound(sx, sy, ex - sx, ey - sy, 8.0f, true, new Color(this.mergeAlpha(Color.black.getRGB(), maxAlphaOutline)));
+            myau.util.shader.BlurUtils.blurEnd(2, blurRadius);
+        } else {
+            this.drawRoundedGradientOutlinedRectangle(sx, sy, ex, ey, 10.0f, this.mergeAlpha(Color.black.getRGB(), maxAlphaOutline), this.mergeAlpha(gradient[0].getRGB(), alpha), this.mergeAlpha(gradient[1].getRGB(), alpha));
         }
+
+        float n13 = sx + 6;
+        float n14 = ex - 6;
+        float n15 = n9 * invScale;
+
+        this.drawRoundedRectangle(n13, n15, n14, n15 + 5, 4.0f, this.mergeAlpha(Color.black.getRGB(), maxAlphaOutline));
+        
+        int mergedGradientLeft = this.mergeAlpha(gradient[0].getRGB(), maxAlphaBackground);
+        int mergedGradientRight = this.mergeAlpha(gradient[1].getRGB(), maxAlphaBackground);
+        
+        float healthBar = n14 + (n13 - n14) * (1.0f - health);
+        if (healthBar - n13 < 3.0F) healthBar = n13 + 3.0F;
+        
         float animatedHealthBar = healthBar;
         if (this.animations.getValue()) {
             float elapsed = (float) Math.min(Math.max(this.animTimer.getElapsedTime(), 0L), 150L);
             float animatedRatio = Math.min(Math.max(RenderUtil.lerpFloat(this.newHealth, this.oldHealth, elapsed / 150.0F) / this.maxHealth, 0.0F), 1.0F);
-            animatedHealthBar = (float) (int) (barRight + (barLeft - barRight) * (1.0F - (animatedRatio < 0.05F ? 0.05F : animatedRatio)));
-            if (animatedHealthBar - barLeft < 3.0F) {
-                animatedHealthBar = barLeft + 3.0F;
-            }
+            animatedHealthBar = n14 + (n13 - n14) * (1.0f - animatedRatio);
+            if (animatedHealthBar - n13 < 3.0F) animatedHealthBar = n13 + 3.0F;
         }
 
-        this.drawRoundedGradientOutlinedRectangle(sx, sy, ex, ey, 10.0F, this.mergeAlpha(Color.BLACK.getRGB(), backgroundAlpha), this.mergeAlpha(gradient[0].getRGB(), outlineAlpha), this.mergeAlpha(gradient[1].getRGB(), outlineAlpha));
-        this.drawRoundedRectangle(barLeft, barTop, barRight, barBottom, 4.0F, this.mergeAlpha(Color.BLACK.getRGB(), backgroundAlpha));
-        this.drawRoundedGradientRect(barLeft, barTop, animatedHealthBar, barBottom, 4.0F,
-                this.mergeAlpha(gradient[0].getRGB(), barAlpha), this.mergeAlpha(gradient[0].getRGB(), barAlpha),
-                this.mergeAlpha(gradient[1].getRGB(), barAlpha), this.mergeAlpha(gradient[1].getRGB(), barAlpha));
-
         if (this.color.getValue() == 0) {
-            this.drawRoundedRectangle(barLeft, barTop, animatedHealthBar, barBottom, 4.0F, ColorUtil.getHealthBlend(health).getRGB());
+            mergedGradientLeft = mergedGradientRight = this.mergeAlpha(ColorUtil.getHealthBlend(health).getRGB(), maxAlphaBackground);
+        }
+
+        if (mode == 0) {
+            this.drawRoundedRectangle(n13, n15, animatedHealthBar, n15 + 5, 4.0f, ColorUtil.darker(new Color(mergedGradientRight), 0.25f).getRGB());
+            this.drawRoundedGradientRect(n13, n15, healthBar, n15 + 5, 4.0f, mergedGradientLeft, mergedGradientLeft, mergedGradientRight, mergedGradientRight);
+        } else {
+            this.drawRoundedGradientRect(n13, n15, animatedHealthBar, n15 + 5, 4.0f, mergedGradientLeft, mergedGradientLeft, mergedGradientRight, mergedGradientRight);
         }
 
         GlStateManager.enableBlend();
         GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
-        int textAlpha = this.mergeAlpha(new Color(220, 220, 220).getRGB(), 255);
-        int healthTextColor = ColorUtil.getHealthBlend(health).getRGB();
-        mc.fontRendererObj.drawString(name, x * invScale, y * invScale, textAlpha, this.shadow.getValue());
-        mc.fontRendererObj.drawString(healthText, (x + mc.fontRendererObj.getStringWidth(name)) * invScale, y * invScale, healthTextColor, this.shadow.getValue());
+        int textAlpha = (new Color(220, 220, 220, 255).getRGB() & 0xFFFFFF) | 255 << 24;
+        mc.fontRendererObj.drawString(string, (x + padding) * invScale, (y + padding) * invScale, textAlpha, this.shadow.getValue());
         GlStateManager.disableBlend();
-        GlStateManager.popMatrix();
-    }
-
-    private void drawRavenNewStyle(EntityLivingBase entity, float healthRatio, Color targetColor) {
-        String name = entity.getDisplayName().getFormattedText();
-        String healthText = " " + (int) entity.getHealth();
-        float health = Math.min(Math.max(entity.getHealth() / entity.getMaxHealth(), 0.0F), 1.0F);
-        if (Float.isInfinite(health) || Float.isNaN(health)) {
-            health = 0.0F;
-        }
-
-        if (mc.thePlayer != null) {
-            float playerRatio = (mc.thePlayer.getHealth() + mc.thePlayer.getAbsorptionAmount()) / mc.thePlayer.getMaxHealth();
-            healthText += health <= playerRatio ? " §aW" : " §cL";
-        }
-
-        String renderText = name + " " + healthText;
-        int minX = (int) this.drag.position.x;
-        int minY = (int) this.drag.position.y;
-        int maxX = minX + mc.fontRendererObj.getStringWidth(renderText) + 12;
-        int maxY = minY + 16 + 12;
-        
-        this.drag.scale.x = (maxX - minX) * this.scale.getValue();
-        this.drag.scale.y = (maxY - minY) * this.scale.getValue();
-        
-        Color[] gradient = this.getRavenGradient(targetColor);
-
-        GlStateManager.pushMatrix();
-        GlStateManager.scale(this.scale.getValue(), this.scale.getValue(), 1.0F);
-        float invScale = 1.0F / this.scale.getValue();
-        float sx = minX * invScale;
-        float sy = minY * invScale;
-        float ex = maxX * invScale;
-        float ey = maxY * invScale;
-        if (this.shadow.getValue()) {
-            this.drawRoundedRectangle(sx - 6.0F, sy - 6.0F, ex + 6.0F, ey + 6.0F, 6.0F, new Color(0, 0, 0, 80).getRGB());
-        }
-        RenderUtil.drawRect(sx, sy, ex, ey, new Color(0, 0, 0, 80).getRGB());
-
-        int healthTextColor = ColorUtil.getHealthBlend(health).getRGB();
-        mc.fontRendererObj.drawString(name, (minX + 6) * invScale, (minY + 6) * invScale, -1, this.shadow.getValue());
-        mc.fontRendererObj.drawString(healthText, (minX + 6 + mc.fontRendererObj.getStringWidth(name)) * invScale, (minY + 6) * invScale, healthTextColor, this.shadow.getValue());
-
-        float barLeft = (minX + 6) * invScale;
-        float barRight = (maxX - 6) * invScale;
-        float barTop = (maxY - 9) * invScale;
-        float barBottom = (maxY - 4) * invScale;
-        float healthBar = (float) (int) (barRight + (barLeft - barRight) * (1.0F - (health < 0.05F ? 0.05F : health)));
-        if (healthBar - barLeft < 3.0F) {
-            healthBar = barLeft + 3.0F;
-        }
-        float elapsed = (float) Math.min(Math.max(this.animTimer.getElapsedTime(), 0L), 500L);
-        float slowRatio = Math.min(Math.max(RenderUtil.lerpFloat(this.newHealth, this.oldHealth, elapsed / 500.0F) / this.maxHealth, 0.0F), 1.0F);
-        float fastRatio = Math.min(Math.max(RenderUtil.lerpFloat(this.newHealth, this.oldHealth, Math.min(elapsed, 150.0F) / 150.0F) / this.maxHealth, 0.0F), 1.0F);
-        float slowBar = this.animations.getValue() ? (float) (int) (barRight + (barLeft - barRight) * (1.0F - (slowRatio < 0.05F ? 0.05F : slowRatio))) : healthBar;
-        float fastBar = this.animations.getValue() ? (float) (int) (barRight + (barLeft - barRight) * (1.0F - (fastRatio < 0.05F ? 0.05F : fastRatio))) : healthBar;
-        if (slowBar - barLeft < 3.0F) slowBar = barLeft + 3.0F;
-        if (fastBar - barLeft < 3.0F) fastBar = barLeft + 3.0F;
-
-        this.drawRoundedGradientRect(barLeft, barTop, slowBar, barBottom, 4.0F,
-                this.mergeAlpha(gradient[0].getRGB(), 100), this.mergeAlpha(gradient[0].getRGB(), 60),
-                this.mergeAlpha(gradient[1].getRGB(), 100), this.mergeAlpha(gradient[1].getRGB(), 60));
-        this.drawRoundedGradientRect(barLeft, barTop, fastBar, barBottom, 4.0F,
-                this.mergeAlpha(gradient[0].getRGB(), 210), this.mergeAlpha(gradient[0].getRGB(), 210),
-                this.mergeAlpha(gradient[1].getRGB(), 210), this.mergeAlpha(gradient[1].getRGB(), 210));
-
-        if (this.color.getValue() == 0) {
-            this.drawRoundedRectangle(barLeft, barTop, fastBar, barBottom, 4.0F, healthTextColor);
-        }
         GlStateManager.popMatrix();
     }
 
