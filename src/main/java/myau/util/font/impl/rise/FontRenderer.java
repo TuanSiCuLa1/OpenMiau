@@ -1,6 +1,6 @@
 package myau.util.font.impl.rise;
 
-import myau.util.ColorUtil;
+import myau.util.render.ColorUtil;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.util.MathHelper;
 import org.lwjgl.BufferUtils;
@@ -140,7 +140,7 @@ public class FontRenderer extends myau.util.font.Font {
                 byteBuffer.put((byte) ((pixel >> 24) & MASK));
             }
         }
-        byteBuffer.flip();
+        ((java.nio.Buffer) byteBuffer).flip();
         GlStateManager.bindTexture(texture);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);

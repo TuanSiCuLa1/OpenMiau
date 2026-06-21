@@ -16,6 +16,9 @@ import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Redirect;
+import net.minecraft.entity.player.InventoryPlayer;
 
 @Mixin(ItemRenderer.class)
 public abstract class MixinItemRenderer {
@@ -61,6 +64,11 @@ public abstract class MixinItemRenderer {
 
     @Shadow
     protected abstract void renderPlayerArm(AbstractClientPlayer clientPlayer, float equipProgress, float swingProgress);
+
+    @Redirect(method = "updateEquippedItem", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/player/InventoryPlayer;getCurrentItem()Lnet/minecraft/item/ItemStack;"))
+    private ItemStack redirectGetCurrentItem(InventoryPlayer inventoryPlayer) {
+        return inventoryPlayer.mainInventory[inventoryPlayer.currentItem];
+    }
 
     /**
      * @author CCBlueX, ported to Miau

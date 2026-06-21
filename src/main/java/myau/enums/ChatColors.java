@@ -61,17 +61,10 @@ public enum ChatColors {
         return closest;
     }
 
+    public static final String PREFIX_CLEAN = "Miau \u00bb ";
+
     public static String getDynamicPrefix() {
-        try {
-            myau.module.modules.render.HUD hud = (myau.module.modules.render.HUD) myau.Myau.moduleManager.getModule(myau.module.modules.render.HUD.class);
-            if (hud != null && hud.isEnabled()) {
-                java.awt.Color currentColor = hud.getColor(System.currentTimeMillis());
-                ChatColors closest = getClosestColor(currentColor);
-                return closest.toString() + "Miau " + closest.toString() + "\u00bb\u00a7r ";
-            }
-        } catch (Exception e) {
-        }
-        return "\u00a7bMiau \u00a7b\u00bb\u00a7r ";
+        return PREFIX_CLEAN;
     }
 
     public static String formatColor(String string) {

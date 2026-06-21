@@ -6,8 +6,7 @@ import myau.ui.clickgui.components.impl.BindComponent;
 import myau.ui.clickgui.components.impl.CategoryComponent;
 import myau.ui.clickgui.components.impl.ModuleComponent;
 import myau.ui.clickgui.components.impl.SearchBarComponent;
-import myau.util.shader.BlurUtils;
-import myau.util.Timer;
+import myau.util.animation.AnimationTimer;
 import myau.util.shader.RoundedUtils;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.ScaledResolution;
@@ -22,8 +21,10 @@ import java.util.Comparator;
 import java.util.List;
 
 public class ClickGui extends GuiScreen {
-    private Timer backgroundFade;
-    private Timer blurSmooth;
+    public static float openingScale = 1.0f;
+    private AnimationTimer backgroundFade;
+    private AnimationTimer blurSmooth;
+    private AnimationTimer scaleAnimation = new AnimationTimer(300.0F);
     private ScaledResolution sr;
     public static ArrayList<CategoryComponent> categories;
 
@@ -36,7 +37,7 @@ public class ClickGui extends GuiScreen {
 
     public ClickGui() {
         categories = new ArrayList<>();
-        String[] values = new String[]{"Combat", "Target", "Movement", "Player", "Render", "Misc", "Latency", "Config", "Search", "Minigames"};
+        String[] values = new String[]{"Combat", "Target", "Movement", "Player", "Render", "Themes", "Misc", "Latency", "Search", "Minigames"};
 
         float startX = 15;
         float marginX = 105;
@@ -50,7 +51,7 @@ public class ClickGui extends GuiScreen {
     }
 
     public void initMain() {
-        (this.blurSmooth = this.backgroundFade = new Timer(500.0F)).start();
+        (this.blurSmooth = this.backgroundFade = new AnimationTimer(500.0F)).start();
     }
 
     private void updateAutoLayout(float delta) {
@@ -85,6 +86,8 @@ public class ClickGui extends GuiScreen {
     @Override
     public void initGui() {
         super.initGui();
+        this.scaleAnimation.start();
+        ClickGui.openingScale = 0.5f;
         this.sr = new ScaledResolution(mc);
         this.actualScreenWidth = this.sr.getScaledWidth();
         this.actualScreenHeight = this.sr.getScaledHeight();
@@ -126,14 +129,23 @@ public class ClickGui extends GuiScreen {
 
         updateAutoLayout(delta);
 
+        ClickGui.openingScale = this.scaleAnimation.getValueFloat(0.5f, 1.0f, 2);
+
+        myau.module.modules.render.HUD hudModule = (myau.module.modules.render.HUD) myau.Myau.moduleManager.modules.get(myau.module.modules.render.HUD.class);
         ClickGUI guiModule = (ClickGUI) myau.Myau.moduleManager.modules.get(ClickGUI.class);
-        if (guiModule != null && guiModule.blur.getValue()) {
-            BlurUtils.prepareBlur();
-            RoundedUtils.drawRound(0, 0, this.width, this.height, 0.0f, true, Color.black);
-            BlurUtils.blurEnd(2, 3.0f);
+        
+        boolean useBlur = (guiModule != null && guiModule.blur.getValue()) || (hudModule != null && hudModule.shaders.getValue());
+
+        if (useBlur) {
+            int passes = (hudModule != null && hudModule.blurSettings.getValue()) ? hudModule.blurPasses.getValue() : 2;
+            float radius = (hudModule != null && hudModule.blurSettings.getValue()) ? hudModule.blurRadius.getValue() : 3.0f;
+            myau.util.shader.RenderSystem.renderBlur(radius, passes, () -> {
+                RoundedUtils.drawRound(0, 0, this.width, this.height, 0.0f, true, Color.black);
+            });
         }
 
-        drawRect(0, 0, this.width, this.height, new Color(0, 0, 0, 130).getRGB());
+        int bgColorAlpha = (int) (130 * this.scaleAnimation.getValueFloat(0.0f, 1.0f, 2));
+        drawRect(0, 0, this.width, this.height, new Color(0, 0, 0, bgColorAlpha).getRGB());
 
         List<CategoryComponent> renderOrder = getCategoriesInRenderOrder();
         CategoryComponent topmostUnderCursor = getTopmostUnderCursor(renderOrder, x, y);

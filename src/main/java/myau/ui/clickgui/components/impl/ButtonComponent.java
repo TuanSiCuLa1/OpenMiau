@@ -62,6 +62,7 @@ public class ButtonComponent extends Component {
     public boolean onClick(int x, int y, int b) {
         if (this.i(x, y) && b == 0 && this.moduleComponent.isOpened && this.moduleComponent.isVisible(this)) {
             this.property.setValue(!this.property.getValue());
+            this.moduleComponent.reloadSettings();
         }
         return false;
     }

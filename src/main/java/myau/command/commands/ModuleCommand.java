@@ -3,7 +3,7 @@ package myau.command.commands;
 import myau.Myau;
 import myau.command.Command;
 import myau.module.Module;
-import myau.util.ChatUtil;
+import myau.util.client.ChatUtil;
 import myau.property.Property;
 import myau.property.properties.BooleanProperty;
 

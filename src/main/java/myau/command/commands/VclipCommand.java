@@ -2,7 +2,7 @@ package myau.command.commands;
 
 import myau.Myau;
 import myau.command.Command;
-import myau.util.ChatUtil;
+import myau.util.client.ChatUtil;
 import net.minecraft.client.Minecraft;
 
 import java.text.DecimalFormat;

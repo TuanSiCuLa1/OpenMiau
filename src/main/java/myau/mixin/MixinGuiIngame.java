@@ -23,13 +23,6 @@ public abstract class MixinGuiIngame {
             )
     )
     private ItemStack updateTick(InventoryPlayer inventoryPlayer) {
-        Scaffold scaffold = (Scaffold) Myau.moduleManager.modules.get(Scaffold.class);
-        if (scaffold.isEnabled() && scaffold.itemSpoof.getValue()) {
-            int slot = scaffold.getSlot();
-            if (slot >= 0) {
-                return inventoryPlayer.getStackInSlot(slot);
-            }
-        }
         AutoBlockIn autoBlockIn = (AutoBlockIn) Myau.moduleManager.modules.get(AutoBlockIn.class);
         if(autoBlockIn.itemSpoof.getValue() && autoBlockIn.isEnabled()){
             int slot = autoBlockIn.getSlot();

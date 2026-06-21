@@ -8,7 +8,7 @@ import myau.mixin.IAccessorRenderManager;
 import myau.module.Module;
 import myau.property.properties.BooleanProperty;
 import myau.property.properties.ColorProperty;
-import myau.util.RenderUtil;
+import myau.util.render.RenderUtil;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockChest;
 import net.minecraft.client.Minecraft;

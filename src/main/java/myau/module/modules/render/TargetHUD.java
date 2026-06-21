@@ -8,14 +8,12 @@ import myau.event.types.EventType;
 import myau.events.PacketEvent;
 import myau.events.Render2DEvent;
 import myau.module.Module;
-import myau.util.ColorUtil;
-import myau.util.RenderUtil;
-import myau.util.TeamUtil;
-import myau.util.TimerUtil;
+import myau.util.render.ColorUtil;
+import myau.util.render.RenderUtil;
+import myau.util.player.TeamUtil;
+import myau.util.time.TimerUtil;
 import myau.property.properties.*;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.GuiChat;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.network.NetworkPlayerInfo;
 import net.minecraft.client.renderer.GlStateManager;
@@ -48,8 +46,7 @@ public class TargetHUD extends Module {
     public final ModeProperty style = new ModeProperty("style", 0, new String[]{"MYAU", "CLEAN", "RAVEN", "RAVEN_NEW"});
     public final ModeProperty color = new ModeProperty("color", 0, new String[]{"DEFAULT", "HUD"}, () -> this.style.getValue() == 0 || this.style.getValue() == 2 || this.style.getValue() == 3);
     public final FloatProperty scale = new FloatProperty("scale", 1.0F, 0.5F, 1.5F);
-    public final IntProperty offX = new IntProperty("offset-x", 150, -2000, 2000);
-    public final IntProperty offY = new IntProperty("offset-y", 150, -2000, 2000);
+    public final DragProperty drag = new DragProperty("Position", new myau.util.vector.Vector2d(150, 150));
     public final PercentProperty background = new PercentProperty("background", 25, () -> this.style.getValue() == 0);
     public final BooleanProperty head = new BooleanProperty("head", true, () -> this.style.getValue() == 0);
     public final BooleanProperty indicator = new BooleanProperty("indicator", true, () -> this.style.getValue() == 0);
@@ -68,7 +65,7 @@ public class TargetHUD extends Module {
                 && TeamUtil.isEntityLoaded(this.lastTarget)) {
             return this.lastTarget;
         } else {
-            return (this.chatPreview.getValue() || mc.currentScreen instanceof GuiChat || mc.currentScreen instanceof myau.ui.clickgui.ClickGui) ? mc.thePlayer : null;
+            return (this.chatPreview.getValue() || mc.currentScreen instanceof net.minecraft.client.gui.GuiChat || mc.currentScreen instanceof myau.ui.clickgui.ClickGui) ? mc.thePlayer : null;
         }
     }
 
@@ -109,102 +106,115 @@ public class TargetHUD extends Module {
         super("TargetHUD", false, true);
     }
 
+    @Override
+    public void onDisabled() {
+        this.target = null;
+        this.lastTarget = null;
+    }
+
     @EventTarget
     public void onRender(Render2DEvent event) {
-        if (this.isEnabled() && mc.thePlayer != null) {
-            EntityLivingBase entityLivingBase = this.target;
-            this.target = this.resolveTarget();
-            if (this.target != null) {
-                float health = (mc.thePlayer.getHealth() + mc.thePlayer.getAbsorptionAmount()) / 2.0F;
-                float abs = this.target.getAbsorptionAmount() / 2.0F;
-                float heal = this.target.getHealth() / 2.0F + abs;
-                if (this.target != entityLivingBase) {
-                    this.headTexture = null;
-                    this.animTimer.setTime();
-                    this.oldHealth = heal;
-                    this.newHealth = heal;
-                }
-                if (!this.animations.getValue() || this.animTimer.hasTimeElapsed(150L)) {
-                    this.oldHealth = this.newHealth;
-                    this.newHealth = heal;
-                    this.maxHealth = this.target.getMaxHealth() / 2.0F;
-                    if (this.oldHealth != this.newHealth) {
-                        this.animTimer.reset();
-                    }
-                }
-                ResourceLocation resourceLocation = this.getSkin(this.target);
-                if (resourceLocation != null) {
-                    this.headTexture = resourceLocation;
-                }
-                float elapsedTime = (float) Math.min(Math.max(this.animTimer.getElapsedTime(), 0L), 150L);
-                float healthRatio = Math.min(Math.max(RenderUtil.lerpFloat(this.newHealth, this.oldHealth, elapsedTime / 150.0F) / this.maxHealth, 0.0F), 1.0F);
-                Color targetColor = this.getTargetColor(this.target);
-                if (this.style.getValue() == 1) {
-                    drawCleanStyle(this.target);
-                    return;
-                }
-                if (this.style.getValue() == 2) {
-                    drawRavenStyle(this.target, healthRatio, targetColor);
-                    return;
-                }
-                if (this.style.getValue() == 3) {
-                    drawRavenNewStyle(this.target, healthRatio, targetColor);
-                    return;
-                }
-                Color healthBarColor = this.color.getValue() == 0 ? ColorUtil.getHealthBlend(healthRatio) : targetColor;
-                float healthDeltaRatio = Math.min(Math.max((health - heal + 1.0F) / 2.0F, 0.0F), 1.0F);
-                Color healthDeltaColor = ColorUtil.getHealthBlend(healthDeltaRatio);
-                ScaledResolution scaledResolution = new ScaledResolution(mc);
-                String targetNameText = ChatColors.formatColor(String.format("&r%s&r", TeamUtil.stripName(this.target)));
-                int targetNameWidth = mc.fontRendererObj.getStringWidth(targetNameText);
-                String healthText = ChatColors.formatColor(
-                        String.format("&r&f%s%s❤&r", healthFormat.format(heal), abs > 0.0F ? "&6" : "&c")
-                );
-                int healthTextWidth = mc.fontRendererObj.getStringWidth(healthText);
-                String statusText = ChatColors.formatColor(String.format("&r&l%s&r", heal == health ? "D" : (heal < health ? "W" : "L")));
-                int statusTextWidth = mc.fontRendererObj.getStringWidth(statusText);
-                String healthDiffText = ChatColors.formatColor(
-                        String.format("&r%s&r", heal == health ? "0.0" : diffFormat.format(health - heal))
-                );
-                int healthDiffWidth = mc.fontRendererObj.getStringWidth(healthDiffText);
-                float barContentWidth = Math.max(
-                        (float) targetNameWidth + (this.indicator.getValue() ? 2.0F + (float) statusTextWidth + 2.0F : 0.0F),
-                        (float) healthTextWidth + (this.indicator.getValue() ? 2.0F + (float) healthDiffWidth + 2.0F : 0.0F)
-                );
-                float headIconOffset = this.head.getValue() && this.headTexture != null ? 25.0F : 0.0F;
-                float barTotalWidth = Math.max(headIconOffset + 70.0F, headIconOffset + 2.0F + barContentWidth + 2.0F);
-                float posX = this.offX.getValue().floatValue() / this.scale.getValue();
-                float posY = this.offY.getValue().floatValue() / this.scale.getValue();
-                GlStateManager.pushMatrix();
-                GlStateManager.scale(this.scale.getValue(), this.scale.getValue(), 0.0F);
-                GlStateManager.translate(posX, posY, -450.0F);
-                RenderUtil.enableRenderState();
-                int backgroundColor = new Color(0.0F, 0.0F, 0.0F, (float) this.background.getValue() / 100.0F).getRGB();
-                int outlineColor = this.outline.getValue() ? targetColor.getRGB() : new Color(0, 0, 0, 0).getRGB();
-                RenderUtil.drawOutlineRect(0.0F, 0.0F, barTotalWidth, 27.0F, 1.5F, backgroundColor, outlineColor);
-                RenderUtil.drawRect(headIconOffset + 2.0F, 22.0F, barTotalWidth - 2.0F, 25.0F, ColorUtil.darker(healthBarColor, 0.2F).getRGB());
-                RenderUtil.drawRect(headIconOffset + 2.0F, 22.0F, headIconOffset + 2.0F + healthRatio * (barTotalWidth - 2.0F - headIconOffset - 2.0F), 25.0F, healthBarColor.getRGB());
-                RenderUtil.disableRenderState();
-                GlStateManager.disableDepth();
-                GlStateManager.enableBlend();
-                GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-                mc.fontRendererObj.drawString(targetNameText, headIconOffset + 2.0F, 2.0F, -1, this.shadow.getValue());
-                mc.fontRendererObj.drawString(healthText, headIconOffset + 2.0F, 12.0F, -1, this.shadow.getValue());
-                if (this.indicator.getValue()) {
-                    mc.fontRendererObj.drawString(statusText, barTotalWidth - 2.0F - (float) statusTextWidth, 2.0F, healthDeltaColor.getRGB(), this.shadow.getValue());
-                    mc.fontRendererObj.drawString(healthDiffText, barTotalWidth - 2.0F - (float) healthDiffWidth, 12.0F, ColorUtil.darker(healthDeltaColor, 0.8F).getRGB(), this.shadow.getValue());
-                }
-                if (this.head.getValue() && this.headTexture != null) {
-                    GlStateManager.color(1.0F, 1.0F, 1.0F);
-                    mc.getTextureManager().bindTexture(this.headTexture);
-                    Gui.drawScaledCustomSizeModalRect(2, 2, 8.0F, 8.0F, 8, 8, 23, 23, 64.0F, 64.0F);
-                    Gui.drawScaledCustomSizeModalRect(2, 2, 40.0F, 8.0F, 8, 8, 23, 23, 64.0F, 64.0F);
-                    GlStateManager.color(1.0F, 1.0F, 1.0F);
-                }
-                GlStateManager.disableBlend();
-                GlStateManager.enableDepth();
-                GlStateManager.popMatrix();
+        if (!this.isEnabled() || mc.thePlayer == null) {
+            this.target = null;
+            return;
+        }
+        EntityLivingBase entityLivingBase = this.target;
+        this.target = this.resolveTarget();
+        if (this.target != null) {
+            float health = (mc.thePlayer.getHealth() + mc.thePlayer.getAbsorptionAmount()) / 2.0F;
+            float abs = this.target.getAbsorptionAmount() / 2.0F;
+            float heal = this.target.getHealth() / 2.0F + abs;
+            if (this.target != entityLivingBase) {
+                this.headTexture = null;
+                this.animTimer.setTime();
+                this.oldHealth = heal;
+                this.newHealth = heal;
             }
+            if (!this.animations.getValue() || this.animTimer.hasTimeElapsed(150L)) {
+                this.oldHealth = this.newHealth;
+                this.newHealth = heal;
+                this.maxHealth = this.target.getMaxHealth() / 2.0F;
+                if (this.oldHealth != this.newHealth) {
+                    this.animTimer.reset();
+                }
+            }
+            ResourceLocation resourceLocation = this.getSkin(this.target);
+            if (resourceLocation != null) {
+                this.headTexture = resourceLocation;
+            }
+            float elapsedTime = (float) Math.min(Math.max(this.animTimer.getElapsedTime(), 0L), 150L);
+            float healthRatio = Math.min(Math.max(RenderUtil.lerpFloat(this.newHealth, this.oldHealth, elapsedTime / 150.0F) / this.maxHealth, 0.0F), 1.0F);
+            Color targetColor = this.getTargetColor(this.target);
+            if (this.style.getValue() == 1) {
+                drawCleanStyle(this.target);
+                return;
+            }
+            if (this.style.getValue() == 2) {
+                drawRavenStyle(this.target, healthRatio, targetColor);
+                return;
+            }
+            if (this.style.getValue() == 3) {
+                drawRavenNewStyle(this.target, healthRatio, targetColor);
+                return;
+            }
+            Color healthBarColor = this.color.getValue() == 0 ? ColorUtil.getHealthBlend(healthRatio) : targetColor;
+            float healthDeltaRatio = Math.min(Math.max((health - heal + 1.0F) / 2.0F, 0.0F), 1.0F);
+            Color healthDeltaColor = ColorUtil.getHealthBlend(healthDeltaRatio);
+            ScaledResolution scaledResolution = new ScaledResolution(mc);
+            String targetNameText = ChatColors.formatColor(String.format("&r%s&r", TeamUtil.stripName(this.target)));
+            int targetNameWidth = mc.fontRendererObj.getStringWidth(targetNameText);
+            String healthText = ChatColors.formatColor(
+                    String.format("&r&f%s%s❤&r", healthFormat.format(heal), abs > 0.0F ? "&6" : "&c")
+            );
+            int healthTextWidth = mc.fontRendererObj.getStringWidth(healthText);
+            String statusText = ChatColors.formatColor(String.format("&r&l%s&r", heal == health ? "D" : (heal < health ? "W" : "L")));
+            int statusTextWidth = mc.fontRendererObj.getStringWidth(statusText);
+            String healthDiffText = ChatColors.formatColor(
+                    String.format("&r%s&r", heal == health ? "0.0" : diffFormat.format(health - heal))
+            );
+            int healthDiffWidth = mc.fontRendererObj.getStringWidth(healthDiffText);
+            float barContentWidth = Math.max(
+                    (float) targetNameWidth + (this.indicator.getValue() ? 2.0F + (float) statusTextWidth + 2.0F : 0.0F),
+                    (float) healthTextWidth + (this.indicator.getValue() ? 2.0F + (float) healthDiffWidth + 2.0F : 0.0F)
+            );
+            float headIconOffset = this.head.getValue() && this.headTexture != null ? 25.0F : 0.0F;
+            float barTotalWidth = Math.max(headIconOffset + 70.0F, headIconOffset + 2.0F + barContentWidth + 2.0F);
+            
+            float posX = (float) this.drag.position.x / this.scale.getValue();
+            float posY = (float) this.drag.position.y / this.scale.getValue();
+            
+            this.drag.scale.x = barTotalWidth * this.scale.getValue();
+            this.drag.scale.y = 27.0F * this.scale.getValue();
+            
+            GlStateManager.pushMatrix();
+            GlStateManager.scale(this.scale.getValue(), this.scale.getValue(), 0.0F);
+            GlStateManager.translate(posX, posY, -450.0F);
+            RenderUtil.enableRenderState();
+            int backgroundColor = new Color(0.0F, 0.0F, 0.0F, (float) this.background.getValue() / 100.0F).getRGB();
+            int outlineColor = this.outline.getValue() ? targetColor.getRGB() : new Color(0, 0, 0, 0).getRGB();
+            RenderUtil.drawOutlineRect(0.0F, 0.0F, barTotalWidth, 27.0F, 1.5F, backgroundColor, outlineColor);
+            RenderUtil.drawRect(headIconOffset + 2.0F, 22.0F, barTotalWidth - 2.0F, 25.0F, ColorUtil.darker(healthBarColor, 0.2F).getRGB());
+            RenderUtil.drawRect(headIconOffset + 2.0F, 22.0F, headIconOffset + 2.0F + healthRatio * (barTotalWidth - 2.0F - headIconOffset - 2.0F), 25.0F, healthBarColor.getRGB());
+            RenderUtil.disableRenderState();
+            GlStateManager.disableDepth();
+            GlStateManager.enableBlend();
+            GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+            mc.fontRendererObj.drawString(targetNameText, headIconOffset + 2.0F, 2.0F, -1, this.shadow.getValue());
+            mc.fontRendererObj.drawString(healthText, headIconOffset + 2.0F, 12.0F, -1, this.shadow.getValue());
+            if (this.indicator.getValue()) {
+                mc.fontRendererObj.drawString(statusText, barTotalWidth - 2.0F - (float) statusTextWidth, 2.0F, healthDeltaColor.getRGB(), this.shadow.getValue());
+                mc.fontRendererObj.drawString(healthDiffText, barTotalWidth - 2.0F - (float) healthDiffWidth, 12.0F, ColorUtil.darker(healthDeltaColor, 0.8F).getRGB(), this.shadow.getValue());
+            }
+            if (this.head.getValue() && this.headTexture != null) {
+                GlStateManager.color(1.0F, 1.0F, 1.0F);
+                mc.getTextureManager().bindTexture(this.headTexture);
+                net.minecraft.client.gui.Gui.drawScaledCustomSizeModalRect(2, 2, 8.0F, 8.0F, 8, 8, 23, 23, 64.0F, 64.0F);
+                net.minecraft.client.gui.Gui.drawScaledCustomSizeModalRect(2, 2, 40.0F, 8.0F, 8, 8, 23, 23, 64.0F, 64.0F);
+                GlStateManager.color(1.0F, 1.0F, 1.0F);
+            }
+            GlStateManager.disableBlend();
+            GlStateManager.enableDepth();
+            GlStateManager.popMatrix();
         }
     }
 
@@ -218,9 +228,11 @@ public class TargetHUD extends Module {
         int healthWidth = mc.fontRendererObj.getStringWidth(healthPrefix + healthValue);
         int hudWidth = Math.max(98, Math.max(targetWidth, healthWidth) + 14);
         int hudHeight = 30;
-        ScaledResolution scaledResolution = new ScaledResolution(mc);
-        float baseX = this.offX.getValue().floatValue() / this.scale.getValue();
-        float baseY = this.offY.getValue().floatValue() / this.scale.getValue();
+        
+        float baseX = (float) this.drag.position.x / this.scale.getValue();
+        float baseY = (float) this.drag.position.y / this.scale.getValue();
+        this.drag.scale.x = hudWidth * this.scale.getValue();
+        this.drag.scale.y = hudHeight * this.scale.getValue();
 
         float sc = this.scale.getValue();
         GL11.glPushMatrix();
@@ -236,7 +248,7 @@ public class TargetHUD extends Module {
         int yellowColor = 0xFFFFFF00;
         int statusColor = "W".equals(status) ? greenColor : ("L".equals(status) ? redColor : yellowColor);
         GlStateManager.enableBlend();
-        Gui.drawRect(x, y, x + hudWidth, y + hudHeight, bgColor);
+        net.minecraft.client.gui.Gui.drawRect(x, y, x + hudWidth, y + hudHeight, bgColor);
         drawVerticalGradientRect(x, y, x + 2, y + hudHeight, 0xFFC44DFF, 0xFF4D8DFF);
         int textX = x + 8;
         int targetY = y + 5;
@@ -318,15 +330,18 @@ public class TargetHUD extends Module {
             healthText += health <= playerRatio ? " §aW" : " §cL";
         }
 
-        ScaledResolution scaledResolution = new ScaledResolution(mc);
         int padding = 8;
         int textWidth = mc.fontRendererObj.getStringWidth(name + healthText) + padding;
-        int x = (int) this.offX.getValue().floatValue();
-        int y = (int) this.offY.getValue().floatValue();
-        int minX = x - padding;
-        int minY = y - padding;
-        int maxX = x + textWidth;
+        int x = (int) this.drag.position.x;
+        int y = (int) this.drag.position.y;
+        int minX = x; // Removed padding subtraction to align exactly at the drag coordinate
+        int minY = y;
+        int maxX = x + textWidth + padding;
         int maxY = y + (mc.fontRendererObj.FONT_HEIGHT + 5) - 6 + padding;
+        
+        this.drag.scale.x = (maxX - minX) * this.scale.getValue();
+        this.drag.scale.y = (maxY + 13 - minY) * this.scale.getValue();
+        
         Color[] gradient = this.getRavenGradient(targetColor);
         int outlineAlpha = 255;
         int backgroundAlpha = 110;
@@ -391,11 +406,14 @@ public class TargetHUD extends Module {
         }
 
         String renderText = name + " " + healthText;
-        ScaledResolution scaled = new ScaledResolution(mc);
-        int minX = (int) this.offX.getValue().floatValue();
-        int minY = (int) this.offY.getValue().floatValue();
+        int minX = (int) this.drag.position.x;
+        int minY = (int) this.drag.position.y;
         int maxX = minX + mc.fontRendererObj.getStringWidth(renderText) + 12;
         int maxY = minY + 16 + 12;
+        
+        this.drag.scale.x = (maxX - minX) * this.scale.getValue();
+        this.drag.scale.y = (maxY - minY) * this.scale.getValue();
+        
         Color[] gradient = this.getRavenGradient(targetColor);
 
         GlStateManager.pushMatrix();
@@ -498,6 +516,7 @@ public class TargetHUD extends Module {
 
     @EventTarget
     public void onPacket(PacketEvent event) {
+        if (!this.isEnabled()) return;
         if (event.getType() == EventType.SEND && event.getPacket() instanceof C02PacketUseEntity) {
             C02PacketUseEntity packet = (C02PacketUseEntity) event.getPacket();
             if (packet.getAction() != Action.ATTACK) {
@@ -511,76 +530,6 @@ public class TargetHUD extends Module {
                 this.lastAttackTimer.reset();
                 this.lastTarget = (EntityLivingBase) entity;
             }
-        }
-    }
-
-    public static class TargetHUDBounds {
-        public float x, y, width, height;
-        public TargetHUDBounds(float x, float y, float width, float height) {
-            this.x = x;
-            this.y = y;
-            this.width = width;
-            this.height = height;
-        }
-    }
-
-    public TargetHUDBounds getBounds(ScaledResolution scaledResolution) {
-        if (mc.thePlayer == null) return new TargetHUDBounds(150, 150, 100, 30);
-        EntityLivingBase entity = resolveTarget();
-        if (entity == null) entity = mc.thePlayer;
-
-        float sc = this.scale.getValue();
-        float posX = this.offX.getValue().floatValue();
-        float posY = this.offY.getValue().floatValue();
-
-        if (this.style.getValue() == 1) { 
-            String targetName = TeamUtil.stripName(entity);
-            String targetPrefix = "Target: ";
-            String healthPrefix = "Health: ";
-            String healthValue = healthFormat.format(entity.getHealth());
-            String status = getCleanStatus(entity);
-            int targetWidth = mc.fontRendererObj.getStringWidth(targetPrefix + targetName + (status.isEmpty() ? "" : " " + status));
-            int healthWidth = mc.fontRendererObj.getStringWidth(healthPrefix + healthValue);
-            int hudWidth = Math.max(98, Math.max(targetWidth, healthWidth) + 14);
-            int hudHeight = 30;
-            return new TargetHUDBounds(posX, posY, hudWidth * sc, hudHeight * sc);
-        } else if (this.style.getValue() == 2) { 
-            String name = entity.getDisplayName().getFormattedText();
-            String healthText = " " + healthFormat.format(entity.getHealth());
-            int padding = 8;
-            int textWidth = mc.fontRendererObj.getStringWidth(name + healthText) + padding;
-            int minX = (int) posX - padding;
-            int minY = (int) posY - padding;
-            int maxX = (int) posX + textWidth;
-            int maxY = (int) posY + (mc.fontRendererObj.FONT_HEIGHT + 5) - 6 + padding;
-            return new TargetHUDBounds(minX, minY, (maxX - minX) * sc, (maxY + 13 - minY) * sc);
-        } else if (this.style.getValue() == 3) { 
-            String name = entity.getDisplayName().getFormattedText();
-            String healthText = " " + (int) entity.getHealth();
-            String renderText = name + " " + healthText;
-            int minX = (int) posX;
-            int minY = (int) posY;
-            int maxX = minX + mc.fontRendererObj.getStringWidth(renderText) + 12;
-            int maxY = minY + 16 + 12;
-            return new TargetHUDBounds(minX, minY, (maxX - minX) * sc, (maxY - minY) * sc);
-        } else { 
-            float abs = entity.getAbsorptionAmount() / 2.0F;
-            float heal = entity.getHealth() / 2.0F + abs;
-            String targetNameText = ChatColors.formatColor(String.format("&r%s&r", TeamUtil.stripName(entity)));
-            int targetNameWidth = mc.fontRendererObj.getStringWidth(targetNameText);
-            String healthText = ChatColors.formatColor(String.format("&r&f%s%s\u2764&r", healthFormat.format(heal), abs > 0.0F ? "&6" : "&c"));
-            int healthTextWidth = mc.fontRendererObj.getStringWidth(healthText);
-            String statusText = ChatColors.formatColor(String.format("&r&l%s&r", "D"));
-            int statusTextWidth = mc.fontRendererObj.getStringWidth(statusText);
-            String healthDiffText = ChatColors.formatColor(String.format("&r%s&r", "0.0"));
-            int healthDiffWidth = mc.fontRendererObj.getStringWidth(healthDiffText);
-            float barContentWidth = Math.max(
-                    (float) targetNameWidth + (this.indicator.getValue() ? 2.0F + (float) statusTextWidth + 2.0F : 0.0F),
-                    (float) healthTextWidth + (this.indicator.getValue() ? 2.0F + (float) healthDiffWidth + 2.0F : 0.0F)
-            );
-            float headIconOffset = this.head.getValue() && this.getSkin(entity) != null ? 25.0F : 0.0F;
-            float barTotalWidth = Math.max(headIconOffset + 70.0F, headIconOffset + 2.0F + barContentWidth + 2.0F);
-            return new TargetHUDBounds(posX, posY, barTotalWidth * sc, 27.0F * sc);
         }
     }
 }

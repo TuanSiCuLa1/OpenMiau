@@ -7,7 +7,7 @@ import myau.events.TickEvent;
 import myau.module.Module;
 import myau.property.properties.IntProperty;
 import myau.property.properties.ModeProperty;
-import myau.util.TimerUtil;
+import myau.util.time.TimerUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.inventory.GuiInventory;
 import net.minecraft.init.Items;

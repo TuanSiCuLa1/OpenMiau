@@ -11,7 +11,6 @@ import myau.event.EventManager;
 import myau.management.*;
 import myau.module.Module;
 import myau.module.ModuleManager;
-import myau.module.modules.*;
 import myau.module.modules.combat.*;
 import myau.module.modules.movement.*;
 import myau.module.modules.render.*;
@@ -22,7 +21,7 @@ import myau.module.modules.minigames.BedwarUtils;
 import myau.module.modules.target.Targets;
 import myau.property.Property;
 import myau.property.PropertyManager;
-import myau.util.notification.NotificationManager;
+import myau.notification.NotificationManager;
 
 import org.lwjgl.opengl.Display;
 
@@ -34,7 +33,7 @@ import java.util.Locale;
 import java.util.Objects;
 public class Myau {
     public static final boolean DEVELOPMENT_SWITCH = false;
-    public static final String clientName = "&7[&cM&6i&ea&au&7]&r ";
+    public static String clientName = "&7[&cM&6i&ea&au&7]&r ";
     public static String version = ClientInfo.VERSION;
     public static RotationManager rotationManager;
     public static FloatManager floatManager;
@@ -52,6 +51,8 @@ public class Myau {
     public static DragManager dragManager;
     public static PresenceManager presenceManager;
     public static MiauPeerDetector peerDetector;
+    public static myau.component.BadPacketsComponent badPacketsComponent;
+    public static myau.component.SlotComponent slotComponent;
 
     public Myau() {
         this.init();
@@ -86,6 +87,10 @@ public class Myau {
         EventManager.register(dragManager);
         EventManager.register(presenceManager);
         EventManager.register(peerDetector);
+        badPacketsComponent = new myau.component.BadPacketsComponent();
+        EventManager.register(badPacketsComponent);
+        slotComponent = new myau.component.SlotComponent();
+        EventManager.register(slotComponent);
         moduleManager.modules.put(AimAssist.class, new AimAssist());
         moduleManager.modules.put(AntiAFK.class, new AntiAFK());
         moduleManager.modules.put(AntiDebuff.class, new AntiDebuff());
@@ -131,6 +136,7 @@ public class Myau {
         moduleManager.modules.put(ClickGUI.class, new ClickGUI());
         moduleManager.modules.put(HitSelect.class, new HitSelect());
         moduleManager.modules.put(HUD.class, new HUD());
+        moduleManager.modules.put(Ambience.class, new Ambience());
         moduleManager.modules.put(MoreKB.class, new MoreKB());
         moduleManager.modules.put(Indicators.class, new Indicators());
         moduleManager.modules.put(InventoryClicker.class, new InventoryClicker());

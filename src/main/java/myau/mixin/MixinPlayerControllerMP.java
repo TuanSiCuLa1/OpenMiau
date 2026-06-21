@@ -6,6 +6,7 @@ import myau.events.CancelUseEvent;
 import myau.events.WindowClickEvent;
 import myau.events.BlockDamageEvent;
 import myau.events.BlockBreakEvent;
+import myau.util.player.IInventoryPlayerAccessor;
 
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
@@ -33,6 +34,16 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @SideOnly(Side.CLIENT)
 @Mixin(value = {PlayerControllerMP.class}, priority = 9999)
 public abstract class MixinPlayerControllerMP {
+
+    @org.spongepowered.asm.mixin.injection.Redirect(
+            method = "syncCurrentPlayItem",
+            at = @org.spongepowered.asm.mixin.injection.At(value = "FIELD", target = "Lnet/minecraft/entity/player/InventoryPlayer;currentItem:I")
+    )
+    private int myau$getCurrentItemRedirect(net.minecraft.entity.player.InventoryPlayer inventoryPlayer) {
+        return myau.Myau.slotComponent.getItemIndex();
+    }
+
+
     @Inject(
             method = "attackEntity",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/multiplayer/PlayerControllerMP;syncCurrentPlayItem()V"))

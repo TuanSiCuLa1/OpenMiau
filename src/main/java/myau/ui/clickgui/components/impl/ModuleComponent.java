@@ -10,8 +10,8 @@ import myau.property.properties.FloatProperty;
 import myau.property.properties.IntProperty;
 import myau.property.properties.PercentProperty;
 import myau.property.properties.ModeProperty;
-import myau.util.render.RenderUtils;
-import myau.util.Timer;
+import myau.util.render.RenderUtil;
+import myau.util.animation.AnimationTimer;
 import myau.util.font.Font;
 import myau.util.font.Fonts;
 import net.minecraft.client.Minecraft;
@@ -32,9 +32,9 @@ public class ModuleComponent extends Component {
     public ArrayList<Component> settings;
     public boolean isOpened;
     private boolean hovering;
-    private Timer hoverTimer;
+    private AnimationTimer hoverTimer;
     private boolean hoverStarted;
-    private Timer smoothTimer;
+    private AnimationTimer smoothTimer;
     private float smoothingY = 16f;
     private float animationStartY = 16f;
     private float animationTargetY = 16f;
@@ -186,7 +186,7 @@ public class ModuleComponent extends Component {
             if (hoverAlpha == 0) {
                 hoverTimer = null;
             }
-            RenderUtils.drawRoundedRectangle(this.categoryComponent.getX(), this.categoryComponent.getY() + yPos, this.categoryComponent.getX() + this.categoryComponent.getWidth(), this.categoryComponent.getY() + 16 + this.yPos, 8, RenderUtils.setAlpha(HOVER_COLOR, hoverAlpha / 255.0));
+            RenderUtil.drawRoundedRectangle(this.categoryComponent.getX(), this.categoryComponent.getY() + yPos, this.categoryComponent.getX() + this.categoryComponent.getWidth(), this.categoryComponent.getY() + 16 + this.yPos, 8, RenderUtil.setAlpha(HOVER_COLOR, hoverAlpha / 255.0));
         }
         int button_rgb = this.mod != null && this.mod.isEnabled() ? ENABLED_COLOR : DISABLED_COLOR;
 
@@ -275,13 +275,13 @@ public class ModuleComponent extends Component {
         if (hasModuleHeader() && overModuleName(x, y) && this.categoryComponent.opened) {
             hovering = true;
             if (hoverTimer == null) {
-                (hoverTimer = new Timer(75)).start();
+                (hoverTimer = new AnimationTimer(75)).start();
                 hoverStarted = true;
             }
         }
         else {
             if (hovering && hoverStarted) {
-                (hoverTimer = new Timer(75)).start();
+                (hoverTimer = new AnimationTimer(75)).start();
             }
             hoverStarted = false;
             hovering = false;
@@ -309,7 +309,7 @@ public class ModuleComponent extends Component {
                 targetHeight = getCollapsedHeight();
             }
             this.animationTargetY = targetHeight;
-            (this.smoothTimer = new Timer(250)).start();
+            (this.smoothTimer = new AnimationTimer(250)).start();
             return true;
         }
 

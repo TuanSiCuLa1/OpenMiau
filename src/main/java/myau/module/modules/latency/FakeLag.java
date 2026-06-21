@@ -14,8 +14,8 @@ import myau.property.properties.ColorProperty;
 import myau.property.properties.FloatProperty;
 import myau.property.properties.IntProperty;
 import myau.property.properties.ModeProperty;
-import myau.util.PacketUtil;
-import myau.util.TeamUtil;
+import myau.util.network.PacketUtil;
+import myau.util.player.TeamUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.AbstractClientPlayer;
 import net.minecraft.client.gui.inventory.GuiContainer;
@@ -330,7 +330,7 @@ public class FakeLag extends Module {
 
     private void dynamicMessage(String message) {
         if (dynamicDebug.getValue()) {
-            myau.util.ChatUtil.display(Myau.clientName + this.getName() + ": &7" + message);
+            myau.util.client.ChatUtil.display(Myau.clientName + this.getName() + ": &7" + message);
         }
     }
 

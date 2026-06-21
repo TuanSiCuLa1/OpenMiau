@@ -4,7 +4,7 @@ import com.google.gson.*;
 import myau.Myau;
 import myau.mixin.IAccessorMinecraft;
 import myau.module.Module;
-import myau.util.ChatUtil;
+import myau.util.client.ChatUtil;
 import myau.property.Property;
 import net.minecraft.client.Minecraft;
 

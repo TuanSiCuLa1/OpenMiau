@@ -7,7 +7,15 @@ import myau.event.types.Priority;
 import myau.events.LeftClickMouseEvent;
 import myau.events.TickEvent;
 import myau.module.Module;
-import myau.util.*;
+import myau.util.render.*;
+import myau.util.math.*;
+import myau.util.animation.*;
+import myau.util.time.*;
+import myau.util.player.*;
+import myau.util.world.*;
+import myau.util.network.*;
+import myau.util.client.*;
+import myau.util.misc.*;
 import myau.property.properties.BooleanProperty;
 import myau.property.properties.FloatProperty;
 import myau.property.properties.IntProperty;
@@ -69,12 +77,14 @@ public class AutoClicker extends Module {
             } else if (entityPlayer.deathTime > 0) {
                 return false;
             } else {
-                float borderSize = entityPlayer.getCollisionBorderSize();
-                return RotationUtil.rayTrace(entityPlayer.getEntityBoundingBox().expand(
-                        borderSize + this.hitBoxHorizontal.getValue(),
-                        borderSize + this.hitBoxVertical.getValue(),
-                        borderSize + this.hitBoxHorizontal.getValue()
-                ), mc.thePlayer.rotationYaw, mc.thePlayer.rotationPitch, this.range.getValue()) != null;
+                net.minecraft.util.MovingObjectPosition mop = myau.util.player.RayCastUtil.rayCast(
+                        mc.thePlayer.rotationYaw, 
+                        mc.thePlayer.rotationPitch, 
+                        this.range.getValue(), 
+                        Math.max(this.hitBoxHorizontal.getValue(), this.hitBoxVertical.getValue()), 
+                        entityPlayer
+                );
+                return mop != null && mop.entityHit == entityPlayer;
             }
         } else {
             return false;

@@ -4,7 +4,7 @@ import myau.event.EventTarget;
 import myau.events.Render3DEvent;
 import myau.mixin.IAccessorRenderManager;
 import myau.module.Module;
-import myau.util.RenderUtil;
+import myau.util.render.RenderUtil;
 import myau.property.properties.BooleanProperty;
 import myau.property.properties.PercentProperty;
 import net.minecraft.block.material.Material;

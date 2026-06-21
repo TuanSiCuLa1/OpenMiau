@@ -3,7 +3,7 @@ package myau.module.modules.misc;
 import myau.event.EventTarget;
 import myau.events.Render2DEvent;
 import myau.module.Module;
-import myau.util.TimerUtil;
+import myau.util.time.TimerUtil;
 import myau.property.properties.FloatProperty;
 import myau.property.properties.IntProperty;
 import myau.property.properties.TextProperty;

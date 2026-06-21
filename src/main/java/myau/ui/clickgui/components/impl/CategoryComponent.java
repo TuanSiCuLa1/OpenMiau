@@ -5,9 +5,9 @@ import myau.ui.clickgui.ClickGui;
 import myau.ui.clickgui.components.Component;
 import myau.module.Module;
 import myau.module.modules.target.Targets;
-import myau.util.render.RenderUtils;
-import myau.util.ColorUtil;
-import myau.util.Timer;
+import myau.util.render.RenderUtil;
+import myau.util.render.ColorUtil;
+import myau.util.animation.AnimationTimer;
 import myau.util.font.Font;
 import myau.util.font.Fonts;
 import net.minecraft.client.Minecraft;
@@ -42,8 +42,8 @@ public class CategoryComponent {
     public float yy;
     public boolean hovering = false;
     public boolean hoveringOverCategory = false;
-    public Timer smoothTimer;
-    private Timer textTimer;
+    public AnimationTimer smoothTimer;
+    private AnimationTimer textTimer;
     public float big;
 
     private static final int TRANSLUCENT_BACKGROUND = new Color(0, 0, 0, 110).getRGB();
@@ -124,6 +124,16 @@ public class CategoryComponent {
         if (this.category.equalsIgnoreCase("Search")) {
             SearchBarComponent searchBar = new SearchBarComponent(this, moduleRenderY);
             this.modules.add(searchBar);
+            syncAfterModuleReload();
+            return;
+        }
+
+        if (this.category.equalsIgnoreCase("Themes")) {
+            for (myau.util.render.Themes theme : myau.util.render.Themes.values()) {
+                ThemeSelectComponent tsc = new ThemeSelectComponent(this, moduleRenderY, theme);
+                this.modules.add(tsc);
+                moduleRenderY += tsc.getHeightF();
+            }
             syncAfterModuleReload();
             return;
         }
@@ -266,8 +276,8 @@ public class CategoryComponent {
         float animationDuration = 250.0f;
 
         this.opened = on;
-        (this.smoothTimer = new Timer(animationDuration)).start();
-        (this.textTimer = new Timer(animationDuration)).start();
+        (this.smoothTimer = new AnimationTimer(animationDuration)).start();
+        (this.textTimer = new AnimationTimer(animationDuration)).start();
     }
 
     public void onScroll(int mouseScrollInput) {
@@ -350,7 +360,7 @@ public class CategoryComponent {
 
         GL11.glPushMatrix();
 
-        RenderUtils.drawRoundedGradientOutlinedRectangle(this.x - 2, this.y, this.x + this.width + 2, extra, 10, TRANSLUCENT_BACKGROUND,
+        RenderUtil.drawRoundedGradientOutlinedRectangle(this.x - 2, this.y, this.x + this.width + 2, extra, 10, TRANSLUCENT_BACKGROUND,
                 REGULAR_OUTLINE, REGULAR_OUTLINE2);
         renderItemForCategory(this.category, (int) (this.x + 1), (int) (this.y + 4), opened || hovering);
         titleRenderer.draw(this.category, namePos, this.y + 4, CATEGORY_NAME_COLOR, false);
@@ -361,7 +371,7 @@ public class CategoryComponent {
 
         if (this.opened || smoothTimer != null) {
             GL11.glEnable(GL11.GL_SCISSOR_TEST);
-            RenderUtils.scissor(0, moduleAreaTop, this.x + this.width + 4, moduleAreaHeight);
+            RenderUtil.scissor(0, moduleAreaTop, this.x + this.width + 4, moduleAreaHeight);
 
             float scrollOffset = moduleY - this.y;
             GL11.glPushMatrix();
@@ -580,7 +590,7 @@ public class CategoryComponent {
 
     private static Map<String, CategoryIconStacks> buildCategoryIconStacks() {
         Map<String, CategoryIconStacks> iconStacks = new HashMap<>();
-        String[] categories = new String[]{"Combat", "Movement", "Render", "Player", "Misc", "Latency", "Minigames", "Target", "Search"};
+        String[] categories = new String[]{"Combat", "Movement", "Render", "Player", "Misc", "Latency", "Minigames", "Target", "Search", "Themes"};
         for (String cat : categories) {
             ItemStack normalStack = createCategoryIconStack(cat, false);
             ItemStack activeStack = createCategoryIconStack(cat, true);
@@ -611,6 +621,8 @@ public class CategoryComponent {
             itemStack = new ItemStack(Items.arrow);
         } else if (category.equalsIgnoreCase("Search")) {
             itemStack = new ItemStack(Items.name_tag);
+        } else if (category.equalsIgnoreCase("Themes")) {
+            itemStack = new ItemStack(Items.dye, 1, 9);
         } else {
             return null;
         }

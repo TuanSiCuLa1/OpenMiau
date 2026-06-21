@@ -7,7 +7,7 @@ import myau.property.properties.FloatProperty;
 import myau.property.properties.IntProperty;
 import myau.property.properties.PercentProperty;
 import myau.property.properties.ModeProperty;
-import myau.util.render.RenderUtils;
+import myau.util.render.RenderUtil;
 import myau.util.font.FontManager;
 import myau.util.font.Font;
 import myau.util.font.Fonts;
@@ -83,6 +83,7 @@ public class SliderComponent extends Component {
 
     public void setValue(double newValue) {
         newValue = Math.max(getMin(), Math.min(getMax(), newValue));
+        Object prevValue = property.getValue();
         if (property instanceof FloatProperty) {
             property.setValue((float) newValue);
         } else if (property instanceof IntProperty) {
@@ -91,6 +92,9 @@ public class SliderComponent extends Component {
             property.setValue((int) Math.round(newValue));
         } else if (property instanceof ModeProperty) {
             property.setValue((int) Math.round(newValue));
+        }
+        if (prevValue != null && !prevValue.equals(property.getValue())) {
+            this.moduleComponent.reloadSettings();
         }
     }
 
@@ -114,7 +118,7 @@ public class SliderComponent extends Component {
 
     @Override
     public void render() {
-        RenderUtils.drawRoundedRectangle(
+        RenderUtil.drawRoundedRectangle(
             this.moduleComponent.categoryComponent.getX() + 4 + (xOffset / 2),
             this.moduleComponent.categoryComponent.getY() + this.o + 11,
             this.moduleComponent.categoryComponent.getX() + 4 + this.moduleComponent.categoryComponent.getWidth() - 8,
@@ -130,7 +134,7 @@ public class SliderComponent extends Component {
             right = left + 84;
         }
 
-        RenderUtils.drawRoundedRectangle(
+        RenderUtil.drawRoundedRectangle(
             left,
             this.moduleComponent.categoryComponent.getY() + this.o + 11,
             right,

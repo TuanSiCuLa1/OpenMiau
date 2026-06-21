@@ -9,7 +9,7 @@ import myau.module.Module;
 import myau.property.properties.BooleanProperty;
 import myau.property.properties.FloatProperty;
 import myau.property.properties.IntProperty;
-import myau.util.TeamUtil;
+import myau.util.player.TeamUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.EntityLivingBase;
 import org.lwjgl.opengl.GL11;

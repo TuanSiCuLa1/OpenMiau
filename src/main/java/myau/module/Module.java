@@ -6,9 +6,9 @@ import myau.property.Property;
 import myau.property.PropertyManager;
 import java.util.List;
 import java.util.ArrayList;
-import myau.util.KeyBindUtil;
-import myau.util.notification.NotificationManager;
-import myau.util.notification.NotificationType;
+import myau.util.client.KeyBindUtil;
+import myau.notification.NotificationManager;
+import myau.notification.NotificationType;
 
 public abstract class Module {
     protected final String name;
@@ -56,10 +56,10 @@ public abstract class Module {
             this.enabled = enabled;
             if (enabled) {
                 this.onEnabled();
-                NotificationManager.show(this.name, "was enabled.", NotificationType.SUCCESS);
+                Myau.notificationManager.builder(NotificationType.SUCCESS).title(this.name).description("was enabled.").duration(2000).buildAndPublish();
             } else {
                 this.onDisabled();
-                NotificationManager.show(this.name, "was disabled.", NotificationType.ERROR);
+                Myau.notificationManager.builder(NotificationType.ERROR).title(this.name).description("was disabled.").duration(2000).buildAndPublish();
             }
         }
     }

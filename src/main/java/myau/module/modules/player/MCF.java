@@ -4,7 +4,7 @@ import myau.Myau;
 import myau.event.EventTarget;
 import myau.events.KeyEvent;
 import myau.module.Module;
-import myau.util.ChatUtil;
+import myau.util.client.ChatUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.MovingObjectPosition.MovingObjectType;

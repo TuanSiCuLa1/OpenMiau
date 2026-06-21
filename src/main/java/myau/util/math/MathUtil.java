@@ -7,6 +7,15 @@ import net.minecraft.util.MathHelper;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.concurrent.ThreadLocalRandom;
+import myau.util.math.*;
+import myau.util.time.*;
+import myau.util.player.*;
+import myau.util.world.*;
+import myau.util.network.*;
+import myau.util.client.*;
+import myau.util.misc.*;
+import myau.util.render.*;
+import myau.util.animation.*;
 
 @UtilityClass
 public class MathUtil {
@@ -18,7 +27,7 @@ public class MathUtil {
      * @param max maximal number
      * @return random between both numbers
      */
-    public double getRandom(double min, double max) {
+    public static double getRandom(double min, double max) {
         if (min == max) {
             return min;
         } else if (min > max) {
@@ -29,7 +38,7 @@ public class MathUtil {
         return ThreadLocalRandom.current().nextDouble(min, max);
     }
 
-    public double round(final double value, final int places) {
+    public static double round(final double value, final int places) {
         try {
             final BigDecimal bigDecimal = BigDecimal.valueOf(value);
 
@@ -45,7 +54,7 @@ public class MathUtil {
         return divisor * quotient;
     }
 
-    public double round(final double value, final int scale, final double inc) {
+    public static double round(final double value, final int scale, final double inc) {
         final double halfOfInc = inc / 2.0;
         final double floored = Math.floor(value / inc) * inc;
 
@@ -60,7 +69,7 @@ public class MathUtil {
         }
     }
 
-    public double roundWithSteps(final double value, final double steps) {
+    public static double roundWithSteps(final double value, final double steps) {
         double a = ((Math.round(value / steps)) * steps);
         a *= 1000;
         a = (int) a;
@@ -68,11 +77,11 @@ public class MathUtil {
         return a;
     }
 
-    public double lerp(final double a, final double b, final double c) {
+    public static double lerp(final double a, final double b, final double c) {
         return a + c * (b - a);
     }
 
-    public float lerp(final float a, final float b, final float c) {
+    public static float lerp(final float a, final float b, final float c) {
         return a + c * (b - a);
     }
 
@@ -94,11 +103,11 @@ public class MathUtil {
      * @param n   The input number to clamp
      * @return The input, bounded by the specified minimum and maximum values
      */
-    public double clamp(double min, double max, double n) {
+    public static double clamp(double min, double max, double n) {
         return Math.max(min, Math.min(max, n));
     }
 
-    public double wrappedDifference(double number1, double number2) {
+    public static double wrappedDifference(double number1, double number2) {
         return Math.min(Math.abs(number1 - number2), Math.min(Math.abs(number1 - 360) - Math.abs(number2 - 0), Math.abs(number2 - 360) - Math.abs(number1 - 0)));
     }
 
