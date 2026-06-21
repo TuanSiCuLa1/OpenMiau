@@ -12,6 +12,11 @@ import myau.module.Module;
 import myau.property.properties.BooleanProperty;
 import myau.property.properties.ModeProperty;
 import myau.property.properties.PercentProperty;
+<<<<<<< HEAD
+import myau.util.player.MoveUtil;
+import myau.util.player.PlayerUtil;
+=======
+>>>>>>> bf1c1a2a9f74591f727d217c2cd377e2ee9178e8
 import myau.util.math.RandomUtil;
 import myau.util.network.PacketUtil;
 import myau.util.player.ItemUtil;
@@ -75,7 +80,10 @@ public class Scaffold extends Module {
     private EnumFacing targetFacing = null;
     public final ModeProperty rotationMode = new ModeProperty("rotations", 2,
             new String[] { "NONE", "DEFAULT", "BACKWARDS", "SIDEWAYS" });
+<<<<<<< HEAD
+=======
     public final ModeProperty moveFix = new ModeProperty("move-fix", 1, new String[] { "NONE", "SILENT" });
+>>>>>>> bf1c1a2a9f74591f727d217c2cd377e2ee9178e8
     public final ModeProperty sprintMode = new ModeProperty("sprint", 0, new String[] { "NONE", "VANILLA" });
     public final BooleanProperty jumpSprint = new BooleanProperty("jump-sprint", true,
             () -> this.sprintMode.getValue() != 0);
@@ -92,6 +100,11 @@ public class Scaffold extends Module {
             () -> this.keepY.getValue() != 0);
     public final BooleanProperty disableWhileJumpActive = new BooleanProperty("no-keep-y-on-jump-potion", false,
             () -> this.keepY.getValue() != 0);
+<<<<<<< HEAD
+    public final ModeProperty moveFix = new ModeProperty("move-fix", 1, new String[] { "NONE", "SILENT" });
+    public final BooleanProperty safeWalk = new BooleanProperty("safe-walk", true);
+=======
+>>>>>>> bf1c1a2a9f74591f727d217c2cd377e2ee9178e8
     public final BooleanProperty multiplace = new BooleanProperty("multi-place", true);
     public final BooleanProperty safeWalk = new BooleanProperty("safe-walk", true);
     public final BooleanProperty itemSpoof = new BooleanProperty("item-spoof", false);
@@ -190,9 +203,16 @@ public class Scaffold extends Module {
     }
 
     private void place(BlockPos blockPos, EnumFacing enumFacing, Vec3 vec3) {
+<<<<<<< HEAD
+        ItemStack activeItem = Myau.slotComponent.getItemStack();
+        if (activeItem != null && ItemUtil.isBlock(activeItem) && this.blockCount > 0) {
+            if (mc.playerController.onPlayerRightClick(mc.thePlayer, mc.theWorld,
+                    activeItem, blockPos, enumFacing, vec3)) {
+=======
         if (ItemUtil.isHoldingBlock() && this.blockCount > 0) {
             if (mc.playerController.onPlayerRightClick(mc.thePlayer, mc.theWorld,
                     mc.thePlayer.inventory.getCurrentItem(), blockPos, enumFacing, vec3)) {
+>>>>>>> bf1c1a2a9f74591f727d217c2cd377e2ee9178e8
                 if (mc.playerController.getCurrentGameType() != GameType.CREATIVE) {
                     this.blockCount--;
                 }
@@ -292,6 +312,11 @@ public class Scaffold extends Module {
                 this.towering = false;
             }
             if (this.canPlace()) {
+<<<<<<< HEAD
+                int blockSlot = this.findBlock();
+                if (blockSlot != -1) {
+                    Myau.slotComponent.setSlot(blockSlot);
+=======
                 ItemStack stack = mc.thePlayer.getHeldItem();
                 int count = ItemUtil.isBlock(stack) ? stack.stackSize : 0;
                 this.blockCount = Math.min(this.blockCount, count);
@@ -305,6 +330,25 @@ public class Scaffold extends Module {
                         ItemStack candidate = mc.thePlayer.inventory.getStackInSlot(hotbarSlot);
                         if (ItemUtil.isBlock(candidate)) {
                             mc.thePlayer.inventory.currentItem = hotbarSlot;
+                            this.blockCount = candidate.stackSize;
+                            break;
+                        }
+                    }
+>>>>>>> bf1c1a2a9f74591f727d217c2cd377e2ee9178e8
+                }
+                ItemStack stack = Myau.slotComponent.getItemStack();
+                int count = ItemUtil.isBlock(stack) ? stack.stackSize : 0;
+                this.blockCount = Math.min(this.blockCount, count);
+                if (this.blockCount <= 0) {
+                    int slot = Myau.slotComponent.getItemIndex();
+                    if (this.blockCount == 0) {
+                        slot--;
+                    }
+                    for (int i = slot; i > slot - 9; i--) {
+                        int hotbarSlot = (i % 9 + 9) % 9;
+                        ItemStack candidate = mc.thePlayer.inventory.getStackInSlot(hotbarSlot);
+                        if (ItemUtil.isBlock(candidate)) {
+                            Myau.slotComponent.setSlot(hotbarSlot);
                             this.blockCount = candidate.stackSize;
                             break;
                         }
@@ -514,7 +558,7 @@ public class Scaffold extends Module {
                     && mc.thePlayer.hurtTime <= 5
                     && !mc.thePlayer.isPotionActive(Potion.jump)
                     && mc.gameSettings.keyBindJump.isKeyDown()
-                    && ItemUtil.isHoldingBlock()) {
+                    && Myau.slotComponent.isHoldingBlock()) {
                 int yState = (int) (mc.thePlayer.posY % 1.0 * 100.0);
                 switch (this.tower.getValue()) {
                     case 1:
@@ -717,7 +761,7 @@ public class Scaffold extends Module {
 
         ItemStack itemStack = null;
         int count = 0;
-        ItemStack held = mc.thePlayer.getHeldItem();
+        ItemStack held = Myau.slotComponent.getItemStack();
         if (held != null && held.getItem() instanceof ItemBlock) {
             itemStack = held;
         }
@@ -742,7 +786,7 @@ public class Scaffold extends Module {
 
         ScaledResolution sr = new ScaledResolution(mc);
         String amount = String.valueOf(count);
-        String info = "Slot: " + (mc.thePlayer.inventory.currentItem + 1) + " | Blocks: " + amount;
+        String info = "Blocks: " + amount;
 
         float textWidth = Fonts.MAIN.get(18).width(info);
         float width = 16f + 8f + textWidth + 8f;
@@ -762,12 +806,32 @@ public class Scaffold extends Module {
         boolean shaders = hud != null && hud.shaders.getValue();
 
         if (shaders) {
-            int blurP = hud.blurPasses.getValue();
+            float blurP = hud.blurCompression.getValue();
             float blurR = hud.blurRadius.getValue();
-            int bloomP = hud.bloomPasses.getValue();
+            float bloomP = hud.bloomCompression.getValue();
             float bloomR = hud.bloomRadius.getValue();
 
             // Blur pass
+<<<<<<< HEAD
+            myau.util.shader.RenderSystem.renderBlur(blurR, blurP, () -> {
+                GlStateManager.pushMatrix();
+                GlStateManager.translate(centerX, centerY, 0);
+                GlStateManager.scale(animationProgress, animationProgress, 1f);
+                GlStateManager.translate(-centerX, -centerY, 0);
+                RoundedUtils.drawRound(x, y, width, height, 4f, new Color(0, 0, 0, 150));
+                GlStateManager.popMatrix();
+            });
+
+            // Bloom pass
+            myau.util.shader.RenderSystem.renderBloom(bloomR, bloomP, () -> {
+                GlStateManager.pushMatrix();
+                GlStateManager.translate(centerX, centerY, 0);
+                GlStateManager.scale(animationProgress, animationProgress, 1f);
+                GlStateManager.translate(-centerX, -centerY, 0);
+                RoundedUtils.drawRound(x - 1, y - 1, width + 2, height + 2, 4f, new Color(81, 99, 149, 80));
+                GlStateManager.popMatrix();
+            });
+=======
             BlurUtils.prepareBlur();
             RoundedUtils.drawRound(x, y, width, height, 4f, new Color(0, 0, 0, 150));
             BlurUtils.blurEnd(blurP, blurR);
@@ -776,6 +840,7 @@ public class Scaffold extends Module {
             BlurUtils.prepareBloom();
             RoundedUtils.drawRound(x - 1, y - 1, width + 2, height + 2, 4f, new Color(81, 99, 149, 80));
             BlurUtils.bloomEnd(bloomP, bloomR);
+>>>>>>> bf1c1a2a9f74591f727d217c2cd377e2ee9178e8
         }
 
         int bgAlpha = (int) (150 * animationProgress);
@@ -847,6 +912,18 @@ public class Scaffold extends Module {
     public void onDisabled() {
         if (mc.thePlayer != null && this.lastSlot != -1) {
             mc.thePlayer.inventory.currentItem = this.lastSlot;
+<<<<<<< HEAD
+        }
+    }
+
+    private int findBlock() {
+        for (int i = 0; i < 9; i++) {
+            ItemStack stack = mc.thePlayer.inventory.getStackInSlot(i);
+            if (stack != null && stack.stackSize > 0 && ItemUtil.isBlock(stack)) {
+                return i;
+            }
+=======
+>>>>>>> bf1c1a2a9f74591f727d217c2cd377e2ee9178e8
         }
     }
 

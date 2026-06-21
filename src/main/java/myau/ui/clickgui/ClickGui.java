@@ -149,8 +149,8 @@ public class ClickGui extends GuiScreen {
         boolean useBlur = (guiModule != null && guiModule.blur.getValue()) || (hudModule != null && hudModule.shaders.getValue());
 
         if (useBlur) {
-            int passes = (hudModule != null && hudModule.blurSettings.getValue()) ? hudModule.blurPasses.getValue() : 2;
-            float radius = (hudModule != null && hudModule.blurSettings.getValue()) ? hudModule.blurRadius.getValue() : 3.0f;
+            float passes = (hudModule != null && hudModule.blurSettings.getValue()) ? hudModule.blurCompression.getValue() : 5.0f;
+            float radius = (hudModule != null && hudModule.blurSettings.getValue()) ? hudModule.blurRadius.getValue() : 25.0f;
             myau.util.shader.RenderSystem.renderBlur(radius, passes, () -> {
                 RoundedUtils.drawRound(0, 0, this.width, this.height, 0.0f, true, Color.black);
             });
@@ -168,7 +168,7 @@ public class ClickGui extends GuiScreen {
         GL11.glTranslatef(-centerX, -centerY, 0);
 
         if (hudModule != null && hudModule.shaders.getValue()) {
-            myau.util.shader.RenderSystem.renderBloom(hudModule.bloomRadius.getValue().floatValue(), hudModule.bloomPasses.getValue(), () -> {
+            myau.util.shader.RenderSystem.renderBloom(hudModule.bloomRadius.getValue().floatValue(), hudModule.bloomCompression.getValue().floatValue(), () -> {
                 for (CategoryComponent c : renderOrder) {
                     c.render(this.fontRendererObj);
                     c.mousePosition(scaledX, scaledY, c == topmostUnderCursor);

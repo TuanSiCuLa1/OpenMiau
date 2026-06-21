@@ -69,7 +69,7 @@ public class ThemeSelectComponent extends Component {
 
         if (selectAnim > 0.01f) {
             Color bloomColor = new Color(this.theme.getFirstColor().getRed(), this.theme.getFirstColor().getGreen(), this.theme.getFirstColor().getBlue(), (int)(255 * selectAnim));
-            RenderUtil.drawRect(cx + 2, cy + h - 2, cx + w - 2, cy + h, bloomColor.getRGB());
+            myau.util.shader.RoundedUtils.drawRoundOutline(cx - 0.5f, cy - 0.5f, w + 1, h + 1, 6, 1.5f, new Color(0,0,0,0), bloomColor);
         }
     }
 

@@ -54,7 +54,6 @@ public class HUD extends Module {
     public final IntProperty offsetX = new IntProperty("offset-x", 2, 0, 255);
     public final IntProperty offsetY = new IntProperty("offset-y", 2, 0, 255);
     public final FloatProperty scale = new FloatProperty("scale", 1.0F, 0.5F, 1.5F);
-    public final PercentProperty background = new PercentProperty("background", 25);
     public final BooleanProperty showBar = new BooleanProperty("bar", true);
     public final BooleanProperty shadow = new BooleanProperty("shadow", true);
     public final BooleanProperty suffixes = new BooleanProperty("suffixes", true);
@@ -65,10 +64,12 @@ public class HUD extends Module {
     public final BooleanProperty toggleAlerts = new BooleanProperty("toggle-alerts", false);
     public final BooleanProperty shaders = new BooleanProperty("Shaders", false);
     public final BooleanProperty blurSettings = new BooleanProperty("Blur Settings", false, () -> this.shaders.getValue());
-    public final FloatProperty blurRadius = new FloatProperty("Blur Radius", 3.0F, 1.0F, 10.0F, () -> this.shaders.getValue());
-    public final IntProperty blurPasses = new IntProperty("Blur Passes", 2, 1, 10, () -> this.shaders.getValue());
-    public final FloatProperty bloomRadius = new FloatProperty("Bloom Radius", 3.0F, 1.0F, 10.0F, () -> this.shaders.getValue());
-    public final IntProperty bloomPasses = new IntProperty("Bloom Passes", 4, 1, 10, () -> this.shaders.getValue());
+    public final FloatProperty blurRadius = new FloatProperty("Blur Radius", 25.0F, 1.0F, 50.0F, () -> this.shaders.getValue());
+    public final FloatProperty blurCompression = new FloatProperty("Blur Compression", 5.0F, 1.0F, 10.0F, () -> this.shaders.getValue());
+    public final FloatProperty bloomRadius = new FloatProperty("Bloom Radius", 24.0F, 1.0F, 50.0F, () -> this.shaders.getValue());
+    public final FloatProperty bloomCompression = new FloatProperty("Bloom Compression", 6.5F, 1.0F, 10.0F, () -> this.shaders.getValue());
+    public final IntProperty backgroundAlpha = new IntProperty("Background Alpha", 110, 0, 255);
+    public final FloatProperty roundingRadius = new FloatProperty("Rounding Radius", 1.0F, 0.0F, 10.0F);
 
     // Hàm lấy Component tự động
     private InterfaceComponent getComponent(Module module) {
@@ -314,10 +315,10 @@ public class HUD extends Module {
                 int alpha = (int) (255 * animProgress);
                 long finalY = (long) component.position.y;
                 int color = (alpha << 24) | (this.getColor(l, finalY).getRGB() & 0x00FFFFFF);
-                int bgColor = new Color(0.0F, 0.0F, 0.0F, (this.background.getValue().floatValue() / 100.0F) * (float)animProgress).getRGB();
+                int bgColor = new Color(0.0F, 0.0F, 0.0F, (this.backgroundAlpha.getValue().floatValue() / 255.0F) * (float)animProgress).getRGB();
 
                 RenderUtil.enableRenderState();
-                if (this.background.getValue() > 0) RenderUtil.drawRect(drawX - 2.0F, drawY - 2.0F, drawX + totalWidth + 2.0F, drawY + height - 2.0F, bgColor);
+                if (this.backgroundAlpha.getValue() > 0) RenderUtil.drawRect(drawX - 2.0F, drawY - 2.0F, drawX + totalWidth + 2.0F, drawY + height - 2.0F, bgColor);
 
                 if (this.showBar.getValue()) {
                     if (this.posX.getValue() == 0) RenderUtil.drawRect(drawX - 3.0F, drawY - 2.0F, drawX - 2.0F, drawY + height - 2.0F, color);
@@ -374,10 +375,10 @@ public class HUD extends Module {
 
                 long finalY = (long) component.position.y;
                 int color = (alpha << 24) | (this.getColor(l, finalY).getRGB() & 0x00FFFFFF);
-                int bgColor = new Color(0.0F, 0.0F, 0.0F, (this.background.getValue().floatValue() / 100.0F) * (float)animProgress).getRGB();
+                int bgColor = new Color(0.0F, 0.0F, 0.0F, (this.backgroundAlpha.getValue().floatValue() / 255.0F) * (float)animProgress).getRGB();
 
                 RenderUtil.enableRenderState();
-                if (this.background.getValue() > 0) {
+                if (this.backgroundAlpha.getValue() > 0) {
                     RenderUtil.drawRect(
                             drawX - 1.0F,
                             drawY - (this.posY.getValue() == 0 ? (finalY == 0L ? 1.0F : 0.0F) : (this.shadow.getValue() ? 1.0F : 0.0F)),
@@ -508,7 +509,7 @@ public class HUD extends Module {
         if (blur) {
             myau.util.shader.RoundedUtils.drawRound(x, y, width, height, 4.0f, true, Color.black);
         } else {
-            myau.util.shader.RoundedUtils.drawRound(x, y, width, height, 4.0f, false, new Color(0.0F, 0.0F, 0.0F, this.background.getValue().floatValue() / 100.0F));
+            myau.util.shader.RoundedUtils.drawRound(x, y, width, height, 4.0f, false, new Color(0.0F, 0.0F, 0.0F, this.backgroundAlpha.getValue().floatValue() / 255.0F));
         }
     }
 
