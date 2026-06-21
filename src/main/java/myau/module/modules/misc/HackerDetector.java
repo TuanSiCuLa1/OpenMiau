@@ -1,19 +1,15 @@
 package myau.module.modules.misc;
 
 import myau.Myau;
-import myau.clientanticheat.AimDuplicateLookCheck;
-import myau.clientanticheat.AimModulo360Check;
 import myau.clientanticheat.AutoBlockCheck;
-import myau.clientanticheat.BadPacketsCheck;
+import myau.clientanticheat.BlinkCheck;
 import myau.clientanticheat.CheckDataManager;
 import myau.clientanticheat.ClientAntiCheatContext;
 import myau.clientanticheat.KillAuraCheck;
-import myau.clientanticheat.MotionCheck;
-import myau.clientanticheat.NoFallCheck;
 import myau.clientanticheat.NoSlowCheck;
+import myau.clientanticheat.PlayerCheckData;
 import myau.clientanticheat.ReachCheck;
 import myau.clientanticheat.ScaffoldCheck;
-import myau.clientanticheat.SprintCheck;
 import myau.clientanticheat.VelocityCheck;
 import myau.event.EventTarget;
 import myau.event.types.EventType;
@@ -38,33 +34,23 @@ public class HackerDetector extends Module implements ClientAntiCheatContext {
     private static final int FLAG_WINDOW_SECONDS = 5;
     private static final int ALERT_COOLDOWN_SECONDS = 5;
 
+    public final BooleanProperty scaffold = new BooleanProperty("scaffold", true);
+    public final BooleanProperty killAura = new BooleanProperty("killaura", true);
     public final BooleanProperty autoBlock = new BooleanProperty("autoblock", true);
     public final BooleanProperty noSlow = new BooleanProperty("noslow", true);
-    public final BooleanProperty killAura = new BooleanProperty("killaura", true);
-    public final BooleanProperty scaffold = new BooleanProperty("scaffold", true);
-    public final BooleanProperty aimDuplicateLook = new BooleanProperty("aim-duplicate-look", true);
-    public final BooleanProperty aimModulo360 = new BooleanProperty("aim-modulo-360", true);
+    public final BooleanProperty blink = new BooleanProperty("blink", true);
     public final BooleanProperty reach = new BooleanProperty("reach", true);
-    public final BooleanProperty sprint = new BooleanProperty("sprint", true);
-    public final BooleanProperty badPackets = new BooleanProperty("bad-packets", true);
     public final BooleanProperty velocity = new BooleanProperty("velocity", true);
-    public final BooleanProperty noFall = new BooleanProperty("nofall", true);
-    public final BooleanProperty motion = new BooleanProperty("motion", true);
     public final BooleanProperty addTarget = new BooleanProperty("add-target", true);
     public final BooleanProperty sound = new BooleanProperty("sound", true);
 
+    private final ScaffoldCheck scaffoldCheck = new ScaffoldCheck();
+    private final KillAuraCheck killAuraCheck = new KillAuraCheck();
     private final AutoBlockCheck autoBlockCheck = new AutoBlockCheck();
     private final NoSlowCheck noSlowCheck = new NoSlowCheck();
-    private final KillAuraCheck killAuraCheck = new KillAuraCheck();
-    private final ScaffoldCheck scaffoldCheck = new ScaffoldCheck();
-    private final AimDuplicateLookCheck aimDuplicateLookCheck = new AimDuplicateLookCheck();
-    private final AimModulo360Check aimModulo360Check = new AimModulo360Check();
+    private final BlinkCheck blinkCheck = new BlinkCheck();
     private final ReachCheck reachCheck = new ReachCheck();
-    private final SprintCheck sprintCheck = new SprintCheck();
-    private final BadPacketsCheck badPacketsCheck = new BadPacketsCheck();
     private final VelocityCheck velocityCheck = new VelocityCheck();
-    private final NoFallCheck noFallCheck = new NoFallCheck();
-    private final MotionCheck motionCheck = new MotionCheck();
     private final CheckDataManager checkDataManager = new CheckDataManager();
     private final Map<String, int[]> flagMap = new HashMap<>();
     private final Map<String, Integer> alertCooldowns = new HashMap<>();
@@ -87,42 +73,27 @@ public class HackerDetector extends Module implements ClientAntiCheatContext {
             if (player == mc.thePlayer || player.isDead || player.getName() == null) {
                 continue;
             }
-            myau.clientanticheat.PlayerCheckData data = this.checkDataManager.get(player);
+            PlayerCheckData data = this.checkDataManager.get(player);
+            if (this.scaffold.getValue()) {
+                this.scaffoldCheck.check(player, world, data, this);
+            }
+            if (this.killAura.getValue()) {
+                this.killAuraCheck.check(player, world, data, currentTick, this);
+            }
             if (this.autoBlock.getValue()) {
-                this.autoBlockCheck.check(player, currentTick, this);
+                this.autoBlockCheck.check(player, data, currentTick, this);
             }
             if (this.noSlow.getValue()) {
                 this.noSlowCheck.check(player, data, currentTick, this);
             }
-            if (this.killAura.getValue()) {
-                this.killAuraCheck.check(player, world, currentTick, this);
-            }
-            if (this.scaffold.getValue()) {
-                this.scaffoldCheck.check(player, world, data, this);
-            }
-            if (this.aimDuplicateLook.getValue()) {
-                this.aimDuplicateLookCheck.check(player, world, data, this);
-            }
-            if (this.aimModulo360.getValue()) {
-                this.aimModulo360Check.check(player, data, this);
+            if (this.blink.getValue()) {
+                this.blinkCheck.check(player, data, this);
             }
             if (this.reach.getValue()) {
                 this.reachCheck.check(player, world, data, this);
             }
-            if (this.sprint.getValue()) {
-                this.sprintCheck.check(player, data, this);
-            }
-            if (this.badPackets.getValue()) {
-                this.badPacketsCheck.check(player, data, this);
-            }
             if (this.velocity.getValue()) {
                 this.velocityCheck.check(player, data, this);
-            }
-            if (this.noFall.getValue()) {
-                this.noFallCheck.check(player, data, this);
-            }
-            if (this.motion.getValue()) {
-                this.motionCheck.check(player, data, this);
             }
         }
         this.pruneFlags();
@@ -149,7 +120,7 @@ public class HackerDetector extends Module implements ClientAntiCheatContext {
         int lastAlert = this.alertCooldowns.getOrDefault(flagKey, -ALERT_COOLDOWN_SECONDS);
         if (flagData[0] >= maxFlagCount && currentTime - lastAlert >= ALERT_COOLDOWN_SECONDS) {
             ChatUtil.display(
-                    "%s%s%s%s failed %s%s",
+                    "%s%s%s failed %s%s",
                     EnumChatFormatting.RED,
                     playerName,
                     EnumChatFormatting.GRAY,
@@ -191,13 +162,13 @@ public class HackerDetector extends Module implements ClientAntiCheatContext {
     }
 
     private int maxFlagsFor(String cheatName) {
-        if (cheatName.equals("AutoBlock")) return 5;
+        if (cheatName.equals("AutoBlock")) return 4;
         if (cheatName.equals("Noslow")) return 3;
-        if (cheatName.equals("KillAura")) return 4;
-        if (cheatName.equals("Scaffold")) return 4;
+        if (cheatName.equals("KillAura")) return 3;
+        if (cheatName.equals("Scaffold")) return 3;
+        if (cheatName.equals("Blink")) return 2;
+        if (cheatName.equals("Reach")) return 2;
         if (cheatName.equals("Velocity")) return 2;
-        if (cheatName.equals("NoFall")) return 2;
-        if (cheatName.equals("Motion")) return 3;
         return 2;
     }
 
@@ -207,18 +178,13 @@ public class HackerDetector extends Module implements ClientAntiCheatContext {
 
     @Override
     public void onDisabled() {
+        this.scaffoldCheck.reset();
+        this.killAuraCheck.reset();
         this.autoBlockCheck.reset();
         this.noSlowCheck.reset();
-        this.killAuraCheck.reset();
-        this.scaffoldCheck.reset();
-        this.aimDuplicateLookCheck.reset();
-        this.aimModulo360Check.reset();
+        this.blinkCheck.reset();
         this.reachCheck.reset();
-        this.sprintCheck.reset();
-        this.badPacketsCheck.reset();
         this.velocityCheck.reset();
-        this.noFallCheck.reset();
-        this.motionCheck.reset();
         this.checkDataManager.reset();
         this.flagMap.clear();
         this.alertCooldowns.clear();

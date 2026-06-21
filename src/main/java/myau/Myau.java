@@ -128,6 +128,7 @@ public class Myau {
         moduleManager.modules.put(FastPlace.class, new FastPlace());
         moduleManager.modules.put(FakeLag.class, new FakeLag());
         moduleManager.modules.put(Freeze.class, new Freeze());
+        moduleManager.modules.put(Displace.class, new Displace());
         moduleManager.modules.put(Fly.class, new Fly());
         moduleManager.modules.put(FullBright.class, new FullBright());
         moduleManager.modules.put(FreeLook.class, new FreeLook());
@@ -165,6 +166,7 @@ public class Myau {
         moduleManager.modules.put(NoRotate.class, new NoRotate());
         moduleManager.modules.put(NoSlow.class, new NoSlow());
         moduleManager.modules.put(Panic.class, new Panic());
+        moduleManager.modules.put(Piercing.class, new Piercing());
         moduleManager.modules.put(ProjectileAimBot.class, new ProjectileAimBot());
         moduleManager.modules.put(Radar.class, new Radar());
         moduleManager.modules.put(MouseRawInput.class, new MouseRawInput());

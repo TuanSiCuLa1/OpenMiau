@@ -1,7 +1,5 @@
 package myau.clientanticheat;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockAir;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
@@ -11,92 +9,117 @@ import net.minecraft.world.World;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 public class ScaffoldCheck {
-    private final Map<UUID, CheckBuffer> supportBuffers = new HashMap<>();
-    private final Map<UUID, CheckBuffer> rotationBuffers = new HashMap<>();
-    private final Map<UUID, CheckBuffer> pitchBuffers = new HashMap<>();
-    private final Map<UUID, Long> lastFlag = new HashMap<>();
-
-    public void check(EntityPlayer player, World world, ClientAntiCheatContext context) {
-        check(player, world, null, context);
-    }
+    private final Map<String, CheckBuffer> supportBuffers = new HashMap<>();
+    private final Map<String, CheckBuffer> rotationBuffers = new HashMap<>();
+    private final Map<String, CheckBuffer> pitchBuffers = new HashMap<>();
+    private final Map<String, CheckBuffer> edgeBuffers = new HashMap<>();
+    private final Map<String, Long> lastFlag = new HashMap<>();
 
     public void check(EntityPlayer player, World world, PlayerCheckData data, ClientAntiCheatContext context) {
-        UUID uuid = player.getUniqueID();
+        String name = player.getName();
+        if (name == null || data == null) return;
+
+        CheckBuffer supportBuffer = this.supportBuffers.computeIfAbsent(name, key -> new CheckBuffer());
+        CheckBuffer rotationBuffer = this.rotationBuffers.computeIfAbsent(name, key -> new CheckBuffer());
+        CheckBuffer pitchBuffer = this.pitchBuffers.computeIfAbsent(name, key -> new CheckBuffer());
+        CheckBuffer edgeBuffer = this.edgeBuffers.computeIfAbsent(name, key -> new CheckBuffer());
+
         ItemStack held = player.getHeldItem();
         boolean holdingBlock = held != null && held.getItem() instanceof ItemBlock;
-        CheckBuffer supportBuffer = this.supportBuffers.computeIfAbsent(uuid, key -> new CheckBuffer());
-        CheckBuffer rotationBuffer = this.rotationBuffers.computeIfAbsent(uuid, key -> new CheckBuffer());
-        CheckBuffer pitchBuffer = this.pitchBuffers.computeIfAbsent(uuid, key -> new CheckBuffer());
-        if (!holdingBlock || player.isInWater() || player.isInLava() || player.isOnLadder() || data != null && data.recentlyTeleported()) {
+        if (!holdingBlock || this.isExempt(player, data)) {
             supportBuffer.decay(0.5D);
             rotationBuffer.decay(0.5D);
             pitchBuffer.decay(0.5D);
+            edgeBuffer.decay(0.5D);
             return;
         }
 
-        double horizontalSpeed = data != null ? data.horizontalDelta : Math.sqrt(player.motionX * player.motionX + player.motionZ * player.motionZ);
-        boolean movingFast = horizontalSpeed > 0.15D;
-        boolean airborne = data != null ? !data.onGround : !player.onGround;
-        boolean falling = data != null ? data.deltaY < -0.08D : player.motionY < -0.08D;
-        boolean supportBelow = this.hasSupportBelow(player, world);
+        boolean moving = data.horizontalDelta > 0.12D;
+        boolean hasBlockBelow = this.hasSolidBelow(player, world, 1.0D);
+        boolean hasRecentSupport = this.hasSolidBelow(player, world, 1.35D);
+        boolean nearEdge = player.onGround && !this.hasSolidBelowOffset(player, world, data.deltaX, data.deltaZ);
+        boolean bridgeContext = moving && (nearEdge || !hasBlockBelow || hasRecentSupport && data.pitch > 55.0F);
 
-        if (airborne && falling && movingFast && supportBelow) {
-            supportBuffer.flag(1.4D, 999.0D);
+        if (bridgeContext && data.horizontalDelta > 0.18D && hasRecentSupport) {
+            supportBuffer.flag(1.0D, 999.0D);
         } else {
-            supportBuffer.decay(0.35D);
+            supportBuffer.decay(0.25D);
         }
 
-        float yawDiff = data != null ? data.yawDelta : 0.0F;
-        float pitchDiff = data != null ? data.pitchDelta : 0.0F;
-        if (movingFast && (yawDiff > 105.0F || pitchDiff > 32.0F)) {
-            rotationBuffer.flag(1.5D, 999.0D);
+        if (bridgeContext && (data.yawAcceleration > 45.0F || data.pitchAcceleration > 18.0F || data.yawDelta > 110.0F)) {
+            rotationBuffer.flag(1.25D, 999.0D);
         } else {
-            rotationBuffer.decay(0.35D);
+            rotationBuffer.decay(0.3D);
         }
 
-        if (movingFast && player.rotationPitch > 65.0F && pitchDiff < 1.0F && supportBelow) {
-            pitchBuffer.flag(1.0D, 999.0D);
+        if (bridgeContext && data.pitch > 63.0F && data.pitchDelta < 0.35F && data.yawDelta < 3.5F) {
+            pitchBuffer.flag(0.9D, 999.0D);
         } else {
-            pitchBuffer.decay(0.25D);
+            pitchBuffer.decay(0.2D);
         }
 
-        if ((supportBuffer.get() > 7.0D && rotationBuffer.get() > 2.5D) || (supportBuffer.get() > 8.0D && pitchBuffer.get() > 6.0D)) {
+        if (nearEdge && moving && !player.isSneaking() && data.groundTicks > 3) {
+            edgeBuffer.flag(1.0D, 999.0D);
+        } else {
+            edgeBuffer.decay(0.25D);
+        }
+
+        boolean failed = supportBuffer.get() > 5.0D && rotationBuffer.get() > 2.0D
+                || supportBuffer.get() > 6.0D && pitchBuffer.get() > 5.0D
+                || edgeBuffer.get() > 8.0D && pitchBuffer.get() > 3.0D;
+        if (failed) {
             long now = System.currentTimeMillis();
-            long last = this.lastFlag.getOrDefault(uuid, 0L);
-            if (now - last > 3000L) {
-                context.receiveSignal(player.getName(), "Scaffold");
-                this.lastFlag.put(uuid, now);
+            long last = this.lastFlag.getOrDefault(name, 0L);
+            if (now - last > 2500L) {
+                context.receiveSignal(name, "Scaffold");
+                this.lastFlag.put(name, now);
                 supportBuffer.reset();
                 rotationBuffer.reset();
                 pitchBuffer.reset();
+                edgeBuffer.reset();
             }
         }
     }
 
-    private boolean hasSupportBelow(EntityPlayer player, World world) {
+    private boolean isExempt(EntityPlayer player, PlayerCheckData data) {
+        return player.isInWater()
+                || player.isInLava()
+                || player.isOnLadder()
+                || player.isRiding()
+                || player.capabilities.isFlying
+                || data.recentlyTeleported();
+    }
+
+    private boolean hasSolidBelow(EntityPlayer player, World world, double below) {
         for (double xOffset = -0.3D; xOffset <= 0.3D; xOffset += 0.3D) {
             for (double zOffset = -0.3D; zOffset <= 0.3D; zOffset += 0.3D) {
-                BlockPos below = new BlockPos(
+                BlockPos pos = new BlockPos(
                         MathHelper.floor_double(player.posX + xOffset),
-                        MathHelper.floor_double(player.posY - 1.0D),
+                        MathHelper.floor_double(player.posY - below),
                         MathHelper.floor_double(player.posZ + zOffset)
                 );
-                Block block = world.getBlockState(below).getBlock();
-                if (!(block instanceof BlockAir)) {
-                    return true;
-                }
+                if (!world.isAirBlock(pos)) return true;
             }
         }
         return false;
+    }
+
+    private boolean hasSolidBelowOffset(EntityPlayer player, World world, double motionX, double motionZ) {
+        BlockPos pos = new BlockPos(
+                MathHelper.floor_double(player.posX + motionX * 2.0D),
+                MathHelper.floor_double(player.posY - 1.0D),
+                MathHelper.floor_double(player.posZ + motionZ * 2.0D)
+        );
+        return !world.isAirBlock(pos);
     }
 
     public void reset() {
         this.supportBuffers.clear();
         this.rotationBuffers.clear();
         this.pitchBuffers.clear();
+        this.edgeBuffers.clear();
         this.lastFlag.clear();
     }
 }
