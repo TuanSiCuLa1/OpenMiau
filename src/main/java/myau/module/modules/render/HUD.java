@@ -296,7 +296,7 @@ public class HUD extends Module {
                 float drawY = (float) component.position.y / this.scale.getValue();
                 float baseX = x / this.scale.getValue();
                 float targetX;
-                boolean shouldBeVisible = module.isEnabled() && !module.isHidden() && component.shouldDisplay(this);
+                boolean shouldBeVisible = module.isEnabled() && (this.modulesToShow.getValue() == 0 || !module.isHidden()) && component.shouldDisplay(this);
 
                 if (this.posX.getValue() == 1) {
                     targetX = baseX - totalWidth;
@@ -355,7 +355,7 @@ public class HUD extends Module {
                 float drawY = (float) component.position.y / this.scale.getValue();
                 float baseX = x / this.scale.getValue();
                 float targetX;
-                boolean shouldBeVisible = module.isEnabled() && !module.isHidden() && component.shouldDisplay(this);
+                boolean shouldBeVisible = module.isEnabled() && (this.modulesToShow.getValue() == 0 || !module.isHidden()) && component.shouldDisplay(this);
 
                 if (this.posX.getValue() == 1) {
                     targetX = baseX - totalWidth;

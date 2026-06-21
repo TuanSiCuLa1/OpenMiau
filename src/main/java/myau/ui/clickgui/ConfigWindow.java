@@ -375,6 +375,16 @@ public class ConfigWindow {
 
     private void scissor(double x, double y, double width, double height) {
         ScaledResolution sr = new ScaledResolution(mc);
+        if (ClickGui.openingScale != 1.0f) {
+            double scaleFactor = ClickGui.openingScale;
+            double centerX = sr.getScaledWidth() / 2.0;
+            double centerY = sr.getScaledHeight() / 2.0;
+            x = centerX + (x - centerX) * scaleFactor;
+            y = centerY + (y - centerY) * scaleFactor;
+            width *= scaleFactor;
+            height *= scaleFactor;
+        }
+
         final double scale = sr.getScaleFactor();
         y = sr.getScaledHeight() - y;
         x *= scale;

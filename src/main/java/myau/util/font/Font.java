@@ -1,6 +1,15 @@
 package myau.util.font;
 
 import java.awt.Color;
+import myau.util.math.*;
+import myau.util.time.*;
+import myau.util.player.*;
+import myau.util.world.*;
+import myau.util.network.*;
+import myau.util.client.*;
+import myau.util.misc.*;
+import myau.util.render.*;
+import myau.util.animation.*;
 
 public abstract class Font {
     public abstract int draw(String text, double x, double y, int color, boolean dropShadow);

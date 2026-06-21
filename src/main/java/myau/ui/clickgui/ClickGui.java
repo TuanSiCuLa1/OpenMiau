@@ -34,6 +34,7 @@ public class ClickGui extends GuiScreen {
     private int actualScreenHeight;
     private boolean pendingScaleRefresh;
     private long lastMS = System.currentTimeMillis();
+    private float openingAnimation = 0.0f;
 
     public ClickGui() {
         categories = new ArrayList<>();
@@ -44,13 +45,14 @@ public class ClickGui extends GuiScreen {
 
         for (int i = 0; i < values.length; ++i) {
             CategoryComponent cc = new CategoryComponent(values[i]);
-            cc.setX(startX + (i / 2) * marginX, false); 
-            cc.setY(15 + (i % 2) * 60, false);          
+            cc.setX(startX + (i / 2) * marginX, false);
+            cc.setY(15 + (i % 2) * 60, false);   
             categories.add(cc);
         }
     }
 
     public void initMain() {
+        (this.blurSmooth = this.backgroundFade = new AnimationTimer(500.0F)).start();
         (this.blurSmooth = this.backgroundFade = new AnimationTimer(500.0F)).start();
     }
 
@@ -98,6 +100,7 @@ public class ClickGui extends GuiScreen {
             categoryComponent.reloadModules();
         }
 
+        // Khởi tạo ConfigWindow nếu chưa có (Để góc dưới cùng bên phải)
         if (configWindow == null) {
             configWindow = new ConfigWindow(actualScreenWidth - 350, actualScreenHeight - 250);
         } else {
@@ -127,6 +130,15 @@ public class ClickGui extends GuiScreen {
         lastMS = currentMS;
         if (delta > 50 || delta < 0) delta = 16;
 
+        openingAnimation = Math.min(1.0f, lerp(openingAnimation, 1.0f, 0.02f * delta));
+
+        float centerX = this.width / 2.0f;
+        float centerY = this.height / 2.0f;
+        float ease = 1.0f - (float) Math.pow(1.0f - openingAnimation, 3);
+        float scaleFactor = 0.8f + (0.2f * ease);
+        int scaledX = (int) (centerX + (x - centerX) / scaleFactor);
+        int scaledY = (int) (centerY + (y - centerY) / scaleFactor);
+
         updateAutoLayout(delta);
 
         ClickGui.openingScale = this.scaleAnimation.getValueFloat(0.5f, 1.0f, 2);
@@ -148,28 +160,57 @@ public class ClickGui extends GuiScreen {
         drawRect(0, 0, this.width, this.height, new Color(0, 0, 0, bgColorAlpha).getRGB());
 
         List<CategoryComponent> renderOrder = getCategoriesInRenderOrder();
-        CategoryComponent topmostUnderCursor = getTopmostUnderCursor(renderOrder, x, y);
+        CategoryComponent topmostUnderCursor = getTopmostUnderCursor(renderOrder, scaledX, scaledY);
+
+        GL11.glPushMatrix();
+        GL11.glTranslatef(centerX, centerY, 0);
+        GL11.glScaled(scaleFactor, scaleFactor, 1.0);
+        GL11.glTranslatef(-centerX, -centerY, 0);
+
+        if (hudModule != null && hudModule.shaders.getValue()) {
+            myau.util.shader.RenderSystem.renderBloom(hudModule.bloomRadius.getValue().floatValue(), hudModule.bloomPasses.getValue(), () -> {
+                for (CategoryComponent c : renderOrder) {
+                    c.render(this.fontRendererObj);
+                    c.mousePosition(scaledX, scaledY, c == topmostUnderCursor);
+
+                    for (Component m : c.getModules()) {
+                        m.drawScreen(scaledX, scaledY);
+                    }
+                }
+                if (configWindow != null) {
+                    configWindow.drawWindow(scaledX, scaledY, 0);
+                }
+            });
+        }
+
         for (CategoryComponent c : renderOrder) {
             c.render(this.fontRendererObj);
-            c.mousePosition(x, y, c == topmostUnderCursor);
+            c.mousePosition(scaledX, scaledY, c == topmostUnderCursor);
 
             for (Component m : c.getModules()) {
-                m.drawScreen(x, y);
+                m.drawScreen(scaledX, scaledY);
             }
         }
         GL11.glColor3f(1.0f, 1.0f, 1.0f);
 
+        // Vẽ Config Window
         if (configWindow != null) {
-            configWindow.drawWindow(x, y, delta);
+            configWindow.drawWindow(scaledX, scaledY, delta);
         }
 
-        int onlineCount = myau.Myau.presenceManager == null ? 0 : myau.Myau.presenceManager.getOnlineCount();
-        this.fontRendererObj.drawStringWithShadow("Miau User Online: " + onlineCount, 4.0F, this.height - 12.0F, 0xFFFFFFFF);
+        GL11.glPopMatrix();
     }
 
     @Override
     public void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
-        if (configWindow != null && configWindow.mouseClicked(mouseX, mouseY, mouseButton)) {
+        float centerX = this.width / 2.0f;
+        float centerY = this.height / 2.0f;
+        float ease = 1.0f - (float) Math.pow(1.0f - openingAnimation, 3);
+        float scaleFactor = 0.8f + (0.2f * ease);
+        int scaledX = (int) (centerX + (mouseX - centerX) / scaleFactor);
+        int scaledY = (int) (centerY + (mouseY - centerY) / scaleFactor);
+
+        if (configWindow != null && configWindow.mouseClicked(scaledX, scaledY, mouseButton)) {
             return;
         }
 
@@ -177,7 +218,7 @@ public class ClickGui extends GuiScreen {
         inputOrder.sort((a, b) -> Long.compare(b.lastInteractedTime, a.lastInteractedTime));
         CategoryComponent topmostCategory = null;
         for (CategoryComponent category : inputOrder) {
-            if (category.overRect(mouseX, mouseY)) {
+            if (category.overRect(scaledX, scaledY)) {
                 topmostCategory = category;
                 break;
             }
@@ -187,35 +228,44 @@ public class ClickGui extends GuiScreen {
 
         if (mouseButton == 0) {
             for (CategoryComponent category : categories) category.overTitle(false);
-            if (topmostCategory != null && topmostCategory.draggable(mouseX, mouseY)) {
+            if (topmostCategory != null && topmostCategory.draggable(scaledX, scaledY)) {
                 topmostCategory.overTitle(true);
-                topmostCategory.xx = mouseX - topmostCategory.getX();
-                topmostCategory.yy = mouseY - topmostCategory.getY();
+                topmostCategory.xx = scaledX - topmostCategory.getX();
+                topmostCategory.yy = scaledY - topmostCategory.getY();
                 topmostCategory.dragging = true;
             }
         }
 
-        if (mouseButton == 1 && topmostCategory != null && topmostCategory.overTitle(mouseX, mouseY)) {
+        if (mouseButton == 1 && topmostCategory != null && topmostCategory.overTitle(scaledX, scaledY)) {
             topmostCategory.mouseClicked(!topmostCategory.isOpened());
         }
 
-        if (topmostCategory != null && topmostCategory.isOpened() && !topmostCategory.getModules().isEmpty() && !topmostCategory.overTitle(mouseX, mouseY)) {
+        if (topmostCategory != null && topmostCategory.isOpened() && !topmostCategory.getModules().isEmpty() && !topmostCategory.overTitle(scaledX, scaledY)) {
             for (Component component : topmostCategory.getModules()) {
-                if (component.onClick(mouseX, mouseY, mouseButton)) break;
+                if (component.onClick(scaledX, scaledY, mouseButton)) break;
             }
         }
     }
 
     @Override
     public void mouseReleased(int x, int y, int button) {
-        if (configWindow != null) configWindow.mouseReleased(x, y, button);
+        if (openingAnimation < 0.95f) return;
+
+        float centerX = this.width / 2.0f;
+        float centerY = this.height / 2.0f;
+        float ease = 1.0f - (float) Math.pow(1.0f - openingAnimation, 3);
+        float scaleFactor = 0.8f + (0.2f * ease);
+        int scaledX = (int) (centerX + (x - centerX) / scaleFactor);
+        int scaledY = (int) (centerY + (y - centerY) / scaleFactor);
+
+        if (configWindow != null) configWindow.mouseReleased(scaledX, scaledY, button);
 
         if (button == 0) {
             for (CategoryComponent category : categories) {
                 category.overTitle(false);
                 if (category.isOpened() && !category.getModules().isEmpty()) {
                     for (Component module : category.getModules()) {
-                        module.mouseReleased(x, y, button);
+                        module.mouseReleased(scaledX, scaledY, button);
                     }
                 }
             }
@@ -225,12 +275,21 @@ public class ClickGui extends GuiScreen {
     @Override
     public void handleMouseInput() throws IOException {
         super.handleMouseInput();
+        if (openingAnimation < 0.95f) return;
+
         int wheelInput = Mouse.getDWheel();
         if (wheelInput != 0) {
             int mouseX = Mouse.getEventX() * this.width / mc.displayWidth;
             int mouseY = this.height - Mouse.getEventY() * this.height / mc.displayHeight - 1;
 
-            if (configWindow != null) configWindow.onScroll(wheelInput, mouseX, mouseY);
+            float centerX = this.width / 2.0f;
+            float centerY = this.height / 2.0f;
+            float ease = 1.0f - (float) Math.pow(1.0f - openingAnimation, 3);
+            float scaleFactor = 0.8f + (0.2f * ease);
+            int scaledX = (int) (centerX + (mouseX - centerX) / scaleFactor);
+            int scaledY = (int) (centerY + (mouseY - centerY) / scaleFactor);
+
+            if (configWindow != null) configWindow.onScroll(wheelInput, scaledX, scaledY);
 
             for (CategoryComponent category : categories) {
                 category.onScroll(wheelInput);
@@ -240,13 +299,16 @@ public class ClickGui extends GuiScreen {
 
     @Override
     public void keyTyped(char t, int k) {
+        // 1. Chặn phím tắt nếu đang gõ chữ trong ConfigWindow
         if (configWindow != null && configWindow.keyTyped(t, k)) return;
 
+        // Kiểm tra xem người dùng có đang cài Keybind cho module nào không
         boolean isBinding = binding();
 
         SearchBarComponent searchBar = null;
         CategoryComponent searchCategory = null;
 
+        // Tìm Category Search và Component SearchBar
         for (CategoryComponent category : categories) {
             if (category.category.equalsIgnoreCase("Search")) {
                 searchCategory = category;
@@ -257,22 +319,30 @@ public class ClickGui extends GuiScreen {
             }
         }
 
+        // 2. Logic Xử lý phím cho Search
         if (searchBar != null && searchCategory != null) {
             if (searchBar.focused) {
+                // Nếu đang gõ Search mà bấm ESC -> Thoát khỏi chế độ gõ (không đóng GUI)
                 if (k == Keyboard.KEY_ESCAPE) {
                     searchBar.focused = false;
                     return;
                 }
             } else if (!isBinding && k != Keyboard.KEY_ESCAPE && k != Keyboard.KEY_RETURN && k != Keyboard.KEY_BACK) {
+                // TỰ ĐỘNG BẮT PHÍM (Giống Rise Client)
+                // Nếu gõ chữ cái, số, hoặc khoảng trắng -> Tự động chuyển qua Search
                 if (String.valueOf(t).matches("[a-zA-Z0-9 ]")) {
+                    // Mở xổ Panel Search ra nếu nó đang bị thu gọn
                     if (!searchCategory.isOpened()) {
                         searchCategory.mouseClicked(true);
                     }
+                    // Bật focus để nó nhận chữ ngay lập tức
                     searchBar.focused = true;
+                    // (Phím vừa gõ sẽ được truyền tiếp xuống vòng lặp bên dưới để add vào ô Search)
                 }
             }
         }
 
+        // 3. Xử lý đóng ClickGUI bằng ESC
         if (k == Keyboard.KEY_ESCAPE) {
             if (!isBinding) {
                 this.mc.displayGuiScreen(null);
@@ -280,6 +350,7 @@ public class ClickGui extends GuiScreen {
             }
         }
 
+        // 4. Truyền phím xuống cho toàn bộ các module/setting/searchbar
         for (CategoryComponent category : categories) {
             if (category.isOpened() && !category.getModules().isEmpty()) {
                 for (Component module : category.getModules()) {
