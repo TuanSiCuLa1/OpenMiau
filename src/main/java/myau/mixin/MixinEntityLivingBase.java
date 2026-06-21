@@ -28,9 +28,13 @@ public abstract class MixinEntityLivingBase extends MixinEntity {
             ordinal = 0
     )
     private float jump(float float1) {
-        return (Entity) ((Object) this) instanceof EntityPlayerSP && RotationState.isActived()
-                ? RotationState.getSmoothedYaw() * (float) (Math.PI / 180.0)
-                : float1;
+        if ((Entity) ((Object) this) instanceof EntityPlayerSP) {
+            float yawDegrees = float1 * (float) (180.0 / Math.PI);
+            myau.events.JumpEvent event = new myau.events.JumpEvent(RotationState.isActived() ? RotationState.getSmoothedYaw() : yawDegrees);
+            EventManager.call(event);
+            return event.getYaw() * (float) (Math.PI / 180.0);
+        }
+        return float1;
     }
 
     @Redirect(
@@ -42,20 +46,16 @@ public abstract class MixinEntityLivingBase extends MixinEntity {
     )
     private void moveEntityWithHeading(EntityLivingBase entityLivingBase, float float2, float float3, float float4) {
         if ((Entity) ((Object) this) instanceof EntityPlayerSP) {
-            StrafeEvent event = new StrafeEvent(float2, float3, float4);
+            float originalYaw = this.rotationYaw;
+            float movementYaw = RotationState.isActived() ? RotationState.getSmoothedYaw() : originalYaw;
+            StrafeEvent event = new StrafeEvent(float2, float3, float4, movementYaw);
             EventManager.call(event);
             float2 = event.getStrafe();
             float3 = event.getForward();
             float4 = event.getFriction();
-            boolean actived = RotationState.isActived();
-            float yaw = this.rotationYaw;
-            if (actived) {
-                this.rotationYaw = RotationState.getSmoothedYaw();
-            }
+            this.rotationYaw = event.getYaw();
             entityLivingBase.moveFlying(float2, float3, float4);
-            if (actived) {
-                this.rotationYaw = yaw;
-            }
+            this.rotationYaw = originalYaw;
         } else {
             entityLivingBase.moveFlying(float2, float3, float4);
         }

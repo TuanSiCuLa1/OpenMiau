@@ -6,8 +6,6 @@ import myau.ui.clickgui.components.impl.BindComponent;
 import myau.ui.clickgui.components.impl.CategoryComponent;
 import myau.ui.clickgui.components.impl.ModuleComponent;
 import myau.ui.clickgui.components.impl.SearchBarComponent;
-import myau.util.shader.BlurUtils;
-import myau.module.modules.render.HUD;
 import myau.util.animation.AnimationTimer;
 import myau.util.shader.RoundedUtils;
 import net.minecraft.client.gui.GuiScreen;
@@ -23,11 +21,12 @@ import java.util.Comparator;
 import java.util.List;
 
 public class ClickGui extends GuiScreen {
+    public static float openingScale = 1.0f;
     private AnimationTimer backgroundFade;
     private AnimationTimer blurSmooth;
+    private AnimationTimer scaleAnimation = new AnimationTimer(300.0F);
     private ScaledResolution sr;
     public static ArrayList<CategoryComponent> categories;
-    public static float openingScale = 1.0f;
 
     private ConfigWindow configWindow;
 
@@ -39,29 +38,21 @@ public class ClickGui extends GuiScreen {
 
     public ClickGui() {
         categories = new ArrayList<>();
-<<<<<<< HEAD
         String[] values = new String[]{"Combat", "Target", "Movement", "Player", "Render", "Themes", "Misc", "Latency", "Search", "Minigames"};
-=======
-        String[] values = new String[]{"Combat", "Target", "Movement", "Player", "Render", "Themes", "Misc", "Latency", "Config", "Search", "Minigames"};
->>>>>>> 746610b90671b5ee596a876af938a43584190552
 
         float startX = 15;
         float marginX = 105;
 
         for (int i = 0; i < values.length; ++i) {
             CategoryComponent cc = new CategoryComponent(values[i]);
-<<<<<<< HEAD
             cc.setX(startX + (i / 2) * marginX, false);
             cc.setY(15 + (i % 2) * 60, false);   
-=======
-            cc.setX(startX + (i / 2) * marginX, false); // i/2 = cột
-            cc.setY(15 + (i % 2) * 60, false);          // i%2 = hàng
->>>>>>> 746610b90671b5ee596a876af938a43584190552
             categories.add(cc);
         }
     }
 
     public void initMain() {
+        (this.blurSmooth = this.backgroundFade = new AnimationTimer(500.0F)).start();
         (this.blurSmooth = this.backgroundFade = new AnimationTimer(500.0F)).start();
     }
 
@@ -97,8 +88,8 @@ public class ClickGui extends GuiScreen {
     @Override
     public void initGui() {
         super.initGui();
-        this.openingAnimation = 0.0f;
-        ClickGui.openingScale = 0.8f;
+        this.scaleAnimation.start();
+        ClickGui.openingScale = 0.5f;
         this.sr = new ScaledResolution(mc);
         this.actualScreenWidth = this.sr.getScaledWidth();
         this.actualScreenHeight = this.sr.getScaledHeight();
@@ -141,33 +132,34 @@ public class ClickGui extends GuiScreen {
 
         openingAnimation = Math.min(1.0f, lerp(openingAnimation, 1.0f, 0.02f * delta));
 
-        updateAutoLayout(delta);
-
-        HUD hud = (HUD) myau.Myau.moduleManager.getModule(HUD.class);
-        ClickGUI guiModule = (ClickGUI) myau.Myau.moduleManager.modules.get(ClickGUI.class);
-        if (guiModule != null && guiModule.blur.getValue()) {
-            int blurP = hud != null ? hud.blurPasses.getValue() : 2;
-            float blurR = hud != null ? hud.blurRadius.getValue() : 3.0f;
-            BlurUtils.prepareBlur();
-            RoundedUtils.drawRound(0, 0, this.width, this.height, 0.0f, true, Color.black);
-            BlurUtils.blurEnd(blurP, blurR * openingAnimation);
-        }
-
-        int alpha = (int) (130 * openingAnimation);
-        drawRect(0, 0, this.width, this.height, new Color(0, 0, 0, alpha).getRGB());
-
         float centerX = this.width / 2.0f;
         float centerY = this.height / 2.0f;
-        
         float ease = 1.0f - (float) Math.pow(1.0f - openingAnimation, 3);
         float scaleFactor = 0.8f + (0.2f * ease);
-        ClickGui.openingScale = scaleFactor;
-
         int scaledX = (int) (centerX + (x - centerX) / scaleFactor);
         int scaledY = (int) (centerY + (y - centerY) / scaleFactor);
 
+        updateAutoLayout(delta);
+
+        ClickGui.openingScale = this.scaleAnimation.getValueFloat(0.5f, 1.0f, 2);
+
+        myau.module.modules.render.HUD hudModule = (myau.module.modules.render.HUD) myau.Myau.moduleManager.modules.get(myau.module.modules.render.HUD.class);
+        ClickGUI guiModule = (ClickGUI) myau.Myau.moduleManager.modules.get(ClickGUI.class);
+        
+        boolean useBlur = (guiModule != null && guiModule.blur.getValue()) || (hudModule != null && hudModule.shaders.getValue());
+
+        if (useBlur) {
+            int passes = (hudModule != null && hudModule.blurSettings.getValue()) ? hudModule.blurPasses.getValue() : 2;
+            float radius = (hudModule != null && hudModule.blurSettings.getValue()) ? hudModule.blurRadius.getValue() : 3.0f;
+            myau.util.shader.RenderSystem.renderBlur(radius, passes, () -> {
+                RoundedUtils.drawRound(0, 0, this.width, this.height, 0.0f, true, Color.black);
+            });
+        }
+
+        int bgColorAlpha = (int) (130 * this.scaleAnimation.getValueFloat(0.0f, 1.0f, 2));
+        drawRect(0, 0, this.width, this.height, new Color(0, 0, 0, bgColorAlpha).getRGB());
+
         List<CategoryComponent> renderOrder = getCategoriesInRenderOrder();
-<<<<<<< HEAD
         CategoryComponent topmostUnderCursor = getTopmostUnderCursor(renderOrder, scaledX, scaledY);
 
         GL11.glPushMatrix();
@@ -175,39 +167,20 @@ public class ClickGui extends GuiScreen {
         GL11.glScaled(scaleFactor, scaleFactor, 1.0);
         GL11.glTranslatef(-centerX, -centerY, 0);
 
-=======
-        CategoryComponent topmostUnderCursor = getTopmostUnderCursor(renderOrder, x, y);
+        if (hudModule != null && hudModule.shaders.getValue()) {
+            myau.util.shader.RenderSystem.renderBloom(hudModule.bloomRadius.getValue().floatValue(), hudModule.bloomPasses.getValue(), () -> {
+                for (CategoryComponent c : renderOrder) {
+                    c.render(this.fontRendererObj);
+                    c.mousePosition(scaledX, scaledY, c == topmostUnderCursor);
 
-        myau.module.modules.render.HUD hud = (myau.module.modules.render.HUD) myau.Myau.moduleManager.modules.get(myau.module.modules.render.HUD.class);
-        
->>>>>>> 746610b90671b5ee596a876af938a43584190552
-        if (hud != null && hud.shaders.getValue()) {
-            BlurUtils.prepareBloom();
-            for (CategoryComponent c : renderOrder) {
-                c.render(this.fontRendererObj);
-<<<<<<< HEAD
-                c.mousePosition(scaledX, scaledY, c == topmostUnderCursor);
-
-                for (Component m : c.getModules()) {
-                    m.drawScreen(scaledX, scaledY);
+                    for (Component m : c.getModules()) {
+                        m.drawScreen(scaledX, scaledY);
+                    }
                 }
-            }
-            if (configWindow != null) {
-                configWindow.drawWindow(scaledX, scaledY, 0);
-            }
-            BlurUtils.bloomEnd(hud.bloomPasses.getValue(), hud.bloomRadius.getValue());
-=======
-                c.mousePosition(x, y, c == topmostUnderCursor);
-
-                for (Component m : c.getModules()) {
-                    m.drawScreen(x, y);
+                if (configWindow != null) {
+                    configWindow.drawWindow(scaledX, scaledY, 0);
                 }
-            }
-            if (configWindow != null) {
-                configWindow.drawWindow(x, y, 0);
-            }
-            BlurUtils.bloomEnd(4, 3f);
->>>>>>> 746610b90671b5ee596a876af938a43584190552
+            });
         }
 
         for (CategoryComponent c : renderOrder) {
@@ -224,18 +197,12 @@ public class ClickGui extends GuiScreen {
         if (configWindow != null) {
             configWindow.drawWindow(scaledX, scaledY, delta);
         }
-<<<<<<< HEAD
 
         GL11.glPopMatrix();
-=======
->>>>>>> 746610b90671b5ee596a876af938a43584190552
     }
 
     @Override
     public void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
-<<<<<<< HEAD
-        if (openingAnimation < 0.95f) return;
-
         float centerX = this.width / 2.0f;
         float centerY = this.height / 2.0f;
         float ease = 1.0f - (float) Math.pow(1.0f - openingAnimation, 3);
@@ -244,10 +211,6 @@ public class ClickGui extends GuiScreen {
         int scaledY = (int) (centerY + (mouseY - centerY) / scaleFactor);
 
         if (configWindow != null && configWindow.mouseClicked(scaledX, scaledY, mouseButton)) {
-=======
-        // Ưu tiên tương tác Config Window trước
-        if (configWindow != null && configWindow.mouseClicked(mouseX, mouseY, mouseButton)) {
->>>>>>> 746610b90671b5ee596a876af938a43584190552
             return;
         }
 
@@ -319,7 +282,6 @@ public class ClickGui extends GuiScreen {
             int mouseX = Mouse.getEventX() * this.width / mc.displayWidth;
             int mouseY = this.height - Mouse.getEventY() * this.height / mc.displayHeight - 1;
 
-<<<<<<< HEAD
             float centerX = this.width / 2.0f;
             float centerY = this.height / 2.0f;
             float ease = 1.0f - (float) Math.pow(1.0f - openingAnimation, 3);
@@ -328,10 +290,6 @@ public class ClickGui extends GuiScreen {
             int scaledY = (int) (centerY + (mouseY - centerY) / scaleFactor);
 
             if (configWindow != null) configWindow.onScroll(wheelInput, scaledX, scaledY);
-=======
-            // Xử lý scroll Config Window trước
-            if (configWindow != null) configWindow.onScroll(wheelInput, mouseX, mouseY);
->>>>>>> 746610b90671b5ee596a876af938a43584190552
 
             for (CategoryComponent category : categories) {
                 category.onScroll(wheelInput);

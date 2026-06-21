@@ -27,7 +27,7 @@ public class MathUtil {
      * @param max maximal number
      * @return random between both numbers
      */
-    public double getRandom(double min, double max) {
+    public static double getRandom(double min, double max) {
         if (min == max) {
             return min;
         } else if (min > max) {
@@ -38,7 +38,7 @@ public class MathUtil {
         return ThreadLocalRandom.current().nextDouble(min, max);
     }
 
-    public double round(final double value, final int places) {
+    public static double round(final double value, final int places) {
         try {
             final BigDecimal bigDecimal = BigDecimal.valueOf(value);
 
@@ -54,7 +54,7 @@ public class MathUtil {
         return divisor * quotient;
     }
 
-    public double round(final double value, final int scale, final double inc) {
+    public static double round(final double value, final int scale, final double inc) {
         final double halfOfInc = inc / 2.0;
         final double floored = Math.floor(value / inc) * inc;
 
@@ -69,7 +69,7 @@ public class MathUtil {
         }
     }
 
-    public double roundWithSteps(final double value, final double steps) {
+    public static double roundWithSteps(final double value, final double steps) {
         double a = ((Math.round(value / steps)) * steps);
         a *= 1000;
         a = (int) a;
@@ -103,11 +103,11 @@ public class MathUtil {
      * @param n   The input number to clamp
      * @return The input, bounded by the specified minimum and maximum values
      */
-    public double clamp(double min, double max, double n) {
+    public static double clamp(double min, double max, double n) {
         return Math.max(min, Math.min(max, n));
     }
 
-    public double wrappedDifference(double number1, double number2) {
+    public static double wrappedDifference(double number1, double number2) {
         return Math.min(Math.abs(number1 - number2), Math.min(Math.abs(number1 - 360) - Math.abs(number2 - 0), Math.abs(number2 - 360) - Math.abs(number1 - 0)));
     }
 

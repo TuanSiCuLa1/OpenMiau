@@ -747,7 +747,7 @@ public class RenderUtil {
         int[] saved = scissorPushStack[scissorPushDepth++];
         if (scissorPushDepth > SCISSOR_PUSH_STACK_DEPTH) throw new IllegalStateException("Scissor stack overflow");
         if (wasEnabled) {
-            SCISSOR_PUSH_BUF.clear();
+            ((java.nio.Buffer) SCISSOR_PUSH_BUF).clear();
             GL11.glGetInteger(GL11.GL_SCISSOR_BOX, SCISSOR_PUSH_BUF);
             saved[0] = 1;
             saved[1] = SCISSOR_PUSH_BUF.get(0);
@@ -1814,15 +1814,15 @@ public class RenderUtil {
         }
 
         context.scaleFactor = scaleFactor;
-        context.modelView.clear();
-        context.projection.clear();
-        context.viewport.clear();
+        ((java.nio.Buffer) context.modelView).clear();
+        ((java.nio.Buffer) context.projection).clear();
+        ((java.nio.Buffer) context.viewport).clear();
         GL11.glGetFloat(GL11.GL_MODELVIEW_MATRIX, context.modelView);
         GL11.glGetFloat(GL11.GL_PROJECTION_MATRIX, context.projection);
         GL11.glGetInteger(GL11.GL_VIEWPORT, context.viewport);
-        context.modelView.rewind();
-        context.projection.rewind();
-        context.viewport.rewind();
+        ((java.nio.Buffer) context.modelView).rewind();
+        ((java.nio.Buffer) context.projection).rewind();
+        ((java.nio.Buffer) context.viewport).rewind();
         return context;
     }
 
@@ -1831,7 +1831,7 @@ public class RenderUtil {
             return false;
         }
 
-        context.screenCoords.clear();
+        ((java.nio.Buffer) context.screenCoords).clear();
         boolean result = GLU.gluProject(
                 (float) x,
                 (float) y,

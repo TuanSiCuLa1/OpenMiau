@@ -26,6 +26,10 @@ public class MoveUtil {
         return MoveUtil.mc.gameSettings.keyBindLeft.isKeyDown() != MoveUtil.mc.gameSettings.keyBindRight.isKeyDown();
     }
 
+    public static boolean isMoving() {
+        return mc.thePlayer != null && (mc.thePlayer.movementInput.moveForward != 0.0f || mc.thePlayer.movementInput.moveStrafe != 0.0f);
+    }
+
     public static int getForwardValue() {
         int forwardValue = 0;
         if (MoveUtil.mc.gameSettings.keyBindForward.isKeyDown()) {
@@ -211,6 +215,52 @@ public class MoveUtil {
             MoveUtil.mc.thePlayer.movementInput.moveForward *= 0.3f;
             MoveUtil.mc.thePlayer.movementInput.moveStrafe *= 0.3f;
         }
+    }
+
+    public static void fixMovement(final float yaw) {
+        final float forward = mc.thePlayer.movementInput.moveForward;
+        final float strafe = mc.thePlayer.movementInput.moveStrafe;
+        if (forward == 0 && strafe == 0) return;
+
+        final double angle = MathHelper.wrapAngleTo180_double(Math.toDegrees(direction(mc.thePlayer.rotationYaw, forward, strafe)));
+        float closestForward = 0, closestStrafe = 0;
+        double closestDifference = Double.MAX_VALUE;
+
+        for (float predictedForward = -1F; predictedForward <= 1F; predictedForward += 1F) {
+            for (float predictedStrafe = -1F; predictedStrafe <= 1F; predictedStrafe += 1F) {
+                if (predictedStrafe == 0 && predictedForward == 0) continue;
+
+                final double predictedAngle = MathHelper.wrapAngleTo180_double(Math.toDegrees(direction(yaw, predictedForward, predictedStrafe)));
+                final double difference = wrappedDifference(angle, predictedAngle);
+
+                if (difference < closestDifference) {
+                    closestDifference = difference;
+                    closestForward = predictedForward;
+                    closestStrafe = predictedStrafe;
+                }
+            }
+        }
+
+        mc.thePlayer.movementInput.moveForward = closestForward;
+        mc.thePlayer.movementInput.moveStrafe = closestStrafe;
+        if (mc.thePlayer.movementInput.sneak) {
+            mc.thePlayer.movementInput.moveForward *= 0.3f;
+            mc.thePlayer.movementInput.moveStrafe *= 0.3f;
+        }
+    }
+
+    public static double direction(float rotationYaw, final double moveForward, final double moveStrafing) {
+        if (moveForward < 0F) rotationYaw += 180F;
+        float forward = 1F;
+        if (moveForward < 0F) forward = -0.5F;
+        else if (moveForward > 0F) forward = 0.5F;
+        if (moveStrafing > 0F) rotationYaw -= 90F * forward;
+        if (moveStrafing < 0F) rotationYaw += 90F * forward;
+        return Math.toRadians(rotationYaw);
+    }
+
+    public static double wrappedDifference(double number1, double number2) {
+        return Math.min(Math.abs(number1 - number2), Math.min(Math.abs(number1 - 360) - Math.abs(number2 - 0), Math.abs(number2 - 360) - Math.abs(number1 - 0)));
     }
 }
 

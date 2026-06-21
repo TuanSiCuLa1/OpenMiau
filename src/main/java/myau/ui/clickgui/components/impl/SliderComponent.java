@@ -1,17 +1,17 @@
 package myau.ui.clickgui.components.impl;
 
 import myau.ui.clickgui.components.Component;
+import myau.module.Module;
 import myau.property.Property;
 import myau.property.properties.FloatProperty;
 import myau.property.properties.IntProperty;
 import myau.property.properties.PercentProperty;
 import myau.property.properties.ModeProperty;
-<<<<<<< HEAD
 import myau.util.render.RenderUtil;
-=======
-import myau.util.render.RenderUtils;
->>>>>>> 746610b90671b5ee596a876af938a43584190552
+import myau.util.font.FontManager;
+import myau.util.font.Font;
 import myau.util.font.Fonts;
+import net.minecraft.client.Minecraft;
 import org.lwjgl.opengl.GL11;
 
 import java.awt.Color;
@@ -83,6 +83,7 @@ public class SliderComponent extends Component {
 
     public void setValue(double newValue) {
         newValue = Math.max(getMin(), Math.min(getMax(), newValue));
+        Object prevValue = property.getValue();
         if (property instanceof FloatProperty) {
             property.setValue((float) newValue);
         } else if (property instanceof IntProperty) {
@@ -91,6 +92,9 @@ public class SliderComponent extends Component {
             property.setValue((int) Math.round(newValue));
         } else if (property instanceof ModeProperty) {
             property.setValue((int) Math.round(newValue));
+        }
+        if (prevValue != null && !prevValue.equals(property.getValue())) {
+            this.moduleComponent.reloadSettings();
         }
     }
 

@@ -24,4 +24,7 @@ public interface IAccessorEntityLivingBase {
 
     @Accessor
     void setJumpTicks(int integer);
+
+    @Accessor("isJumping")
+    boolean getIsJumping();
 }

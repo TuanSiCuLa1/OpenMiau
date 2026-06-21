@@ -1,15 +1,13 @@
 package myau.ui.clickgui.components.impl;
 
 import myau.ui.clickgui.animation.ScrollOffsetAnimation;
+import myau.ui.clickgui.ClickGui;
 import myau.ui.clickgui.components.Component;
 import myau.module.Module;
-<<<<<<< HEAD
+import myau.module.modules.target.Targets;
 import myau.util.render.RenderUtil;
+import myau.util.render.ColorUtil;
 import myau.util.animation.AnimationTimer;
-=======
-import myau.util.render.RenderUtils;
-import myau.util.Timer;
->>>>>>> 746610b90671b5ee596a876af938a43584190552
 import myau.util.font.Font;
 import myau.util.font.Fonts;
 import net.minecraft.client.Minecraft;
@@ -88,6 +86,7 @@ public class CategoryComponent {
 
     public CategoryComponent(String category) {
         this.category = category;
+        this.width = this.category.equalsIgnoreCase("Config") ? 135 : 92;
         this.x = 5;
         this.moduleY = this.y = 5;
         this.titleHeight = 13;
@@ -97,9 +96,14 @@ public class CategoryComponent {
         this.lastHeight = this.y + this.titleHeight + 4;
         this.animationStartHeight = this.lastHeight;
 
+        moduleRenderY = addTargetSettingsComponent(moduleRenderY);
+
         List<Module> mods = myau.Myau.moduleManager.getModulesByCategory().get(category);
         if (mods != null) {
             for (Module mod : mods) {
+                if (mod instanceof Targets) {
+                    continue;
+                }
                 ModuleComponent b = new ModuleComponent(mod, this, moduleRenderY);
                 this.modules.add(b);
                 moduleRenderY += 16;
@@ -125,11 +129,7 @@ public class CategoryComponent {
         }
 
         if (this.category.equalsIgnoreCase("Themes")) {
-<<<<<<< HEAD
             for (myau.util.render.Themes theme : myau.util.render.Themes.values()) {
-=======
-            for (myau.util.Themes theme : myau.util.Themes.values()) {
->>>>>>> 746610b90671b5ee596a876af938a43584190552
                 ThemeSelectComponent tsc = new ThemeSelectComponent(this, moduleRenderY, theme);
                 this.modules.add(tsc);
                 moduleRenderY += tsc.getHeightF();
@@ -138,9 +138,14 @@ public class CategoryComponent {
             return;
         }
 
+        moduleRenderY = addTargetSettingsComponent(moduleRenderY);
+
         List<Module> mods = myau.Myau.moduleManager.getModulesByCategory().get(this.category);
         if (mods != null) {
             for (Module mod : mods) {
+                if (mod instanceof Targets) {
+                    continue;
+                }
                 ModuleComponent component = new ModuleComponent(mod, this, moduleRenderY);
                 component.restoreOpenState(Boolean.TRUE.equals(openStates.get(mod.getName())));
                 this.modules.add(component);
@@ -150,47 +155,53 @@ public class CategoryComponent {
         syncAfterModuleReload();
     }
 
+    private float addTargetSettingsComponent(float moduleRenderY) {
+        if (!this.category.equalsIgnoreCase("Target")) {
+            return moduleRenderY;
+        }
+        Module targets = myau.Myau.moduleManager.modules.get(Targets.class);
+        if (!(targets instanceof Targets)) {
+            return moduleRenderY;
+        }
+        ModuleComponent targetSettings = new ModuleComponent(targets, this, moduleRenderY, true);
+        this.modules.add(targetSettings);
+        return moduleRenderY + targetSettings.getHeightF();
+    }
+
     public void updateSearchResults(String query) {
         if (!this.category.equalsIgnoreCase("Search")) return;
 
         Map<String, Boolean> openStates = captureModuleOpenStates();
 
-        // Lấy lại cái SearchBar (luôn ở vị trí 0)
         Component searchBar = null;
         if (!this.modules.isEmpty() && this.modules.get(0) instanceof SearchBarComponent) {
             searchBar = this.modules.get(0);
         }
 
-        // Xóa sạch danh sách hiện tại
         this.modules.clear();
 
         float moduleRenderY = this.titleHeight + 3;
 
-        // Add lại SearchBar lên đầu
         if (searchBar != null) {
             this.modules.add(searchBar);
             moduleRenderY += searchBar.getHeightF();
         }
 
-        // Quét toàn bộ module trong Client
         if (query != null && !query.trim().isEmpty()) {
             String lowerQuery = query.toLowerCase().replace(" ", "");
 
             for (Module mod : myau.Myau.moduleManager.modules.values()) {
-                // Bỏ qua các module dạng GUI
-                if (mod.getName().equalsIgnoreCase("ClickGUI") || mod.getName().equalsIgnoreCase("GUI")) continue;
+                if (mod.getName().equalsIgnoreCase("ClickGUI") || mod.getName().equalsIgnoreCase("GUI") || mod instanceof Targets) continue;
 
-                // Nếu tên module chứa từ khóa tìm kiếm
                 if (mod.getName().toLowerCase().replace(" ", "").contains(lowerQuery)) {
                     ModuleComponent component = new ModuleComponent(mod, this, moduleRenderY);
                     component.restoreOpenState(Boolean.TRUE.equals(openStates.get(mod.getName())));
                     this.modules.add(component);
-                    moduleRenderY += component.getHeightF(); // Cộng dồn chiều cao
+                    moduleRenderY += component.getHeightF(); 
                 }
             }
         }
 
-        // Cập nhật lại thanh Scroll cho mượt
         syncAfterModuleReload();
     }
 
@@ -296,6 +307,7 @@ public class CategoryComponent {
     }
 
     public void render(FontRenderer renderer) {
+        this.width = this.category.equalsIgnoreCase("Config") ? 135 : 92;
         Font titleRenderer = Fonts.MINECRAFT.get(24);
 
         if (smoothTimer != null && System.currentTimeMillis() - smoothTimer.last >= 280) {
@@ -578,7 +590,6 @@ public class CategoryComponent {
 
     private static Map<String, CategoryIconStacks> buildCategoryIconStacks() {
         Map<String, CategoryIconStacks> iconStacks = new HashMap<>();
-        // 👉 FIX: Thêm chữ "Search" vào mảng này
         String[] categories = new String[]{"Combat", "Movement", "Render", "Player", "Misc", "Latency", "Minigames", "Target", "Search", "Themes"};
         for (String cat : categories) {
             ItemStack normalStack = createCategoryIconStack(cat, false);

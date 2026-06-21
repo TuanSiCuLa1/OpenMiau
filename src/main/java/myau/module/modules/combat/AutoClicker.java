@@ -77,12 +77,14 @@ public class AutoClicker extends Module {
             } else if (entityPlayer.deathTime > 0) {
                 return false;
             } else {
-                float borderSize = entityPlayer.getCollisionBorderSize();
-                return RotationUtil.rayTrace(entityPlayer.getEntityBoundingBox().expand(
-                        borderSize + this.hitBoxHorizontal.getValue(),
-                        borderSize + this.hitBoxVertical.getValue(),
-                        borderSize + this.hitBoxHorizontal.getValue()
-                ), mc.thePlayer.rotationYaw, mc.thePlayer.rotationPitch, this.range.getValue()) != null;
+                net.minecraft.util.MovingObjectPosition mop = myau.util.player.RayCastUtil.rayCast(
+                        mc.thePlayer.rotationYaw, 
+                        mc.thePlayer.rotationPitch, 
+                        this.range.getValue(), 
+                        Math.max(this.hitBoxHorizontal.getValue(), this.hitBoxVertical.getValue()), 
+                        entityPlayer
+                );
+                return mop != null && mop.entityHit == entityPlayer;
             }
         } else {
             return false;

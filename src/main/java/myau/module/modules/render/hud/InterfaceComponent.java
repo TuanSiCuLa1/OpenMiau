@@ -36,19 +36,22 @@ public final class InterfaceComponent {
 
     public boolean shouldDisplay(HUD hudInstance) {
         String name = this.module.getName().toLowerCase();
-        if (name.equals("clickgui") || name.equals("gui") || name.equals("hud")) {
-            return false;
-        }
 
         switch (hudInstance.modulesToShow.getValue()) {
             case 0:
                 return true;
 
             case 1:
+                if (name.equals("clickgui") || name.equals("gui") || name.equals("hud")) {
+                    return false;
+                }
                 String category = this.module.getCategory();
                 return category == null || !category.equalsIgnoreCase("render");
 
             case 2:
+                if (name.equals("clickgui") || name.equals("gui") || name.equals("hud")) {
+                    return false;
+                }
                 return this.module.getKey() != 0 && this.module.getKey() != Keyboard.KEY_NONE;
 
             default:

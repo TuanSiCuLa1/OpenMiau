@@ -136,11 +136,139 @@ public class RotationUtil {
         return RotationUtil.mc.theWorld.rayTraceBlocks(eyePos, targetPos);
     }
 
-    public static MovingObjectPosition rayTrace(AxisAlignedBB boundingBox, float yaw, float pitch, double distance) {
-        Vec3 eyePos = RotationUtil.mc.thePlayer.getPositionEyes(1.0f);
-        Vec3 lookVec = ((IAccessorEntity) RotationUtil.mc.thePlayer).callGetVectorForRotation(pitch, yaw);
-        Vec3 targetPos = eyePos.addVector(lookVec.xCoord * distance, lookVec.yCoord * distance, lookVec.zCoord * distance);
-        return boundingBox.calculateIntercept(eyePos, targetPos);
+    // Removed obsolete rayTrace(AxisAlignedBB...)
+
+    private static float randomAngle = 0.0f;
+    private static float offsetX = 0.0f;
+    private static float offsetY = 0.0f;
+
+    public static float[] calculate(Vec3 to) {
+        Vec3 from = mc.thePlayer.getPositionEyes(1.0f);
+        double diffX = to.xCoord - from.xCoord;
+        double diffY = to.yCoord - from.yCoord;
+        double diffZ = to.zCoord - from.zCoord;
+        double distance = Math.hypot(diffX, diffZ);
+        float yaw = (float) (MathHelper.atan2(diffZ, diffX) * 180.0 / Math.PI) - 90.0F;
+        float pitch = (float) (-(MathHelper.atan2(diffY, distance) * 180.0 / Math.PI));
+        return new float[]{MathHelper.wrapAngleTo180_float(yaw), MathHelper.wrapAngleTo180_float(pitch)};
+    }
+
+    public static float[] calculate(Entity entity) {
+        double yOffset = Math.max(0, Math.min(mc.thePlayer.posY - entity.posY + mc.thePlayer.getEyeHeight(), (entity.getEntityBoundingBox().maxY - entity.getEntityBoundingBox().minY) * 0.9));
+        return calculate(new Vec3(entity.posX, entity.posY + yOffset, entity.posZ));
+    }
+
+    public static float[] calculate(Entity entity, boolean adaptive, double range) {
+        float[] normalRotations = calculate(entity);
+        if (!adaptive || rayCastHit(normalRotations, range, entity)) {
+            return normalRotations;
+        }
+
+        AxisAlignedBB boundingBox = entity.getEntityBoundingBox();
+        double width = boundingBox.maxX - boundingBox.minX;
+        double height = boundingBox.maxY - boundingBox.minY;
+        double depth = boundingBox.maxZ - boundingBox.minZ;
+
+        for (double yPercent = 1.0; yPercent >= 0.0; yPercent -= 0.25 + Math.random() * 0.1) {
+            for (double xPercent = 1.0; xPercent >= -0.5; xPercent -= 0.5) {
+                for (double zPercent = 1.0; zPercent >= -0.5; zPercent -= 0.5) {
+                    Vec3 targetPoint = new Vec3(
+                            boundingBox.minX + width * xPercent,
+                            boundingBox.minY + height * yPercent,
+                            boundingBox.minZ + depth * zPercent
+                    );
+                    float[] adaptiveRotations = calculate(targetPoint);
+                    if (rayCastHit(adaptiveRotations, range, entity)) {
+                        return adaptiveRotations;
+                    }
+                }
+            }
+        }
+
+        return normalRotations;
+    }
+
+    public static boolean rayCastHit(float[] rotations, double range, Entity target) {
+        MovingObjectPosition mop = RayCastUtil.rayCast(rotations[0], rotations[1], range, 0.0f, target);
+        return mop != null && mop.typeOfHit == MovingObjectPosition.MovingObjectType.ENTITY;
+    }
+
+    public static float[] applySensitivityPatch(float yaw, float pitch, float prevYaw, float prevPitch) {
+        float mouseSensitivity = (float) (mc.gameSettings.mouseSensitivity * (1.0 + Math.random() / 10000000.0) * 0.6F + 0.2F);
+        double multiplier = mouseSensitivity * mouseSensitivity * mouseSensitivity * 8.0F * 0.15D;
+        float fixedYaw = prevYaw + (float) (Math.round((yaw - prevYaw) / multiplier) * multiplier);
+        float fixedPitch = prevPitch + (float) (Math.round((pitch - prevPitch) / multiplier) * multiplier);
+        return new float[]{fixedYaw, MathHelper.clamp_float(fixedPitch, -90.0F, 90.0F)};
+    }
+
+    public static float[] smooth(float[] lastRotation, float[] targetRotation, double speed, Entity targetEntity, double range) {
+        float targetYaw = targetRotation[0];
+        float targetPitch = targetRotation[1];
+        float lastYaw = lastRotation[0];
+        float lastPitch = lastRotation[1];
+
+        if (targetEntity != null && (Math.abs(targetYaw - lastYaw) > 5 || Math.abs(targetPitch - lastPitch) > 5)) {
+            double driftSpeed = (Math.random() * Math.random() * Math.random()) * 20.0;
+            randomAngle += (float) ((20.0 + (Math.random() - 0.5) * (Math.random() * Math.random() * Math.random() * 360.0)) * (mc.thePlayer.ticksExisted / 10 % 2 == 0 ? -1 : 1));
+
+            offsetX += -MathHelper.sin((float) Math.toRadians(randomAngle)) * driftSpeed;
+            offsetY += MathHelper.cos((float) Math.toRadians(randomAngle)) * driftSpeed;
+
+            targetYaw += offsetX;
+            targetPitch += offsetY;
+
+            if (!rayCastHit(new float[]{targetYaw, targetPitch}, range, targetEntity)) {
+                randomAngle = (float) Math.toDegrees(Math.atan2(targetRotation[0] - targetYaw, targetPitch - targetRotation[1])) - 180.0F;
+                targetYaw -= offsetX;
+                targetPitch -= offsetY;
+
+                offsetX += -MathHelper.sin((float) Math.toRadians(randomAngle)) * driftSpeed;
+                offsetY += MathHelper.cos((float) Math.toRadians(randomAngle)) * driftSpeed;
+
+                targetYaw += offsetX;
+                targetPitch += offsetY;
+            }
+
+            if (!rayCastHit(new float[]{targetYaw, targetPitch}, range, targetEntity)) {
+                offsetX = 0;
+                offsetY = 0;
+                targetYaw = (float) (targetRotation[0] + Math.random() * 2);
+                targetPitch = (float) (targetRotation[1] + Math.random() * 2);
+            }
+        }
+
+        if (speed != 0) {
+            double deltaYaw = MathHelper.wrapAngleTo180_float(targetYaw - lastYaw);
+            double deltaPitch = (targetPitch - lastPitch);
+            double distance = Math.sqrt(deltaYaw * deltaYaw + deltaPitch * deltaPitch);
+
+            if (distance > 0.001) {
+                double distributionYaw = Math.abs(deltaYaw / distance);
+                double distributionPitch = Math.abs(deltaPitch / distance);
+
+                double maxYaw = speed * distributionYaw;
+                double maxPitch = speed * distributionPitch;
+
+                float moveYaw = (float) Math.max(Math.min(deltaYaw, maxYaw), -maxYaw);
+                float movePitch = (float) Math.max(Math.min(deltaPitch, maxPitch), -maxPitch);
+
+                float yaw = lastYaw + moveYaw;
+                float pitch = lastPitch + movePitch;
+
+                for (int i = 1; i <= (int) (Minecraft.getDebugFPS() / 20.0F + Math.random() * 10); ++i) {
+                    if (Math.abs(moveYaw) + Math.abs(movePitch) > 0.0001) {
+                        yaw += (Math.random() - 0.5) / 1000.0;
+                        pitch -= Math.random() / 200.0;
+                    }
+
+                    float[] fixedRotations = applySensitivityPatch(yaw, pitch, lastYaw, lastPitch);
+                    yaw = fixedRotations[0];
+                    pitch = Math.max(-90.0F, Math.min(90.0F, fixedRotations[1]));
+                }
+                return new float[]{yaw, pitch};
+            }
+        }
+        return targetRotation;
     }
 }
 

@@ -6,11 +6,7 @@ import myau.property.Property;
 import myau.property.PropertyManager;
 import java.util.List;
 import java.util.ArrayList;
-<<<<<<< HEAD
 import myau.util.client.KeyBindUtil;
-=======
-import myau.util.KeyBindUtil;
->>>>>>> 746610b90671b5ee596a876af938a43584190552
 import myau.notification.NotificationManager;
 import myau.notification.NotificationType;
 

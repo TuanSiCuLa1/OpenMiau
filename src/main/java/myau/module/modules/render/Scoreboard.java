@@ -1,7 +1,6 @@
 package myau.module.modules.render;
 
 import myau.module.Module;
-import myau.property.properties.IntProperty;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.scoreboard.Score;
@@ -14,24 +13,15 @@ import java.util.List;
 
 public class Scoreboard extends Module {
     private static final Minecraft mc = Minecraft.getMinecraft();
-    public final IntProperty offX = new IntProperty("offset-x", 0, -2000, 2000);
-    public final IntProperty offY = new IntProperty("offset-y", 0, -2000, 2000);
+    public final myau.property.properties.DragProperty drag = new myau.property.properties.DragProperty("Position", new myau.util.vector.Vector2d(0, 0));
+    public float defaultX = 0;
+    public float defaultY = 0;
 
     public Scoreboard() {
         super("Scoreboard", true, false);
     }
 
-    public static class ScoreboardBounds {
-        public float x, y, width, height;
-        public ScoreboardBounds(float x, float y, float width, float height) {
-            this.x = x;
-            this.y = y;
-            this.width = width;
-            this.height = height;
-        }
-    }
-
-    public ScoreboardBounds getBounds(ScaledResolution scaledRes) {
+    public void updateBounds(ScaledResolution scaledRes) {
         net.minecraft.scoreboard.Scoreboard sb = null;
         ScoreObjective objective = null;
         if (mc.theWorld != null) {
@@ -72,9 +62,18 @@ public class Scoreboard extends Module {
         float baseX = scaledRes.getScaledWidth() - width - 2;
         float baseY = scaledRes.getScaledHeight() / 2 - height / 3;
 
-        baseX += this.offX.getValue();
-        baseY += this.offY.getValue();
+        this.defaultX = baseX;
+        this.defaultY = baseY;
 
-        return new ScoreboardBounds(baseX, baseY, width, height);
+        // Ensure drag property is initialized reasonably if it's 0,0
+        if (this.drag.position.x == 0 && this.drag.position.y == 0 && this.drag.targetPosition.x == 0) {
+            this.drag.position.x = baseX;
+            this.drag.position.y = baseY;
+            this.drag.targetPosition.x = baseX;
+            this.drag.targetPosition.y = baseY;
+        }
+
+        this.drag.scale.x = width;
+        this.drag.scale.y = height;
     }
 }

@@ -1,12 +1,16 @@
 package myau.module.modules.player;
 
 import myau.module.modules.combat.KillAura;
+import myau.module.modules.render.HUD;
 import myau.Myau;
+import myau.component.SlotComponent;
 import myau.event.EventTarget;
 import myau.event.types.EventType;
+import myau.event.types.Priority;
 import myau.events.TickEvent;
 import myau.events.Render2DEvent;
 import myau.module.Module;
+import myau.util.player.IInventoryPlayerAccessor;
 import myau.util.player.ItemUtil;
 import myau.util.network.PacketUtil;
 import myau.util.player.TeamUtil;
@@ -20,7 +24,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.network.play.client.C09PacketHeldItemChange;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.MovingObjectPosition.MovingObjectType;
-import myau.util.font.Fonts;
+
 import myau.util.shader.RoundedUtils;
 
 import java.awt.Color;
@@ -28,7 +32,9 @@ import java.awt.Color;
 public class AutoTool extends Module {
     private static final Minecraft mc = Minecraft.getMinecraft();
 
+    /** The real slot that was held before AutoTool started spoofing. */
     private int serverSlot = -1;
+    /** The slot AutoTool is currently spoofing. */
     private int spoofedToolSlot = -1;
 
     private float animationProgress = 0f;
@@ -45,7 +51,7 @@ public class AutoTool extends Module {
         return TeamUtil.isEntityLoaded(killAura.getTarget()) && killAura.isAttackAllowed();
     }
 
-    @EventTarget
+    @EventTarget(Priority.HIGH)
     public void onTick(TickEvent event) {
         if (!this.isEnabled() || event.getType() != EventType.PRE) return;
         if (mc.thePlayer == null || mc.theWorld == null) {
@@ -61,7 +67,7 @@ public class AutoTool extends Module {
         BlockPos pos = mc.objectMouseOver.getBlockPos();
         Block block = mc.theWorld.getBlockState(pos).getBlock();
         int slot = this.findBestHotbarTool(block);
-        if (slot == -1 || slot == mc.thePlayer.inventory.currentItem) return;
+        if (slot == -1 || slot == Myau.slotComponent.getItemIndex()) return;
 
         this.selectTool(slot);
     }
@@ -77,35 +83,35 @@ public class AutoTool extends Module {
     }
 
     private int findBestHotbarTool(Block block) {
-        int currentSlot = mc.thePlayer.inventory.currentItem;
+        int currentSlot = Myau.slotComponent.getItemIndex();
         int bestSlot = ItemUtil.findInventorySlot(currentSlot, block);
         return bestSlot == currentSlot ? -1 : bestSlot;
     }
 
+    /**
+     * Switch to slot silently via SlotComponent (alternative slot) so the
+     * server sees the tool without changing the client's visible currentItem.
+     */
     private void selectTool(int slot) {
-        this.selectToolSilently(slot);
-    }
-
-    private void selectToolSilently(int slot) {
-        if (this.serverSlot == -1) this.serverSlot = mc.thePlayer.inventory.currentItem;
-        if (this.spoofedToolSlot != slot || mc.thePlayer.inventory.currentItem != slot) {
-            this.switchToSlot(slot);
+        if (this.serverSlot == -1) {
+            // Remember the real slot before we start spoofing
+            this.serverSlot = mc.thePlayer.inventory.currentItem;
+        }
+        if (this.spoofedToolSlot != slot || Myau.slotComponent.getItemIndex() != slot) {
+            // Tell SlotComponent to use this slot for this tick
+            Myau.slotComponent.setSlot(slot);
             this.spoofedToolSlot = slot;
         }
     }
 
-    private void switchToSlot(int slot) {
-        mc.thePlayer.inventory.currentItem = slot;
-        PacketUtil.sendPacket(new C09PacketHeldItemChange(slot));
-    }
-
     private void resetState() {
-        this.resetSilentSlot(true);
-    }
-
-    private void resetSilentSlot(boolean sendSwitchBack) {
-        if (this.serverSlot != -1 && sendSwitchBack) {
-            this.switchToSlot(this.serverSlot);
+        if (this.serverSlot != -1) {
+            // Clear alternative slot so the real currentItem is restored
+            if (mc.thePlayer != null) {
+                IInventoryPlayerAccessor inv = (IInventoryPlayerAccessor) mc.thePlayer.inventory;
+                inv.myau$setAlternativeSlot(false);
+                inv.myau$setAlternativeCurrentItem(mc.thePlayer.inventory.currentItem);
+            }
         }
         this.serverSlot = -1;
         this.spoofedToolSlot = -1;
@@ -142,7 +148,7 @@ public class AutoTool extends Module {
         ScaledResolution sr = new ScaledResolution(mc);
         String toolName = itemStack.getDisplayName();
 
-        float textWidth = Fonts.MAIN.get(18).width(toolName);
+        float textWidth = myau.util.font.Fonts.MAIN.get(18).width(toolName);
         float width = 16f + 8f + textWidth + 8f;
         float height = 22f;
         float x = (sr.getScaledWidth() - width) / 2f;
@@ -156,6 +162,28 @@ public class AutoTool extends Module {
         GlStateManager.scale(animationProgress, animationProgress, 1f);
         GlStateManager.translate(-centerX, -centerY, 0);
 
+        // ── Shader pass (Blur + Bloom) when HUD Shaders option is enabled ──
+        HUD hud = (HUD) Myau.moduleManager.getModule(HUD.class);
+        boolean shaders = hud != null && hud.shaders.getValue();
+
+        if (shaders) {
+            int blurP = hud.blurPasses.getValue();
+            float blurR = hud.blurRadius.getValue();
+            int bloomP = hud.bloomPasses.getValue();
+            float bloomR = hud.bloomRadius.getValue();
+
+            // Blur pass — frosted-glass background
+            myau.util.shader.RenderSystem.renderBlur(blurR, blurP, () -> {
+                RoundedUtils.drawRound(x, y, width, height, 4f, new Color(0, 0, 0, 150));
+            });
+
+            // Bloom pass — soft glow outline
+            myau.util.shader.RenderSystem.renderBloom(bloomR, bloomP, () -> {
+                RoundedUtils.drawRound(x - 1, y - 1, width + 2, height + 2, 4f, new Color(81, 99, 149, 80));
+            });
+        }
+        // ── End shader pass ──────────────────────────────────────────────────
+
         int bgAlpha = (int) (150 * animationProgress);
         RoundedUtils.drawRound(x, y, width, height, 4f, new Color(0, 0, 0, bgAlpha));
 
@@ -167,10 +195,10 @@ public class AutoTool extends Module {
 
         GlStateManager.enableBlend();
         int textAlpha = (int) (255 * animationProgress);
-        float fontY = y + (height / 2f) - (Fonts.MAIN.get(18).height() / 2f);
+        float fontY = y + (height / 2f) - (myau.util.font.Fonts.MAIN.get(18).height() / 2f);
         float textX = x + 24f;
 
-        Fonts.MAIN.get(18).drawWithShadow(toolName, textX, fontY, new Color(255, 255, 255, textAlpha).getRGB());
+        myau.util.font.Fonts.MAIN.get(18).drawWithShadow(toolName, textX, fontY, new Color(255, 255, 255, textAlpha).getRGB());
 
         GlStateManager.popMatrix();
     }

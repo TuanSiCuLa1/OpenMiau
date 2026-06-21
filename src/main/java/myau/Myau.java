@@ -51,6 +51,8 @@ public class Myau {
     public static DragManager dragManager;
     public static PresenceManager presenceManager;
     public static MiauPeerDetector peerDetector;
+    public static myau.component.BadPacketsComponent badPacketsComponent;
+    public static myau.component.SlotComponent slotComponent;
 
     public Myau() {
         this.init();
@@ -85,6 +87,10 @@ public class Myau {
         EventManager.register(dragManager);
         EventManager.register(presenceManager);
         EventManager.register(peerDetector);
+        badPacketsComponent = new myau.component.BadPacketsComponent();
+        EventManager.register(badPacketsComponent);
+        slotComponent = new myau.component.SlotComponent();
+        EventManager.register(slotComponent);
         moduleManager.modules.put(AimAssist.class, new AimAssist());
         moduleManager.modules.put(AntiAFK.class, new AntiAFK());
         moduleManager.modules.put(AntiDebuff.class, new AntiDebuff());
@@ -130,6 +136,7 @@ public class Myau {
         moduleManager.modules.put(ClickGUI.class, new ClickGUI());
         moduleManager.modules.put(HitSelect.class, new HitSelect());
         moduleManager.modules.put(HUD.class, new HUD());
+        moduleManager.modules.put(Ambience.class, new Ambience());
         moduleManager.modules.put(MoreKB.class, new MoreKB());
         moduleManager.modules.put(Indicators.class, new Indicators());
         moduleManager.modules.put(InventoryClicker.class, new InventoryClicker());

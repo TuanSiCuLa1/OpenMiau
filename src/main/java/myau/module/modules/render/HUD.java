@@ -35,6 +35,9 @@ public class HUD extends Module {
 
     private long lastMS = System.currentTimeMillis();
     private List<Module> activeModules = new ArrayList<>();
+    
+    private double lastX = 0, lastZ = 0;
+    private String bpsString = "0.00";
 
     public final BooleanProperty showWatermark = new BooleanProperty("watermark", true);
     public final ModeProperty hudMode = new ModeProperty("mode", 0, new String[]{"NORMAL", "EXHIBITION"});
@@ -60,15 +63,12 @@ public class HUD extends Module {
     public final BooleanProperty blinkTimer = new BooleanProperty("blink-timer", true);
     public final BooleanProperty toggleSound = new BooleanProperty("toggle-sounds", true);
     public final BooleanProperty toggleAlerts = new BooleanProperty("toggle-alerts", false);
-    public final BooleanProperty shaders = new BooleanProperty("Shaders", true);
-<<<<<<< HEAD
+    public final BooleanProperty shaders = new BooleanProperty("Shaders", false);
     public final BooleanProperty blurSettings = new BooleanProperty("Blur Settings", false, () -> this.shaders.getValue());
-    public final FloatProperty blurRadius = new FloatProperty("Blur Radius", 3.0F, 1.0F, 10.0F, () -> this.shaders.getValue() && this.blurSettings.getValue());
-    public final IntProperty blurPasses = new IntProperty("Blur Passes", 2, 1, 10, () -> this.shaders.getValue() && this.blurSettings.getValue());
-    public final FloatProperty bloomRadius = new FloatProperty("Bloom Radius", 3.0F, 1.0F, 10.0F, () -> this.shaders.getValue() && this.blurSettings.getValue());
-    public final IntProperty bloomPasses = new IntProperty("Bloom Passes", 4, 1, 10, () -> this.shaders.getValue() && this.blurSettings.getValue());
-=======
->>>>>>> 746610b90671b5ee596a876af938a43584190552
+    public final FloatProperty blurRadius = new FloatProperty("Blur Radius", 3.0F, 1.0F, 10.0F, () -> this.shaders.getValue());
+    public final IntProperty blurPasses = new IntProperty("Blur Passes", 2, 1, 10, () -> this.shaders.getValue());
+    public final FloatProperty bloomRadius = new FloatProperty("Bloom Radius", 3.0F, 1.0F, 10.0F, () -> this.shaders.getValue());
+    public final IntProperty bloomPasses = new IntProperty("Bloom Passes", 4, 1, 10, () -> this.shaders.getValue());
 
     // Hàm lấy Component tự động
     private InterfaceComponent getComponent(Module module) {
@@ -98,15 +98,19 @@ public class HUD extends Module {
     }
 
     private int calculateStringWidth(String string, String[] arr) {
-        int width = mc.fontRendererObj.getStringWidth(string);
+        int width = getFont().getStringWidth(string);
         if (this.suffixes.getValue()) {
             for (String str : arr) {
-                width += 3 + mc.fontRendererObj.getStringWidth(str);
+                width += 3 + getFont().getStringWidth(str);
             }
         }
         return width;
     }
 
+    public myau.util.font.Font getFont() {
+        return myau.util.font.Fonts.MAIN.get(18);
+    }
+    
     public HUD() {
         super("HUD", true, true);
     }
@@ -132,9 +136,17 @@ public class HUD extends Module {
 
     @EventTarget
     public void onTick(TickEvent event) {
+        if (this.isEnabled() && event.getType() == EventType.PRE) {
+            if (mc.thePlayer != null) {
+                double dist = Math.hypot(mc.thePlayer.posX - lastX, mc.thePlayer.posZ - lastZ);
+                bpsString = String.valueOf(myau.util.math.MathUtil.round(dist * 20.0D * ((myau.mixin.IAccessorMinecraft) mc).getTimer().timerSpeed, 2));
+                lastX = mc.thePlayer.posX;
+                lastZ = mc.thePlayer.posZ;
+            }
+        }
         if (this.isEnabled() && event.getType() == EventType.POST) {
             this.activeModules = Myau.moduleManager.modules.values().stream()
-                    .filter(module -> module.isEnabled() && !module.isHidden() && getComponent(module).shouldDisplay(this))
+                    .filter(module -> module.isEnabled() && (this.modulesToShow.getValue() == 0 || !module.isHidden()) && getComponent(module).shouldDisplay(this))
                     .sorted(Comparator.comparingInt(this::getModuleWidth).reversed())
                     .collect(Collectors.<Module>toList());
             try {
@@ -173,7 +185,7 @@ public class HUD extends Module {
 
         for (Module module : Myau.moduleManager.modules.values()) {
             InterfaceComponent component = getComponent(module);
-            boolean shouldBeVisible = module.isEnabled() && !module.isHidden() && component.shouldDisplay(this);
+            boolean shouldBeVisible = module.isEnabled() && (this.modulesToShow.getValue() == 0 || !module.isHidden()) && component.shouldDisplay(this);
 
             if (shouldBeVisible) {
                 component.animationTime = (float) Math.min(1.0, component.animationTime + (delta * 0.006));
@@ -188,8 +200,8 @@ public class HUD extends Module {
                 .sorted(Comparator.comparingInt((InterfaceComponent c) -> this.getModuleWidth(c.module)).reversed())
                 .collect(Collectors.toList());
 
-        float heightExhibition = (float) mc.fontRendererObj.FONT_HEIGHT + 2.0F;
-        float heightNormal = (float) mc.fontRendererObj.FONT_HEIGHT - 1.0F;
+        float heightExhibition = (float) getFont().getFontHeight() + 2.0F;
+        float heightNormal = (float) getFont().getFontHeight() - 1.0F;
         float currentYExhibition = (float) this.offsetY.getValue() + 1.0F * this.scale.getValue();
         float currentYNormal = (float) this.offsetY.getValue() + 1.0F * this.scale.getValue();
 
@@ -198,16 +210,14 @@ public class HUD extends Module {
             currentYNormal = (float) new ScaledResolution(mc).getScaledHeight() - currentYNormal - heightNormal * this.scale.getValue();
         }
 
-        // 3. Tính toán Lerp Y
         for (InterfaceComponent component : animatingComponents) {
             float targetY = (this.hudMode.getValue() == 1) ? currentYExhibition : currentYNormal;
 
-            // Fix lỗi module trượt từ vị trí 0 (trên cùng màn hình) xuống
             if (component.position.y == 0) component.position.y = targetY;
 
             component.position.y = myau.util.math.MathUtil.lerp((float) component.position.y, targetY, 0.015f * delta);
 
-            if (component.module.isEnabled() && !component.module.isHidden() && component.shouldDisplay(this)) {
+            if (component.module.isEnabled() && (this.modulesToShow.getValue() == 0 || !component.module.isHidden()) && component.shouldDisplay(this)) {
                 float spacingEx = heightExhibition * this.scale.getValue() * (this.posY.getValue() == 0 ? 1.0F : -1.0F);
                 float spacingNorm = (heightNormal + (this.shadow.getValue() ? 1.0F : 0.0F)) * this.scale.getValue() * (this.posY.getValue() == 0 ? 1.0F : -1.0F);
                 currentYExhibition += spacingEx;
@@ -228,22 +238,31 @@ public class HUD extends Module {
             long l = System.currentTimeMillis();
 
             if (this.shaders.getValue()) {
-                myau.util.shader.BlurUtils.prepareBloom();
-                renderElements(l, delta, animatingComponents);
-<<<<<<< HEAD
-                myau.util.shader.BlurUtils.bloomEnd(this.bloomPasses.getValue(), this.bloomRadius.getValue());
-=======
-                myau.util.shader.BlurUtils.bloomEnd(4, 3f);
->>>>>>> 746610b90671b5ee596a876af938a43584190552
+                final long finalL = l;
+                final float finalDelta = delta;
+                myau.util.shader.RenderSystem.renderBloom(() -> {
+                    renderElements(finalL, finalDelta, animatingComponents);
+                    renderBPSBackground(false);
+                    renderBPSText(finalL);
+                });
+                
+                if (this.blurSettings.getValue()) {
+                    myau.util.shader.RenderSystem.renderBlur(() -> {
+                        renderBPSBackground(true);
+                    });
+                }
             }
             renderElements(l, delta, animatingComponents);
+            
+            renderBPSBackground(false);
+            renderBPSText(l);
         }
     }
 
     private void renderElements(long l, float delta, java.util.List<InterfaceComponent> animatingComponents) {
         if (this.showWatermark.getValue()) {
             String watermark = getExhibitionWatermark();
-            if (watermark != null) mc.fontRendererObj.drawStringWithShadow(watermark, 3.0F, 3.0F, this.getColor(l).getRGB());
+            if (watermark != null) getFont().drawWithShadow(watermark, 3.0F, 3.0F, this.getColor(l).getRGB());
         }
 
         if (this.hudMode.getValue() == 1) { // Exhibition mode
@@ -252,14 +271,14 @@ public class HUD extends Module {
                 String posY2 = String.valueOf(Math.round(mc.thePlayer.posY));
                 String posZ2 = String.valueOf(Math.round(mc.thePlayer.posZ));
                 float yCoord = new ScaledResolution(mc).getScaledHeight() - 10;
-                float fontHeight = mc.fontRendererObj.FONT_HEIGHT;
+                float fontHeight = getFont().getFontHeight();
                 int colour = this.getColor(l).getRGB();
-                mc.fontRendererObj.drawStringWithShadow("X: §7" + posX2, 3.0F, yCoord - fontHeight * 2, colour);
-                mc.fontRendererObj.drawStringWithShadow("Y: §7" + posY2, 3.0F, yCoord - fontHeight, colour);
-                mc.fontRendererObj.drawStringWithShadow("Z: §7" + posZ2, 3.0F, yCoord, colour);
+                getFont().drawWithShadow("X: §7" + posX2, 3.0F, yCoord - fontHeight * 2, colour);
+                getFont().drawWithShadow("Y: §7" + posY2, 3.0F, yCoord - fontHeight, colour);
+                getFont().drawWithShadow("Z: §7" + posZ2, 3.0F, yCoord, colour);
             }
 
-            float height = (float) mc.fontRendererObj.FONT_HEIGHT + 2.0F;
+            float height = (float) getFont().getFontHeight() + 2.0F;
             float x = (float) this.offsetX.getValue();
             if (this.posX.getValue() == 1) x = (float) new ScaledResolution(mc).getScaledWidth() - x;
 
@@ -277,7 +296,7 @@ public class HUD extends Module {
                 float drawY = (float) component.position.y / this.scale.getValue();
                 float baseX = x / this.scale.getValue();
                 float targetX;
-                boolean shouldBeVisible = module.isEnabled() && !module.isHidden() && component.shouldDisplay(this);
+                boolean shouldBeVisible = module.isEnabled() && (this.modulesToShow.getValue() == 0 || !module.isHidden()) && component.shouldDisplay(this);
 
                 if (this.posX.getValue() == 1) {
                     targetX = baseX - totalWidth;
@@ -306,20 +325,20 @@ public class HUD extends Module {
                 }
                 RenderUtil.disableRenderState();
 
-                mc.fontRendererObj.drawStringWithShadow(moduleName, drawX, drawY, color);
+                getFont().drawWithShadow(moduleName, drawX, drawY, color);
 
                 if (this.suffixes.getValue() && moduleSuffix.length > 0) {
-                    float suffixX = drawX + mc.fontRendererObj.getStringWidth(moduleName) + 2.0F;
+                    float suffixX = drawX + getFont().getStringWidth(moduleName) + 2.0F;
                     int suffixColor = ((int)(170 * animProgress) << 24) | 0x00AAAAAA;
                     for (String str : moduleSuffix) {
-                        mc.fontRendererObj.drawStringWithShadow(str, suffixX, drawY, suffixColor);
-                        suffixX += mc.fontRendererObj.getStringWidth(str) + 2.0F;
+                        getFont().drawWithShadow(str, suffixX, drawY, suffixColor);
+                        suffixX += getFont().getStringWidth(str) + 2.0F;
                     }
                 }
             }
             GlStateManager.popMatrix();
         } else {
-            float height = (float) mc.fontRendererObj.FONT_HEIGHT - 1.0F;
+            float height = (float) getFont().getFontHeight() - 1.0F;
             float x = (float) this.offsetX.getValue() + (1.0F + (this.showBar.getValue() ? (this.shadow.getValue() ? 2.0F : 1.0F) : 0.0F)) * this.scale.getValue();
             if (this.posX.getValue() == 1) x = (float) new ScaledResolution(mc).getScaledWidth() - x;
 
@@ -336,7 +355,7 @@ public class HUD extends Module {
                 float drawY = (float) component.position.y / this.scale.getValue();
                 float baseX = x / this.scale.getValue();
                 float targetX;
-                boolean shouldBeVisible = module.isEnabled() && !module.isHidden() && component.shouldDisplay(this);
+                boolean shouldBeVisible = module.isEnabled() && (this.modulesToShow.getValue() == 0 || !module.isHidden()) && component.shouldDisplay(this);
 
                 if (this.posX.getValue() == 1) {
                     targetX = baseX - totalWidth;
@@ -377,16 +396,16 @@ public class HUD extends Module {
                 RenderUtil.disableRenderState();
                 GlStateManager.disableDepth();
 
-                if (this.shadow.getValue()) mc.fontRendererObj.drawStringWithShadow(moduleName, drawX, drawY, color);
-                else mc.fontRendererObj.drawString(moduleName, drawX, drawY + (this.posY.getValue() == 1 ? 1.0F : 0.0F), color, false);
+                if (this.shadow.getValue()) getFont().drawWithShadow(moduleName, drawX, drawY, color);
+                else getFont().draw(moduleName, drawX, drawY + (this.posY.getValue() == 1 ? 1.0F : 0.0F), color, false);
 
                 if (this.suffixes.getValue() && moduleSuffix.length > 0) {
-                    float width = (float) mc.fontRendererObj.getStringWidth(moduleName) + 3.0F;
+                    float width = (float) getFont().getStringWidth(moduleName) + 3.0F;
                     int suffixColor = ((int)(160 * animProgress) << 24) | 0x00AAAAAA;
                     for (String string : moduleSuffix) {
-                        if (this.shadow.getValue()) mc.fontRendererObj.drawStringWithShadow(string, drawX + width, drawY, suffixColor);
-                        else mc.fontRendererObj.drawString(string, drawX + width, drawY + (this.posY.getValue() == 1 ? 1.0F : 0.0F), suffixColor, false);
-                        width += (float) mc.fontRendererObj.getStringWidth(string) + (this.shadow.getValue() ? 3.0F : 2.0F);
+                        if (this.shadow.getValue()) getFont().drawWithShadow(string, drawX + width, drawY, suffixColor);
+                        else getFont().draw(string, drawX + width, drawY + (this.posY.getValue() == 1 ? 1.0F : 0.0F), suffixColor, false);
+                        width += (float) getFont().getStringWidth(string) + (this.shadow.getValue() ? 3.0F : 2.0F);
                     }
                 }
             }
@@ -398,7 +417,7 @@ public class HUD extends Module {
                     if (movementPacketSize > 0L) {
                         GlStateManager.enableBlend();
                         GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-                        mc.fontRendererObj.drawString(String.valueOf(movementPacketSize), (float) new ScaledResolution(mc).getScaledWidth() / 2.0F / this.scale.getValue() - (float) mc.fontRendererObj.getStringWidth(String.valueOf(movementPacketSize)) / 2.0F, (float) new ScaledResolution(mc).getScaledHeight() / 5.0F * 3.0F / this.scale.getValue(), this.getColor(l, 0L).getRGB() & 16777215 | -1090519040, this.shadow.getValue());
+                        getFont().draw(String.valueOf(movementPacketSize), (float) new ScaledResolution(mc).getScaledWidth() / 2.0F / this.scale.getValue() - (float) getFont().getStringWidth(String.valueOf(movementPacketSize)) / 2.0F, (float) new ScaledResolution(mc).getScaledHeight() / 5.0F * 3.0F / this.scale.getValue(), this.getColor(l, 0L).getRGB() & 16777215 | -1090519040, this.shadow.getValue());
                         GlStateManager.disableBlend();
                     }
                 }
@@ -411,7 +430,7 @@ public class HUD extends Module {
         if (mc.thePlayer != null) {
             java.util.Collection<net.minecraft.potion.PotionEffect> effects = mc.thePlayer.getActivePotionEffects();
             if (!effects.isEmpty()) {
-                myau.util.font.Font font = myau.util.font.Fonts.MAIN.get(18);
+                myau.util.font.Font font = getFont();
                 float drawY = new ScaledResolution(mc).getScaledHeight() - 3;
                 
                 java.util.List<net.minecraft.potion.PotionEffect> sortedEffects = new ArrayList<>(effects);
@@ -467,5 +486,51 @@ public class HUD extends Module {
             case 5: return "V";
             default: return String.valueOf(value);
         }
+    }
+
+    private void renderBPSBackground(boolean blur) {
+        myau.util.font.Font titleFont = myau.util.font.Fonts.MAIN.get(18, myau.util.font.Weight.BOLD);
+        myau.util.font.Font bpsFont = myau.util.font.Fonts.MAIN.get(18, myau.util.font.Weight.REGULAR);
+        
+        float titleWidth = titleFont.getStringWidth("BPS ");
+        float bpsWidth = bpsFont.getStringWidth(this.bpsString);
+        float width = titleWidth + bpsWidth + 6;
+        float height = Math.max(titleFont.getFontHeight(), bpsFont.getFontHeight()) + 4;
+        
+        float x = 5;
+        float y;
+        if (this.hudMode.getValue() == 1 && this.showCoordinates.getValue() && mc.thePlayer != null) {
+            y = new net.minecraft.client.gui.ScaledResolution(mc).getScaledHeight() - 10 - getFont().getFontHeight() * 2 - 4 - height;
+        } else {
+            y = new net.minecraft.client.gui.ScaledResolution(mc).getScaledHeight() - height - 5;
+        }
+        
+        if (blur) {
+            myau.util.shader.RoundedUtils.drawRound(x, y, width, height, 4.0f, true, Color.black);
+        } else {
+            myau.util.shader.RoundedUtils.drawRound(x, y, width, height, 4.0f, false, new Color(0.0F, 0.0F, 0.0F, this.background.getValue().floatValue() / 100.0F));
+        }
+    }
+
+    private void renderBPSText(long l) {
+        myau.util.font.Font titleFont = myau.util.font.Fonts.MAIN.get(18, myau.util.font.Weight.BOLD);
+        myau.util.font.Font bpsFont = myau.util.font.Fonts.MAIN.get(18, myau.util.font.Weight.REGULAR);
+        
+        float titleWidth = titleFont.getStringWidth("BPS ");
+        float height = Math.max(titleFont.getFontHeight(), bpsFont.getFontHeight()) + 4;
+        
+        float x = 5;
+        float y;
+        if (this.hudMode.getValue() == 1 && this.showCoordinates.getValue() && mc.thePlayer != null) {
+            y = new net.minecraft.client.gui.ScaledResolution(mc).getScaledHeight() - 10 - getFont().getFontHeight() * 2 - 4 - height;
+        } else {
+            y = new net.minecraft.client.gui.ScaledResolution(mc).getScaledHeight() - height - 5;
+        }
+        
+        float textX = x + 3.0F;
+        float textY = y + height / 2.0F - bpsFont.getFontHeight() / 2.0F;
+        
+        titleFont.drawWithShadow("BPS ", textX, textY, this.getColor(l).getRGB());
+        bpsFont.drawWithShadow(this.bpsString, textX + titleWidth, textY, Color.WHITE.getRGB());
     }
 }

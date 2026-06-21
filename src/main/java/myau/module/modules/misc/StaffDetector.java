@@ -7,14 +7,8 @@ import myau.events.PacketEvent;
 import myau.module.Module;
 import myau.property.properties.BooleanProperty;
 import myau.mixin.IAccessorS14PacketEntity;
-<<<<<<< HEAD
 import myau.util.client.ChatUtil;
 import myau.Myau;
-=======
-import myau.util.ChatUtil;
-import myau.Myau;
-import myau.notification.NotificationManager;
->>>>>>> 746610b90671b5ee596a876af938a43584190552
 import myau.notification.NotificationType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.Packet;
@@ -43,6 +37,7 @@ public class StaffDetector extends Module {
     private final Set<Integer> flaggedGhost = new HashSet<>();
     private final Set<String> alertedStaffTeams = new HashSet<>();
     private final Set<String> alertedStaffPlayers = new HashSet<>();
+    private final Map<Integer, Long> lastGhostAlert = new HashMap<>();
 
     public StaffDetector() {
         super("StaffDetector", false, false);
@@ -68,6 +63,7 @@ public class StaffDetector extends Module {
         flaggedGhost.clear();
         alertedStaffTeams.clear();
         alertedStaffPlayers.clear();
+        lastGhostAlert.clear();
     }
 
     @EventTarget
@@ -148,15 +144,20 @@ public class StaffDetector extends Module {
         if (mc.theWorld.getEntityByID(entityId) == null) {
             flaggedGhost.add(entityId);
             
-            // Build and publish notification
-            Myau.notificationManager.builder(NotificationType.WARN)
-                .title("Staff Detector")
-                .description("Vanish Staff Movement Detected! ID: " + entityId)
-                .duration(3000)
-                .buildAndPublish();
+            long now = System.currentTimeMillis();
+            if (now - lastGhostAlert.getOrDefault(entityId, 0L) > 10000L) {
+                lastGhostAlert.put(entityId, now);
                 
-            ChatUtil.display("&c&l[StaffDetector] &r&fVanish staff movement detected! &7(ID: " + entityId + ")");
-            triggerAutoLeave("VanishStaff#" + entityId);
+                // Build and publish notification
+                Myau.notificationManager.builder(NotificationType.WARN)
+                    .title("Staff Detector")
+                    .description("Vanish Staff Movement Detected! ID: " + entityId)
+                    .duration(3000)
+                    .buildAndPublish();
+                    
+                ChatUtil.display("&c&l[StaffDetector] &r&fVanish staff movement detected! &7(ID: " + entityId + ")");
+                triggerAutoLeave("VanishStaff#" + entityId);
+            }
         }
     }
 
@@ -219,11 +220,7 @@ public class StaffDetector extends Module {
     }
 
     private void alert(NotificationType type, String title, String desc, String chatMsg) {
-<<<<<<< HEAD
         Myau.notificationManager.builder(type).title(title).description(desc).duration(3000).buildAndPublish();
-=======
-        Myau.notificationManager.builder(type).title(title).description(desc).duration(2000).buildAndPublish();
->>>>>>> 746610b90671b5ee596a876af938a43584190552
         ChatUtil.display(chatMsg);
     }
 

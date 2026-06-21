@@ -149,7 +149,7 @@ public class FontRenderer extends myau.util.font.Font {
                 byteBuffer.put((byte) ((pixel >> 24) & MASK));
             }
         }
-        byteBuffer.flip();
+        ((java.nio.Buffer) byteBuffer).flip();
         GlStateManager.bindTexture(texture);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);

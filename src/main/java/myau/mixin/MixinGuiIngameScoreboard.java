@@ -2,13 +2,15 @@ package myau.mixin;
 
 import myau.Myau;
 import myau.module.modules.render.HUD;
+import myau.module.modules.render.HUD;
 import myau.module.modules.render.Scoreboard;
-import myau.util.shader.BlurUtils;
+
 import net.minecraft.client.gui.GuiIngame;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.scoreboard.ScoreObjective;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -29,13 +31,9 @@ public abstract class MixinGuiIngameScoreboard {
             if (hud != null && hud.isEnabled() && hud.shaders.getValue()) {
                 isRenderingBloom = true;
                 
-                BlurUtils.prepareBloom();
-                this.renderScoreboard(objective, scaledRes);
-<<<<<<< HEAD
-                BlurUtils.bloomEnd(hud.bloomPasses.getValue(), hud.bloomRadius.getValue());
-=======
-                BlurUtils.bloomEnd(4, 3f);
->>>>>>> 746610b90671b5ee596a876af938a43584190552
+                myau.util.shader.RenderSystem.renderBloom(() -> {
+                    this.renderScoreboard(objective, scaledRes);
+                });
                 
                 this.renderScoreboard(objective, scaledRes);
                 
@@ -48,8 +46,9 @@ public abstract class MixinGuiIngameScoreboard {
         if (Myau.moduleManager != null) {
             Scoreboard scoreboardMod = (Scoreboard) Myau.moduleManager.getModule(Scoreboard.class);
             if (scoreboardMod != null && scoreboardMod.isEnabled()) {
+                scoreboardMod.updateBounds(scaledRes);
                 GlStateManager.pushMatrix();
-                GlStateManager.translate(scoreboardMod.offX.getValue(), scoreboardMod.offY.getValue(), 0.0f);
+                GlStateManager.translate((float) scoreboardMod.drag.position.x - scoreboardMod.defaultX, (float) scoreboardMod.drag.position.y - scoreboardMod.defaultY, 0.0f);
             }
         }
     }
