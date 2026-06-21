@@ -9,34 +9,35 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ReachCheck {
-    private static final double REACH_THRESHOLD = 3.45D;
-    private final Map<String, CheckBuffer> buffers = new HashMap<>();
+    private static final double BASE_REACH = 3.05D;
+    private final Map<String, CheckBuffer> reachBuffers = new HashMap<>();
 
     public void check(EntityPlayer player, World world, PlayerCheckData data, ClientAntiCheatContext context) {
-        if (data == null || data.recentlyTeleported()) return;
-        boolean attacking = player.swingProgress > 0 && player.prevSwingProgress == 0;
-        if (!attacking) return;
+        if (data == null || data.recentlyTeleported() || !data.startedSwinging()) return;
+        String name = player.getName();
+        if (name == null) return;
 
         double nearest = Double.MAX_VALUE;
         Vec3 eyes = new Vec3(player.posX, player.posY + player.getEyeHeight(), player.posZ);
         for (EntityPlayer target : world.playerEntities) {
-            if (target == player || target.isDead) continue;
-            AxisAlignedBB box = target.getEntityBoundingBox().expand(0.1D, 0.1D, 0.1D);
+            if (target == player || target.isDead || target.getName() == null) continue;
+            AxisAlignedBB box = target.getEntityBoundingBox().expand(0.12D, 0.1D, 0.12D);
             double distance = distanceToBox(eyes, box);
             if (distance < nearest) nearest = distance;
         }
         if (nearest == Double.MAX_VALUE || nearest > 6.0D) return;
 
-        String name = player.getName();
-        CheckBuffer buffer = this.buffers.computeIfAbsent(name, key -> new CheckBuffer());
-        double allowed = REACH_THRESHOLD + Math.min(0.25D, data.horizontalDelta + data.lastHorizontalDelta);
+        CheckBuffer buffer = this.reachBuffers.computeIfAbsent(name, key -> new CheckBuffer());
+        double movementTolerance = Math.min(0.35D, data.horizontalDelta + data.lastHorizontalDelta);
+        double allowed = BASE_REACH + movementTolerance + (data.recentlyHurt() ? 0.15D : 0.0D);
         if (nearest > allowed) {
-            if (buffer.flag(1.0D + Math.min(1.0D, nearest - allowed), 3.0D)) {
+            double over = nearest - allowed;
+            if (buffer.flag(1.0D + Math.min(2.0D, over * 2.0D), 4.0D)) {
                 context.receiveSignal(name, "Reach");
                 buffer.reset();
             }
         } else {
-            buffer.decay(0.5D);
+            buffer.decay(0.45D);
         }
     }
 
@@ -55,6 +56,6 @@ public class ReachCheck {
     }
 
     public void reset() {
-        this.buffers.clear();
+        this.reachBuffers.clear();
     }
 }

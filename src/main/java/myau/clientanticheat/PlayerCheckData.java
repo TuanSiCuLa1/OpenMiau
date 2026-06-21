@@ -32,6 +32,7 @@ public class PlayerCheckData {
     public double deltaZ;
     public double horizontalDelta;
     public double lastHorizontalDelta;
+    public double totalDelta;
 
     public float yaw;
     public float pitch;
@@ -39,15 +40,27 @@ public class PlayerCheckData {
     public float lastPitch;
     public float yawDelta;
     public float pitchDelta;
+    public float lastYawDelta;
+    public float lastPitchDelta;
+    public float yawAcceleration;
+    public float pitchAcceleration;
 
     public boolean onGround;
     public boolean lastOnGround;
+    public boolean lastUsingItem;
+    public boolean usingItem;
+    public boolean lastSwinging;
+    public boolean swinging;
     public int groundTicks;
     public int airTicks;
     public int hurtTicks;
     public int sinceHurtTicks = 999;
     public int teleportTicks;
     public int existedTicks;
+    public int stillTicks;
+    public int burstTicks;
+    public int usingItemTicks;
+    public int swingTicks;
     public float observedFallDistance;
 
     public PlayerCheckData(EntityPlayer player) {
@@ -58,6 +71,8 @@ public class PlayerCheckData {
         this.yaw = this.lastYaw = player.rotationYaw;
         this.pitch = this.lastPitch = player.rotationPitch;
         this.onGround = this.lastOnGround = player.onGround;
+        this.usingItem = this.lastUsingItem = player.isUsingItem() || player.isBlocking() || player.isEating();
+        this.swinging = this.lastSwinging = player.swingProgress > 0.0F;
     }
 
     public void update(EntityPlayer player) {
@@ -69,6 +84,10 @@ public class PlayerCheckData {
         this.lastPitch = this.pitch;
         this.lastOnGround = this.onGround;
         this.lastHorizontalDelta = this.horizontalDelta;
+        this.lastYawDelta = this.yawDelta;
+        this.lastPitchDelta = this.pitchDelta;
+        this.lastUsingItem = this.usingItem;
+        this.lastSwinging = this.swinging;
 
         this.x = player.posX;
         this.y = player.posY;
@@ -76,20 +95,28 @@ public class PlayerCheckData {
         this.yaw = player.rotationYaw;
         this.pitch = player.rotationPitch;
         this.onGround = player.onGround;
+        this.usingItem = player.isUsingItem() || player.isBlocking() || player.isEating();
+        this.swinging = player.swingProgress > 0.0F;
 
         this.deltaX = this.x - this.lastX;
         this.deltaY = this.y - this.lastY;
         this.deltaZ = this.z - this.lastZ;
         this.horizontalDelta = Math.hypot(this.deltaX, this.deltaZ);
+        this.totalDelta = Math.sqrt(this.deltaX * this.deltaX + this.deltaY * this.deltaY + this.deltaZ * this.deltaZ);
         this.yawDelta = Math.abs(MathHelper.wrapAngleTo180_float(this.yaw - this.lastYaw));
         this.pitchDelta = Math.abs(this.pitch - this.lastPitch);
+        this.yawAcceleration = Math.abs(this.yawDelta - this.lastYawDelta);
+        this.pitchAcceleration = Math.abs(this.pitchDelta - this.lastPitchDelta);
 
-        double totalDelta = Math.sqrt(this.deltaX * this.deltaX + this.deltaY * this.deltaY + this.deltaZ * this.deltaZ);
-        this.teleportTicks = totalDelta > TELEPORT_DISTANCE_THRESHOLD ? TELEPORT_EXEMPT_TICKS : Math.max(0, this.teleportTicks - 1);
+        this.teleportTicks = this.totalDelta > TELEPORT_DISTANCE_THRESHOLD ? TELEPORT_EXEMPT_TICKS : Math.max(0, this.teleportTicks - 1);
         this.groundTicks = this.onGround ? this.groundTicks + 1 : 0;
         this.airTicks = this.onGround ? 0 : this.airTicks + 1;
         this.hurtTicks = player.hurtTime > 0 ? player.hurtTime : Math.max(0, this.hurtTicks - 1);
         this.sinceHurtTicks = player.hurtTime > 0 ? 0 : Math.min(MAX_SINCE_HURT_TICKS, this.sinceHurtTicks + 1);
+        this.usingItemTicks = this.usingItem ? this.usingItemTicks + 1 : 0;
+        this.swingTicks = this.swinging ? this.swingTicks + 1 : 0;
+        this.stillTicks = this.totalDelta < 0.003D && this.yawDelta < 0.05F && this.pitchDelta < 0.05F ? this.stillTicks + 1 : 0;
+        this.burstTicks = this.totalDelta > 0.8D && this.totalDelta < TELEPORT_DISTANCE_THRESHOLD ? this.burstTicks + 1 : 0;
 
         if (!this.onGround && this.deltaY < 0.0D) {
             this.observedFallDistance += (float) -this.deltaY;
@@ -104,6 +131,14 @@ public class PlayerCheckData {
 
     public boolean recentlyHurt() {
         return this.sinceHurtTicks <= RECENT_HURT_TICKS || this.hurtTicks > 0;
+    }
+
+    public boolean startedSwinging() {
+        return this.swinging && !this.lastSwinging;
+    }
+
+    public boolean startedUsingItem() {
+        return this.usingItem && !this.lastUsingItem;
     }
 
     public double predictedHorizontalLimit(EntityPlayer player) {

@@ -12,13 +12,18 @@ import myau.module.Module;
 import myau.property.properties.BooleanProperty;
 import myau.property.properties.ModeProperty;
 import myau.property.properties.PercentProperty;
+<<<<<<< HEAD
 import myau.util.player.MoveUtil;
 import myau.util.player.PlayerUtil;
+=======
+>>>>>>> bf1c1a2a9f74591f727d217c2cd377e2ee9178e8
 import myau.util.math.RandomUtil;
-import myau.util.world.BlockUtil;
-import myau.util.player.ItemUtil;
 import myau.util.network.PacketUtil;
+import myau.util.player.ItemUtil;
+import myau.util.player.MoveUtil;
+import myau.util.player.PlayerUtil;
 import myau.util.player.RotationUtil;
+import myau.util.world.BlockUtil;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ScaledResolution;
@@ -34,6 +39,7 @@ import net.minecraft.world.WorldSettings.GameType;
 import myau.util.font.Fonts;
 import myau.util.shader.RoundedUtils;
 import net.minecraft.client.renderer.RenderHelper;
+import myau.util.shader.BlurUtils;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -74,11 +80,18 @@ public class Scaffold extends Module {
     private EnumFacing targetFacing = null;
     public final ModeProperty rotationMode = new ModeProperty("rotations", 2,
             new String[] { "NONE", "DEFAULT", "BACKWARDS", "SIDEWAYS" });
+<<<<<<< HEAD
+=======
+    public final ModeProperty moveFix = new ModeProperty("move-fix", 1, new String[] { "NONE", "SILENT" });
+>>>>>>> bf1c1a2a9f74591f727d217c2cd377e2ee9178e8
     public final ModeProperty sprintMode = new ModeProperty("sprint", 0, new String[] { "NONE", "VANILLA" });
     public final BooleanProperty jumpSprint = new BooleanProperty("jump-sprint", true,
             () -> this.sprintMode.getValue() != 0);
     public final BooleanProperty diaSprint = new BooleanProperty("dia-sprint", true,
             () -> this.sprintMode.getValue() != 0);
+    public final PercentProperty groundMotion = new PercentProperty("ground-motion", 100);
+    public final PercentProperty airMotion = new PercentProperty("air-motion", 100);
+    public final PercentProperty speedMotion = new PercentProperty("speed-motion", 100);
     public final ModeProperty tower = new ModeProperty("tower", 0,
             new String[] { "NONE", "VANILLA", "EXTRA", "TELLY" });
     public final ModeProperty keepY = new ModeProperty("keep-y", 0,
@@ -87,13 +100,15 @@ public class Scaffold extends Module {
             () -> this.keepY.getValue() != 0);
     public final BooleanProperty disableWhileJumpActive = new BooleanProperty("no-keep-y-on-jump-potion", false,
             () -> this.keepY.getValue() != 0);
+<<<<<<< HEAD
     public final ModeProperty moveFix = new ModeProperty("move-fix", 1, new String[] { "NONE", "SILENT" });
     public final BooleanProperty safeWalk = new BooleanProperty("safe-walk", true);
+=======
+>>>>>>> bf1c1a2a9f74591f727d217c2cd377e2ee9178e8
     public final BooleanProperty multiplace = new BooleanProperty("multi-place", true);
+    public final BooleanProperty safeWalk = new BooleanProperty("safe-walk", true);
+    public final BooleanProperty itemSpoof = new BooleanProperty("item-spoof", false);
     public final BooleanProperty blockCounter = new BooleanProperty("block-counter", true);
-    public final PercentProperty groundMotion = new PercentProperty("ground-motion", 100);
-    public final PercentProperty airMotion = new PercentProperty("air-motion", 100);
-    public final PercentProperty speedMotion = new PercentProperty("speed-motion", 100);
     private float animationProgress = 0f;
     private long lastFrame = System.currentTimeMillis();
 
@@ -188,10 +203,16 @@ public class Scaffold extends Module {
     }
 
     private void place(BlockPos blockPos, EnumFacing enumFacing, Vec3 vec3) {
+<<<<<<< HEAD
         ItemStack activeItem = Myau.slotComponent.getItemStack();
         if (activeItem != null && ItemUtil.isBlock(activeItem) && this.blockCount > 0) {
             if (mc.playerController.onPlayerRightClick(mc.thePlayer, mc.theWorld,
                     activeItem, blockPos, enumFacing, vec3)) {
+=======
+        if (ItemUtil.isHoldingBlock() && this.blockCount > 0) {
+            if (mc.playerController.onPlayerRightClick(mc.thePlayer, mc.theWorld,
+                    mc.thePlayer.inventory.getCurrentItem(), blockPos, enumFacing, vec3)) {
+>>>>>>> bf1c1a2a9f74591f727d217c2cd377e2ee9178e8
                 if (mc.playerController.getCurrentGameType() != GameType.CREATIVE) {
                     this.blockCount--;
                 }
@@ -263,7 +284,7 @@ public class Scaffold extends Module {
     }
 
     public int getSlot() {
-        return Myau.slotComponent.getItemIndex();
+        return this.lastSlot;
     }
 
     @EventTarget(Priority.HIGH)
@@ -291,9 +312,29 @@ public class Scaffold extends Module {
                 this.towering = false;
             }
             if (this.canPlace()) {
+<<<<<<< HEAD
                 int blockSlot = this.findBlock();
                 if (blockSlot != -1) {
                     Myau.slotComponent.setSlot(blockSlot);
+=======
+                ItemStack stack = mc.thePlayer.getHeldItem();
+                int count = ItemUtil.isBlock(stack) ? stack.stackSize : 0;
+                this.blockCount = Math.min(this.blockCount, count);
+                if (this.blockCount <= 0) {
+                    int slot = mc.thePlayer.inventory.currentItem;
+                    if (this.blockCount == 0) {
+                        slot--;
+                    }
+                    for (int i = slot; i > slot - 9; i--) {
+                        int hotbarSlot = (i % 9 + 9) % 9;
+                        ItemStack candidate = mc.thePlayer.inventory.getStackInSlot(hotbarSlot);
+                        if (ItemUtil.isBlock(candidate)) {
+                            mc.thePlayer.inventory.currentItem = hotbarSlot;
+                            this.blockCount = candidate.stackSize;
+                            break;
+                        }
+                    }
+>>>>>>> bf1c1a2a9f74591f727d217c2cd377e2ee9178e8
                 }
                 ItemStack stack = Myau.slotComponent.getItemStack();
                 int count = ItemUtil.isBlock(stack) ? stack.stackSize : 0;
@@ -771,6 +812,7 @@ public class Scaffold extends Module {
             float bloomR = hud.bloomRadius.getValue();
 
             // Blur pass
+<<<<<<< HEAD
             myau.util.shader.RenderSystem.renderBlur(blurR, blurP, () -> {
                 GlStateManager.pushMatrix();
                 GlStateManager.translate(centerX, centerY, 0);
@@ -789,6 +831,16 @@ public class Scaffold extends Module {
                 RoundedUtils.drawRound(x - 1, y - 1, width + 2, height + 2, 4f, new Color(81, 99, 149, 80));
                 GlStateManager.popMatrix();
             });
+=======
+            BlurUtils.prepareBlur();
+            RoundedUtils.drawRound(x, y, width, height, 4f, new Color(0, 0, 0, 150));
+            BlurUtils.blurEnd(blurP, blurR);
+
+            // Bloom pass
+            BlurUtils.prepareBloom();
+            RoundedUtils.drawRound(x - 1, y - 1, width + 2, height + 2, 4f, new Color(81, 99, 149, 80));
+            BlurUtils.bloomEnd(bloomP, bloomR);
+>>>>>>> bf1c1a2a9f74591f727d217c2cd377e2ee9178e8
         }
 
         int bgAlpha = (int) (150 * animationProgress);
@@ -860,6 +912,7 @@ public class Scaffold extends Module {
     public void onDisabled() {
         if (mc.thePlayer != null && this.lastSlot != -1) {
             mc.thePlayer.inventory.currentItem = this.lastSlot;
+<<<<<<< HEAD
         }
     }
 
@@ -869,8 +922,9 @@ public class Scaffold extends Module {
             if (stack != null && stack.stackSize > 0 && ItemUtil.isBlock(stack)) {
                 return i;
             }
+=======
+>>>>>>> bf1c1a2a9f74591f727d217c2cd377e2ee9178e8
         }
-        return -1;
     }
 
     public static class BlockData {
