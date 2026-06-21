@@ -117,6 +117,7 @@ public class Myau {
         moduleManager.modules.put(BlockHit.class, new BlockHit());
         moduleManager.modules.put(BlockOverlay.class, new BlockOverlay());
         moduleManager.modules.put(BreakProgress.class, new BreakProgress());
+        moduleManager.modules.put(HitSelect.class, new HitSelect());
         moduleManager.modules.put(BackTrack.class, new BackTrack());
         moduleManager.modules.put(Criticals.class, new Criticals());
         moduleManager.modules.put(Chams.class, new Chams());

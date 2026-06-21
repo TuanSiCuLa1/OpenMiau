@@ -5,6 +5,7 @@ import myau.event.EventTarget;
 import myau.event.types.EventType;
 import myau.event.types.Priority;
 import myau.events.LoadWorldEvent;
+import myau.events.PacketEvent;
 import myau.events.Render3DEvent;
 import myau.events.TickEvent;
 import myau.mixin.IAccessorRenderManager;
@@ -33,6 +34,12 @@ import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.network.Packet;
+import net.minecraft.network.play.server.S21PacketChunkData;
+import net.minecraft.network.play.server.S22PacketMultiBlockChange;
+import net.minecraft.network.play.server.S22PacketMultiBlockChange.BlockUpdateData;
+import net.minecraft.network.play.server.S23PacketBlockChange;
+import net.minecraft.network.play.server.S26PacketMapChunkBulk;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.EnumFacing;
@@ -53,7 +60,6 @@ import java.util.concurrent.CopyOnWriteArraySet;
 public class BedESP extends Module {
 
     private static final Minecraft mc = Minecraft.getMinecraft();
-
     private static final float DEFENSE_AUTO_SCALE_THRESHOLD = 8.0F;
 
     // Public field for mixin + BedNuker compatibility
@@ -92,14 +98,14 @@ public class BedESP extends Module {
 
     private final List<BlockPos[]> activeBedPairs = new ArrayList<>();
     private final Map<Long, DefenseOverlaySnapshot> defenseSnapshots = new HashMap<>();
-
-    /* ==================== Constructor ==================== */
+    private final Map<Long, DefenseWatchRegion> defenseWatchRegions = new HashMap<>();
+    private final Map<Long, Set<Long>> watchedBedsByDefensePos = new HashMap<>();
+    private final Map<Long, Set<Long>> watchedBedsByChunk = new HashMap<>();
+    private final Set<Long> dirtyDefenseBeds = new HashSet<>();
 
     public BedESP() {
         super("BedESP", false);
     }
-
-    /* ==================== Lifecycle ==================== */
 
     @Override
     public void onEnabled() {
@@ -112,33 +118,47 @@ public class BedESP extends Module {
     public void onDisabled() {
         activeBedPairs.clear();
         lastRenderedBedPairs.clear();
-        defenseSnapshots.clear();
         lastDefenseToolMode = false;
+        clearDefenseState();
     }
-
-    /* ==================== Events ==================== */
 
     @EventTarget
     public void onLoadWorld(LoadWorldEvent e) {
         activeBedPairs.clear();
         lastRenderedBedPairs.clear();
-        defenseSnapshots.clear();
         lastDefenseToolMode = false;
         beds.clear();
+        clearDefenseState();
     }
 
-    /**
-     * Replacement for {@code onUpdate()} / {@code getScanSpeedBudget()} from the original.
-     * Processes the {@link #beds} set (populated by mixin) into active bed pairs,
-     * then computes defense overlays.
-     */
+    @EventTarget
+    public void onPacket(PacketEvent event) {
+        if (event.getType() != EventType.RECEIVE) return;
+        Packet<?> packet = event.getPacket();
+        if (packet instanceof S23PacketBlockChange) {
+            markBedsDirtyForDefensePos(((S23PacketBlockChange) packet).getBlockPosition());
+        } else if (packet instanceof S22PacketMultiBlockChange) {
+            for (BlockUpdateData data : ((S22PacketMultiBlockChange) packet).getChangedBlocks()) {
+                markBedsDirtyForDefensePos(data.getPos());
+            }
+        } else if (packet instanceof S21PacketChunkData) {
+            S21PacketChunkData p = (S21PacketChunkData) packet;
+            markBedsDirtyForChunk(p.getChunkX(), p.getChunkZ());
+        } else if (packet instanceof S26PacketMapChunkBulk) {
+            S26PacketMapChunkBulk p = (S26PacketMapChunkBulk) packet;
+            for (int i = 0; i < p.getChunkCount(); i++) {
+                markBedsDirtyForChunk(p.getChunkX(i), p.getChunkZ(i));
+            }
+        }
+    }
+
     @EventTarget(Priority.HIGH)
     public void onTick(TickEvent event) {
         if (event.getType() != EventType.PRE) return;
         if (!isEnabled()) return;
         if (mc.theWorld == null || mc.thePlayer == null) {
             activeBedPairs.clear();
-            defenseSnapshots.clear();
+            clearDefenseState();
             return;
         }
 
@@ -146,8 +166,6 @@ public class BedESP extends Module {
         double px = mc.thePlayer.posX;
         double py = mc.thePlayer.posY;
         double pz = mc.thePlayer.posZ;
-
-        // Convert bed head positions from mixin into [foot, head] pairs
         List<BlockPos[]> candidatePairs = buildPairsFromBeds(px, py, pz, rangeSq);
 
         activeBedPairs.clear();
@@ -157,22 +175,42 @@ public class BedESP extends Module {
 
         boolean defenseToolMode = showDefenseTools.getValue();
         if (lastDefenseToolMode != defenseToolMode) {
-            defenseSnapshots.clear();
+            clearDefenseState();
             lastDefenseToolMode = defenseToolMode;
         }
 
         if (!showDefenseLayers.getValue()) {
-            defenseSnapshots.clear();
+            clearDefenseState();
             return;
         }
 
+        Set<Long> activeFeet = new HashSet<>();
         for (BlockPos[] pair : candidatePairs) {
-            long footKey = pair[0].toLong();
-            DefenseOverlaySnapshot snap = defenseSnapshots.get(footKey);
-            if (snap == null || !snap.matches(pair[1])) {
-                defenseSnapshots.put(footKey, computeDefenseSnapshot(pair[0], pair[1]));
+            BlockPos foot = pair[0];
+            BlockPos head = pair[1];
+            long footKey = foot.toLong();
+            activeFeet.add(footKey);
+
+            DefenseWatchRegion region = defenseWatchRegions.get(footKey);
+            if (region == null || !region.matches(head)) {
+                unregisterDefenseWatch(footKey);
+                registerDefenseWatch(foot, head);
+                dirtyDefenseBeds.add(footKey);
+            }
+
+            DefenseOverlaySnapshot snapshot = defenseSnapshots.get(footKey);
+            if (snapshot == null || !snapshot.matches(head) || dirtyDefenseBeds.remove(footKey)) {
+                defenseSnapshots.put(footKey, computeDefenseSnapshot(foot, head));
             }
         }
+
+        for (Long footKey : new ArrayList<>(defenseWatchRegions.keySet())) {
+            if (!activeFeet.contains(footKey)) {
+                unregisterDefenseWatch(footKey);
+            }
+        }
+
+        dirtyDefenseBeds.retainAll(activeFeet);
     }
 
     @Override
@@ -205,7 +243,6 @@ public class BedESP extends Module {
             }
         }
 
-        // Also render previously visible beds that are still valid
         for (BlockPos[] prev : new ArrayList<>(lastRenderedBedPairs)) {
             if (prev == null || prev.length < 2) continue;
             BlockPos foot = prev[0];
@@ -235,13 +272,9 @@ public class BedESP extends Module {
         }
     }
 
-    /* ==================== Bed discovery ==================== */
-
     public double getHeight() {
         return renderFullBlock.getValue() ? 1.0 : 0.5625;
     }
-
-    // ---- internal helpers ----------------------------------------------------
 
     private List<BlockPos[]> buildPairsFromBeds(double px, double py, double pz, double rangeSq) {
         List<BlockPos[]> pairs = new ArrayList<>();
@@ -249,11 +282,8 @@ public class BedESP extends Module {
         for (BlockPos head : beds) {
             if (head == null) continue;
             IBlockState st = mc.theWorld.getBlockState(head);
-            if (!(st.getBlock() instanceof BlockBed)) {
-                // stale entry – mixin will re-add if block is still there
-                continue;
-            }
-                // head block – find matching foot
+            if (!(st.getBlock() instanceof BlockBed)) continue;
+
             BlockPos foot = findFootBlock(head, st);
             if (foot == null) continue;
 
@@ -269,7 +299,6 @@ public class BedESP extends Module {
             return pairs;
         }
 
-        // Keep only the nearest bed
         BlockPos[] nearest = null;
         double nearestDist = Double.MAX_VALUE;
         for (BlockPos[] pair : pairs) {
@@ -287,13 +316,10 @@ public class BedESP extends Module {
         return pairs;
     }
 
-    /** Given a HEAD bed block state, locate the FOOT block. */
     private static BlockPos findFootBlock(BlockPos head, IBlockState headState) {
         if (headState.getValue(BlockBed.PART) == BlockBed.EnumPartType.FOOT) {
-            // Already foot → return as-is (shouldn't happen with mixin but be safe)
             return head;
         }
-        // HEAD → foot is one block opposite of the facing direction
         EnumFacing facing = headState.getValue(BlockBed.FACING);
         return head.offset(facing.getOpposite());
     }
@@ -325,8 +351,6 @@ public class BedESP extends Module {
     private float getBlockHeight() {
         return renderFullBlock.getValue() ? 1.0F : 0.5625F;
     }
-
-    /* ==================== Rendering ==================== */
 
     private static AxisAlignedBB bedWorldBounds(BlockPos foot, BlockPos head, float height) {
         int fx = foot.getX(), fy = foot.getY(), fz = foot.getZ();
@@ -446,8 +470,6 @@ public class BedESP extends Module {
         return false;
     }
 
-    /* ==================== Defense overlay ==================== */
-
     private void renderDefenseOverlay(BlockPos[] blocks, float blockHeight) {
         DefenseOverlaySnapshot snapshot = defenseSnapshots.get(blocks[0].toLong());
         if (snapshot == null || !snapshot.matches(blocks[1]) || snapshot.entries.isEmpty()) return;
@@ -477,7 +499,6 @@ public class BedESP extends Module {
         GlStateManager.pushMatrix();
         try {
             GlStateManager.translate((float) x, (float) y, (float) z);
-            // Yaw-only billboard: keep tools horizontally above the bed, don't follow vertical look
             GlStateManager.rotate(-renderManager.playerViewY, 0.0F, 1.0F, 0.0F);
             GlStateManager.scale(-renderScale, -renderScale, renderScale);
 
@@ -488,7 +509,6 @@ public class BedESP extends Module {
 
             renderDefenseBackground(backgroundLeft, backgroundTop, backgroundRight, backgroundBottom);
 
-            // Render items
             GlStateManager.enableTexture2D();
             GlStateManager.enableAlpha();
             GlStateManager.alphaFunc(GL11.GL_GREATER, 0.1F);
@@ -533,7 +553,6 @@ public class BedESP extends Module {
     private void renderDefenseBlockSprite(TextureAtlasSprite sprite, int iconX, int iconY) {
         if (sprite == null) return;
         mc.getTextureManager().bindTexture(TextureMap.locationBlocksTexture);
-        // ensure correct GL state
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
 
         Tessellator tessellator = Tessellator.getInstance();
@@ -547,15 +566,10 @@ public class BedESP extends Module {
     }
 
     private void renderDefenseBackground(int left, int top, int right, int bottom) {
-        // filled rounded rect
         RenderUtil.drawRoundedRectangle(left, top, right, bottom, DEFENSE_BACKGROUND_RADIUS, DEFENSE_BACKGROUND_COLOR);
-        // outline – approximate with a slightly larger rect drawn behind
         RenderUtil.drawRoundedRectangle(left - 1, top - 1, right + 1, bottom + 1, DEFENSE_BACKGROUND_RADIUS + 1, DEFENSE_BACKGROUND_OUTLINE_COLOR);
-        // Re-draw fill on top
         RenderUtil.drawRoundedRectangle(left, top, right, bottom, DEFENSE_BACKGROUND_RADIUS, DEFENSE_BACKGROUND_COLOR);
     }
-
-    /* ==================== Defense analysis ==================== */
 
     private DefenseOverlaySnapshot computeDefenseSnapshot(BlockPos foot, BlockPos head) {
         LayerOffsets[] layers = getLayerOffsets(foot, head);
@@ -646,8 +660,6 @@ public class BedESP extends Module {
         return false;
     }
 
-    /* ==================== Layer geometry builder ==================== */
-
     private LayerOffsets[] getLayerOffsets(BlockPos foot, BlockPos head) {
         EnumFacing facing = getBedFacing(foot, head);
         return facing == null ? null : DEFENSE_OFFSETS.get(facing);
@@ -730,21 +742,98 @@ public class BedESP extends Module {
         }
     }
 
-    /* ==================== Color ==================== */
-
-    private int getCurrentColor() {
-        HUD hud = (HUD) Myau.moduleManager.modules.get(HUD.class);
-        if (hud != null && hud.isEnabled()) {
-            return hud.getColor(System.currentTimeMillis()).getRGB();
-        }
-        // Fallback: use theme directly when HUD is disabled
-        return Themes.getCurrentTheme().getAccentColor().getRGB();
+    private void clearDefenseState() {
+        defenseSnapshots.clear();
+        defenseWatchRegions.clear();
+        watchedBedsByDefensePos.clear();
+        watchedBedsByChunk.clear();
+        dirtyDefenseBeds.clear();
     }
 
-    /* ==================== Helpers ==================== */
+    private void markBedsDirtyForDefensePos(BlockPos pos) {
+        if (pos == null) return;
+        Set<Long> feet = watchedBedsByDefensePos.get(pos.toLong());
+        if (feet != null) {
+            dirtyDefenseBeds.addAll(feet);
+        }
+    }
+
+    private void markBedsDirtyForChunk(int chunkX, int chunkZ) {
+        Set<Long> feet = watchedBedsByChunk.get(chunkKey(chunkX, chunkZ));
+        if (feet != null) {
+            dirtyDefenseBeds.addAll(feet);
+        }
+    }
+
+    private void registerDefenseWatch(BlockPos foot, BlockPos head) {
+        LayerOffsets[] layers = getLayerOffsets(foot, head);
+        long footKey = foot.toLong();
+        if (layers == null) {
+            defenseWatchRegions.put(footKey, new DefenseWatchRegion(head.toLong(), Collections.<Long>emptySet(), Collections.<Long>emptySet()));
+            return;
+        }
+
+        Set<Long> watchedPositions = new HashSet<>();
+        Set<Long> watchedChunks = new HashSet<>();
+
+        for (LayerOffsets layer : layers) {
+            for (RelativeOffset offset : layer.positions) {
+                BlockPos watchedPos = new BlockPos(foot.getX() + offset.x, foot.getY() + offset.y, foot.getZ() + offset.z);
+                long posKey = watchedPos.toLong();
+                if (!watchedPositions.add(posKey)) {
+                    continue;
+                }
+
+                watchedBedsByDefensePos.computeIfAbsent(posKey, ignored -> new HashSet<>()).add(footKey);
+                watchedChunks.add(chunkKey(watchedPos.getX() >> 4, watchedPos.getZ() >> 4));
+            }
+        }
+
+        for (Long chunkKey : watchedChunks) {
+            watchedBedsByChunk.computeIfAbsent(chunkKey, ignored -> new HashSet<>()).add(footKey);
+        }
+
+        defenseWatchRegions.put(footKey, new DefenseWatchRegion(
+                head.toLong(),
+                Collections.unmodifiableSet(watchedPositions),
+                Collections.unmodifiableSet(watchedChunks)
+        ));
+    }
+
+    private void unregisterDefenseWatch(long footKey) {
+        DefenseWatchRegion region = defenseWatchRegions.remove(footKey);
+        defenseSnapshots.remove(footKey);
+        dirtyDefenseBeds.remove(footKey);
+
+        if (region == null) {
+            return;
+        }
+
+        for (Long posKey : region.watchedPositions) {
+            Set<Long> feet = watchedBedsByDefensePos.get(posKey);
+            if (feet == null) continue;
+            feet.remove(footKey);
+            if (feet.isEmpty()) {
+                watchedBedsByDefensePos.remove(posKey);
+            }
+        }
+
+        for (Long chunkKey : region.watchedChunks) {
+            Set<Long> feet = watchedBedsByChunk.get(chunkKey);
+            if (feet == null) continue;
+            feet.remove(footKey);
+            if (feet.isEmpty()) {
+                watchedBedsByChunk.remove(chunkKey);
+            }
+        }
+    }
+
+    private static long chunkKey(int chunkX, int chunkZ) {
+        return ((long) chunkX << 32) | (chunkZ & 0xFFFFFFFFL);
+    }
 
     private float computeDefenseBaseScaleValue() {
-        return (float) defenseScale.getValue() * 0.02F;
+        return defenseScale.getValue() * 0.02F;
     }
 
     private float computeDefenseScaleValue(float distance) {
@@ -754,7 +843,13 @@ public class BedESP extends Module {
         return Math.max(base, scaled);
     }
 
-    /* ==================== Static inner types ==================== */
+    private int getCurrentColor() {
+        HUD hud = (HUD) Myau.moduleManager.modules.get(HUD.class);
+        if (hud != null && hud.isEnabled()) {
+            return hud.getColor(System.currentTimeMillis()).getRGB();
+        }
+        return Themes.getCurrentTheme().getAccentColor().getRGB();
+    }
 
     private static final class DefenseOverlaySnapshot {
         private final long headKey;
@@ -796,6 +891,22 @@ public class BedESP extends Module {
         }
     }
 
+    private static final class DefenseWatchRegion {
+        private final long headKey;
+        private final Set<Long> watchedPositions;
+        private final Set<Long> watchedChunks;
+
+        private DefenseWatchRegion(long headKey, Set<Long> watchedPositions, Set<Long> watchedChunks) {
+            this.headKey = headKey;
+            this.watchedPositions = watchedPositions;
+            this.watchedChunks = watchedChunks;
+        }
+
+        private boolean matches(BlockPos otherHead) {
+            return otherHead != null && headKey == otherHead.toLong();
+        }
+    }
+
     private static final class DefenseBlockKey {
         private final IBlockState state;
         private final String identityKey;
@@ -804,8 +915,7 @@ public class BedESP extends Module {
         private final ItemStack renderStack;
         private final TextureAtlasSprite blockSprite;
 
-        private DefenseBlockKey(IBlockState state, String identityKey, String sortName,
-                                ItemStack renderStack, TextureAtlasSprite blockSprite) {
+        private DefenseBlockKey(IBlockState state, String identityKey, String sortName, ItemStack renderStack, TextureAtlasSprite blockSprite) {
             this.state = state;
             this.identityKey = identityKey;
             this.sortName = sortName;
@@ -910,8 +1020,6 @@ public class BedESP extends Module {
             return bestTool;
         }
     }
-
-    /* ==================== Static utility methods ==================== */
 
     private static ItemStack resolveBlockItemStack(IBlockState state, BlockPos pos, World world) {
         Block block = state.getBlock();
