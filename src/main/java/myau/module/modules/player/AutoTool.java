@@ -3,23 +3,19 @@ package myau.module.modules.player;
 import myau.module.modules.combat.KillAura;
 import myau.module.modules.render.HUD;
 import myau.Myau;
-import myau.component.SlotComponent;
 import myau.event.EventTarget;
 import myau.event.types.EventType;
 import myau.event.types.Priority;
 import myau.events.TickEvent;
 import myau.events.Render2DEvent;
 import myau.module.Module;
-import myau.util.player.IInventoryPlayerAccessor;
 import myau.util.player.ItemUtil;
-import myau.util.network.PacketUtil;
 import myau.util.player.TeamUtil;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.play.client.C09PacketHeldItemChange;
 import net.minecraft.util.BlockPos;
@@ -32,10 +28,10 @@ import java.awt.Color;
 public class AutoTool extends Module {
     private static final Minecraft mc = Minecraft.getMinecraft();
 
-    /** The real slot that was held before AutoTool started spoofing. */
-    private int serverSlot = -1;
-    /** The slot AutoTool is currently spoofing. */
-    private int spoofedToolSlot = -1;
+    /** Slot thật của player trước khi AutoTool switch. -1 = chưa switch. */
+    private int savedSlot = -1;
+    /** Slot mà AutoTool đang giữ (đã switch thật sự). */
+    private int activeToolSlot = -1;
 
     private float animationProgress = 0f;
     private long lastFrame = System.currentTimeMillis();
@@ -60,16 +56,21 @@ public class AutoTool extends Module {
         }
 
         if (!this.canAutoTool()) {
+            // Không đang đào → restore về slot cũ
             this.resetState();
             return;
         }
 
         BlockPos pos = mc.objectMouseOver.getBlockPos();
         Block block = mc.theWorld.getBlockState(pos).getBlock();
-        int slot = this.findBestHotbarTool(block);
-        if (slot == -1 || slot == Myau.slotComponent.getItemIndex()) return;
+        int bestSlot = this.findBestHotbarTool(block);
 
-        this.selectTool(slot);
+        if (bestSlot == -1) {
+            // Tool tốt nhất chính là slot hiện tại → không cần switch
+            return;
+        }
+
+        this.switchToSlot(bestSlot);
     }
 
     private boolean canAutoTool() {
@@ -77,44 +78,51 @@ public class AutoTool extends Module {
         if (mc.objectMouseOver == null || mc.objectMouseOver.typeOfHit != MovingObjectType.BLOCK) return false;
         if (this.isKillAura() || mc.thePlayer.isUsingItem()) return false;
         if (!mc.gameSettings.keyBindAttack.isKeyDown()) return false;
-        
+
         Block block = mc.theWorld.getBlockState(mc.objectMouseOver.getBlockPos()).getBlock();
         return block.getBlockHardness(mc.theWorld, mc.objectMouseOver.getBlockPos()) != 0.0F;
     }
 
+    /**
+     * Tìm slot hotbar tốt nhất cho block. Trả về -1 nếu slot hiện tại đã tốt nhất.
+     */
     private int findBestHotbarTool(Block block) {
-        int currentSlot = Myau.slotComponent.getItemIndex();
+        int currentSlot = mc.thePlayer.inventory.currentItem;
         int bestSlot = ItemUtil.findInventorySlot(currentSlot, block);
         return bestSlot == currentSlot ? -1 : bestSlot;
     }
 
     /**
-     * Switch to slot silently via SlotComponent (alternative slot) so the
-     * server sees the tool without changing the client's visible currentItem.
+     * Switch slot thật sự: cập nhật cả client lẫn server.
      */
-    private void selectTool(int slot) {
-        if (this.serverSlot == -1) {
-            // Remember the real slot before we start spoofing
-            this.serverSlot = mc.thePlayer.inventory.currentItem;
+    private void switchToSlot(int slot) {
+        if (mc.thePlayer == null) return;
+
+        // Lưu slot thật lần đầu switch
+        if (this.savedSlot == -1) {
+            this.savedSlot = mc.thePlayer.inventory.currentItem;
         }
-        if (this.spoofedToolSlot != slot || Myau.slotComponent.getItemIndex() != slot) {
-            // Tell SlotComponent to use this slot for this tick
-            Myau.slotComponent.setSlot(slot);
-            this.spoofedToolSlot = slot;
-        }
+
+        if (this.activeToolSlot == slot) return; // Đã ở slot này rồi
+
+        // Switch client
+        mc.thePlayer.inventory.currentItem = slot;
+        // Switch server
+        mc.thePlayer.sendQueue.addToSendQueue(new C09PacketHeldItemChange(slot));
+
+        this.activeToolSlot = slot;
     }
 
+    /**
+     * Restore về slot ban đầu, gửi packet để server cũng biết.
+     */
     private void resetState() {
-        if (this.serverSlot != -1) {
-            // Clear alternative slot so the real currentItem is restored
-            if (mc.thePlayer != null) {
-                IInventoryPlayerAccessor inv = (IInventoryPlayerAccessor) mc.thePlayer.inventory;
-                inv.myau$setAlternativeSlot(false);
-                inv.myau$setAlternativeCurrentItem(mc.thePlayer.inventory.currentItem);
-            }
+        if (this.savedSlot != -1 && mc.thePlayer != null) {
+            mc.thePlayer.inventory.currentItem = this.savedSlot;
+            mc.thePlayer.sendQueue.addToSendQueue(new C09PacketHeldItemChange(this.savedSlot));
         }
-        this.serverSlot = -1;
-        this.spoofedToolSlot = -1;
+        this.savedSlot = -1;
+        this.activeToolSlot = -1;
     }
 
     @EventTarget
@@ -125,7 +133,7 @@ public class AutoTool extends Module {
         float delta = (currentFrame - lastFrame) / 1000f;
         lastFrame = currentFrame;
 
-        boolean shouldShow = this.isEnabled() && this.spoofedToolSlot != -1;
+        boolean shouldShow = this.isEnabled() && this.activeToolSlot != -1;
 
         float target = shouldShow ? 1f : 0f;
         animationProgress += (target - animationProgress) * 12f * delta;
@@ -134,8 +142,8 @@ public class AutoTool extends Module {
         if (animationProgress <= 0.01f) return;
 
         ItemStack itemStack = null;
-        if (this.spoofedToolSlot != -1) {
-            itemStack = mc.thePlayer.inventory.getStackInSlot(this.spoofedToolSlot);
+        if (this.activeToolSlot != -1) {
+            itemStack = mc.thePlayer.inventory.getStackInSlot(this.activeToolSlot);
             if (itemStack != null) {
                 lastSpoofedStack = itemStack;
             }
@@ -167,9 +175,9 @@ public class AutoTool extends Module {
         boolean shaders = hud != null && hud.shaders.getValue();
 
         if (shaders) {
-            int blurP = hud.blurPasses.getValue();
+            float blurP = hud.blurCompression.getValue();
             float blurR = hud.blurRadius.getValue();
-            int bloomP = hud.bloomPasses.getValue();
+            float bloomP = hud.bloomCompression.getValue();
             float bloomR = hud.bloomRadius.getValue();
 
             // Blur pass — frosted-glass background

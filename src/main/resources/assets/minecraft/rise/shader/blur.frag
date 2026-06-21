@@ -17,5 +17,5 @@ void main() {
         color += texture2D(u_diffuse_sampler, texCoord - offset) * u_kernel[i];
     }
     
-    gl_FragColor = color;
+    gl_FragColor = vec4(color.rgb, texture2D(u_other_sampler, texCoord).a);
 }

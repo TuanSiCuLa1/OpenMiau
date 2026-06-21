@@ -59,6 +59,10 @@ public class CategoryComponent {
     private float screenWidth;
     private float animationStartHeight;
 
+    // Hover lift & glow animation
+    private float hoverAnim = 0f;
+    private long lastHoverMS = System.currentTimeMillis();
+
     private final ScrollOffsetAnimation scrollAnim = new ScrollOffsetAnimation(200);
     public long lastInteractedTime = 0L;
 
@@ -317,6 +321,16 @@ public class CategoryComponent {
             textTimer = null;
         }
 
+        // Update hover lift animation
+        long nowMS = System.currentTimeMillis();
+        float hoverDelta = nowMS - lastHoverMS;
+        lastHoverMS = nowMS;
+        if (hoverDelta > 50 || hoverDelta < 0) hoverDelta = 16f;
+        float hoverSpeed = 0.025f * hoverDelta;
+        hoverAnim = hovering
+                ? Math.min(1f, hoverAnim + hoverSpeed)
+                : Math.max(0f, hoverAnim - hoverSpeed);
+
         for (Component c : this.modules) {
             if (c instanceof ModuleComponent) {
                 ((ModuleComponent) c).updateAnimationState();
@@ -358,15 +372,71 @@ public class CategoryComponent {
         this.lastNamePos = namePos;
         this.lastHeight = extra;
 
-        GL11.glPushMatrix();
+        float liftY = hoverAnim * 3f;
 
-        RenderUtil.drawRoundedGradientOutlinedRectangle(this.x - 2, this.y, this.x + this.width + 2, extra, 10, TRANSLUCENT_BACKGROUND,
-                REGULAR_OUTLINE, REGULAR_OUTLINE2);
+        myau.module.modules.render.HUD hud = null;
+        if (myau.Myau.moduleManager != null) {
+            hud = (myau.module.modules.render.HUD) myau.Myau.moduleManager.modules.get(myau.module.modules.render.HUD.class);
+        }
+        myau.util.render.Themes theme = myau.util.render.Themes.getCurrentTheme();
+        Color themeColor1 = (hud != null && hud.isEnabled())
+                ? hud.getColor(nowMS, 0L)
+                : theme.getFirstColor();
+        Color themeColor2 = (hud != null && hud.isEnabled())
+                ? hud.getColor(nowMS, 15L)
+                : theme.getSecondColor();
+
+        float glowFactor = Math.max(hoverAnim, opened ? 1f : (smoothTimer != null ? 0.5f : 0f));
+        int baseBg = new Color(0, 0, 0, 110).getRGB();
+        int bgColor;
+        if (glowFactor > 0.01f) {
+            int glowAlpha = (int) (70 * glowFactor);
+            Color glowTint = new Color(
+                    Math.min(255, (int)(themeColor1.getRed() * 0.35f)),
+                    Math.min(255, (int)(themeColor1.getGreen() * 0.35f)),
+                    Math.min(255, (int)(themeColor1.getBlue() * 0.35f)),
+                    glowAlpha
+            );
+            int r = Math.min(255, ((baseBg >> 16) & 0xFF) + glowTint.getRed());
+            int g = Math.min(255, ((baseBg >> 8) & 0xFF) + glowTint.getGreen());
+            int b = Math.min(255, (baseBg & 0xFF) + glowTint.getBlue());
+            int a = (baseBg >> 24) & 0xFF;
+            bgColor = (a << 24) | (r << 16) | (g << 8) | b;
+        } else {
+            bgColor = baseBg;
+        }
+
+        int outline1 = ColorUtil.interpolate(glowFactor,
+                new Color(81, 99, 149), themeColor1).getRGB();
+        int outline2 = ColorUtil.interpolate(glowFactor,
+                new Color(97, 67, 133), themeColor2).getRGB();
+
+        // Draw background rect OUTSIDE the lift translation, with manually offset y coords.
+        // drawRoundedGradientOutlinedRectangle has internal glScaled(0.5) which would halve
+        // any parent glTranslatef, causing the background to not lift fully with the rest.
+        RenderUtil.drawRoundedGradientOutlinedRectangle(this.x - 2, this.y - liftY, this.x + this.width + 2, extra - liftY, 10,
+                bgColor, outline1, outline2);
+
+        // Extra glow ring when hovered (also outside lift for consistency)
+        if (hoverAnim > 0.01f) {
+            Color ringColor = new Color(
+                    themeColor1.getRed(), themeColor1.getGreen(), themeColor1.getBlue(),
+                    (int)(80 * hoverAnim));
+            myau.util.shader.RoundedUtils.drawRoundOutline(
+                    this.x - 3f, this.y - 1f - liftY, this.width + 6f,
+                    (extra - this.y) + 2f, 10f, 1.5f,
+                    new Color(0, 0, 0, 0), ringColor);
+        }
+
+        // Lift everything else (icon, text, modules) via glTranslatef
+        GL11.glPushMatrix();
+        GL11.glTranslatef(0f, -liftY, 0f);
+
         renderItemForCategory(this.category, (int) (this.x + 1), (int) (this.y + 4), opened || hovering);
         titleRenderer.draw(this.category, namePos, this.y + 4, CATEGORY_NAME_COLOR, false);
 
-        float moduleAreaTop = this.y + this.titleHeight + 3;
-        float scissorBottom = extra - 2f;
+        float moduleAreaTop = this.y + this.titleHeight + 3 - liftY;
+        float scissorBottom = extra - 2f - liftY;
         float moduleAreaHeight = Math.max(0f, scissorBottom - moduleAreaTop);
 
         if (this.opened || smoothTimer != null) {

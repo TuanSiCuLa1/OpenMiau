@@ -18,12 +18,12 @@ public class RenderSystem {
         if (hud == null || !hud.shaders.getValue() || !hud.blurSettings.getValue()) {
             return;
         }
-        renderBlur(hud.blurRadius.getValue().floatValue(), hud.blurPasses.getValue(), renderOps);
+        renderBlur(hud.blurRadius.getValue().floatValue(), hud.blurCompression.getValue().floatValue(), renderOps);
     }
 
-    public static void renderBlur(float radius, int passes, Runnable renderOps) {
+    public static void renderBlur(float radius, float compression, Runnable renderOps) {
         blurShader.setRadius((int) radius);
-        blurShader.setCompression(passes); // Used as compression in Rise
+        blurShader.setCompression(compression); // Used as compression in Rise
         blurShader.update();
         
         blurShader.run(ShaderRenderType.OVERLAY, ((myau.mixin.IAccessorMinecraft) Minecraft.getMinecraft()).getTimer().renderPartialTicks, Collections.singletonList(renderOps));
@@ -34,12 +34,12 @@ public class RenderSystem {
         if (hud == null || !hud.shaders.getValue()) {
             return;
         }
-        renderBloom(hud.bloomRadius.getValue().floatValue(), hud.bloomPasses.getValue(), renderOps);
+        renderBloom(hud.bloomRadius.getValue().floatValue(), hud.bloomCompression.getValue().floatValue(), renderOps);
     }
 
-    public static void renderBloom(float radius, int passes, Runnable renderOps) {
+    public static void renderBloom(float radius, float compression, Runnable renderOps) {
         bloomShader.setRadius((int) radius);
-        bloomShader.setCompression(passes); // Used as compression in Rise
+        bloomShader.setCompression(compression); // Used as compression in Rise
         bloomShader.update();
         
         bloomShader.run(ShaderRenderType.OVERLAY, ((myau.mixin.IAccessorMinecraft) Minecraft.getMinecraft()).getTimer().renderPartialTicks, Collections.singletonList(renderOps));
